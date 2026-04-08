@@ -905,5 +905,49 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
     
     localStorage.setItem(config.draftKey, JSON.stringify(univCurrentInput));
 }
+   // =========================================================
+    // FITUR BARU: AUTO-COLLAPSE (TUTUP OTOMATIS)
+    // =========================================================
+    const paramsList = config.areas[subAreaName];
+    
+    // 1. Cek apakah parameter ini adalah parameter PALING TERAKHIR di grup tersebut
+    if (fullLabel === paramsList[paramsList.length - 1] && value.trim() !== '') {
+        
+        // Jeda 0.4 detik agar operator melihat bahwa datanya sudah terisi
+        setTimeout(() => {
+            // Ambil semua kotak grup (<details>) di layar saat ini
+            const allDetails = document.querySelectorAll('#panelSTGContent details');
+            let currentIndex = -1;
 
+            // Cari tahu kotak mana yang sedang aktif/diisi
+            allDetails.forEach((detail, index) => {
+                const summary = detail.querySelector('summary');
+                if (summary && summary.textContent.includes(subAreaName)) {
+                    currentIndex = index;
+                }
+            });
+
+            // 2. Eksekusi Tutup & Buka Otomatis
+            if (currentIndex !== -1) {
+                // Tutup grup yang sudah selesai ini
+                allDetails[currentIndex].removeAttribute('open');
+
+                // Buka grup selanjutnya (jika masih ada di bawahnya)
+                const nextDetail = allDetails[currentIndex + 1];
+                if (nextDetail) {
+                    nextDetail.setAttribute('open', '');
+                    
+                    // 3. Gulir layar otomatis (Auto-Scroll) ke grup baru
+                    nextDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // 4. Fokuskan kursor ke isian pertama di grup baru
+                    const nextInput = nextDetail.querySelector('input, select');
+                    if (nextInput) {
+                        setTimeout(() => nextInput.focus(), 300);
+                    }
+                }
+            }
+        }, 400); 
+    }
+}
 
