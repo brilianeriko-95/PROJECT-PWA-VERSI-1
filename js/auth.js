@@ -14,15 +14,21 @@ function initAuth() {
         isAuthenticated = true;
         updateUIForAuthenticatedUser();
         
+        // 👇 PERBAIKAN: Hilangkan syarat .contains('active') agar selalu auto-login
         const loginScreen = document.getElementById('loginScreen');
-        if (loginScreen && loginScreen.classList.contains('active')) {
-            // PENGECEKAN ROLE SAAT AUTO-LOGIN
-            if (currentUser.role === 'supervisor' || currentUser.role === 'avp') {
-                navigateTo('dashboardSupervisor');
-            } else {
-                navigateTo('homeScreen');
-            }
+        if (loginScreen) {
+            loginScreen.classList.remove('active');
+            loginScreen.style.display = 'none'; // Sembunyikan layar login paksa
         }
+
+        // PENGECEKAN ROLE SAAT AUTO-LOGIN
+        if (currentUser.role === 'supervisor' || currentUser.role === 'avp') {
+            navigateTo('dashboardSupervisor');
+        } else {
+            navigateTo('homeScreen');
+        }
+        
+        console.log("✅ Auto-Login Berhasil untuk:", currentUser.name);
     } else {
         clearSession();
         showLoginScreen();
@@ -37,7 +43,14 @@ function isSessionValid(session) {
 }
 
 function saveSession(user, rememberMe = false) {
-    const duration = rememberMe ? AUTH_CONFIG.REMEMBER_ME_DURATION : AUTH_CONFIG.SESSION_DURATION;
+    // 👇 PERBAIKAN: Beri waktu otomatis 12 Jam (43.200.000 ms) jika AUTH_CONFIG gagal dibaca
+    const defaultDuration = 12 * 60 * 60 * 1000; 
+    let duration = defaultDuration;
+    
+    if (typeof AUTH_CONFIG !== 'undefined') {
+        duration = rememberMe ? AUTH_CONFIG.REMEMBER_ME_DURATION : AUTH_CONFIG.SESSION_DURATION;
+    }
+
     const session = {
         user: user,
         loginTime: Date.now(),
@@ -46,7 +59,8 @@ function saveSession(user, rememberMe = false) {
     };
     
     try {
-        localStorage.setItem(AUTH_CONFIG.SESSION_KEY, JSON.stringify(session));
+        const key = (typeof AUTH_CONFIG !== 'undefined') ? AUTH_CONFIG.SESSION_KEY : 'turbine_session';
+        localStorage.setItem(key, JSON.stringify(session));
     } catch (e) {
         console.error('Error saving session:', e);
     }
