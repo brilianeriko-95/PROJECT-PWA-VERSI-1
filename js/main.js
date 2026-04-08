@@ -377,18 +377,21 @@ function setupEnterKeyNavigation() {
             // 1. CEK MODE WIZARD (Layar 1 Parameter)
             const allButtons = Array.from(document.querySelectorAll('button'));
             const btnLanjut = allButtons.find(btn => 
-                btn.textContent.toLowerCase().includes('lanjut') || 
-                btn.textContent.toLowerCase().includes('next')
+                (btn.textContent.toLowerCase().includes('lanjut') || 
+                 btn.textContent.toLowerCase().includes('next')) &&
+                btn.offsetParent !== null // <--- KUNCI PENYELAMAT: Pastikan tombol sedang TAMPIL, bukan disembunyikan
             );
 
-            // 👇 PERUBAHAN DI SINI: Menambahkan dukungan untuk elemen SELECT (Dropdown)
             if (btnLanjut && (event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT')) {
                 btnLanjut.click(); // Langsung otomatis klik "Simpan & Lanjut"
                 return; // Hentikan fungsi di sini
             }
 
-            // 2. CEK MODE FORM PANJANG
-            const focusableElements = Array.from(document.querySelectorAll('input:not([type="hidden"]), select, textarea'));
+            // 2. CEK MODE FORM PANJANG (Control Room / Grouped Logsheet)
+            // KUNCI PENYELAMAT: Hanya daftarkan input/select yang SEDANG TAMPIL di layar
+            const focusableElements = Array.from(document.querySelectorAll('input:not([type="hidden"]), select, textarea'))
+                                           .filter(el => el.offsetParent !== null); 
+                                           
             const currentIndex = focusableElements.indexOf(event.target);
             
             if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
