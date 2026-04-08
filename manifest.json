@@ -1,7 +1,7 @@
 {
-  "name": "Turbine Logsheet Pro",
-  "short_name": "Turbine Log",
-  "description": "Aplikasi Logsheet Operasional Turbin & Cooling Tower - PT Petrokimia Gresik",
+  "name": "PROJECT LOGSHEET v.1",
+  "short_name": "PROJECT LOGSHEET",
+  "description": "Aplikasi Logsheet Operasional - PT Petrokimia Gresik",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a0f1c",
