@@ -21,7 +21,7 @@ const DRAFT_KEYS = {
     LOGSHEET_BACKUP: 'draft_turbine_backup',
     BALANCING: 'balancing_draft',
     TPM_OFFLINE: 'tpm_offline',
-    LOGSHEET_OFFLINE: 'offline_logsheets',1357
+    LOGSHEET_OFFLINE: 'offline_logsheets',
     BALANCING_OFFLINE: 'balancing_offline',
     TPM_HISTORY: 'tpm_history',
     BALANCING_HISTORY: 'balancing_history'
