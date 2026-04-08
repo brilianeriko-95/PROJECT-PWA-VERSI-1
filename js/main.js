@@ -574,7 +574,7 @@ async function syncOfflineData() {
 window.addEventListener('DOMContentLoaded', () => {
     initState();
     loadTodayJobs();
-   checkOfflineData();
+    checkOfflineData();
 
     // Deteksi jika aplikasi dibuka dari Homescreen HP (Standalone Mode)
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
@@ -594,8 +594,23 @@ window.addEventListener('DOMContentLoaded', () => {
     setupTPMListeners();
     setupParamPhotoListeners();
     setupEnterKeyNavigation();    
+    
     // Start premium loading animation
     simulateLoading();
+    
+    // ==========================================
+    // FITUR ANTI-BACK BUTTON (Mencegah Keluar PWA)
+    // ==========================================
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function () {
+        // Dorong lagi state ke history agar tidak bisa mundur ke luar aplikasi
+        window.history.pushState(null, null, window.location.href);
+        
+        // Tampilkan pesan peringatan
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('⚠️ Gunakan tombol "Kembali" di layar, jangan tombol Back HP.', 'warning');
+        }
+    };
     
     console.log(`${APP_NAME} v${APP_VERSION} initialized successfully`);
 });
