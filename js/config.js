@@ -21,7 +21,7 @@ const DRAFT_KEYS = {
     LOGSHEET_BACKUP: 'draft_turbine_backup',
     BALANCING: 'balancing_draft',
     TPM_OFFLINE: 'tpm_offline',
-    LOGSHEET_OFFLINE: 'offline_logsheets',
+    LOGSHEET_OFFLINE: 'offline_logsheets',1357
     BALANCING_OFFLINE: 'balancing_offline',
     TPM_HISTORY: 'tpm_history',
     BALANCING_HISTORY: 'balancing_history'
@@ -857,8 +857,8 @@ const AREAS_PANEL_ASAM_SULFAT = {
     "30-C-1301 TIA-1346 (°C)", "30-C-1301 TI-1347 (°C)", "30-C-1301 TI-1348 (°C)",	
     "30-C-1301 VIA-1341 X (µm)", "30-C-1301 VIA-1342 Y (µm)", "30-C-1301 VIA-1343 Y (µm)",	
     "30-C-1301 VIA-1344 X (µm)", "30-C-1301 LOAD (Ampere)", "30-C-1301 TIA-1352 (°C)",	
-    "30-C-1301 TIA-1355 (°C)", "30-C-1301 TIA -1357 U (°C)", "30-C-1301 TIA -1358 V (°C)",	
-    "30-C-1301 TIA -1359 W (°C)"
+    "30-C-1301 TIA-1355 (°C)", "30-C-1301 TIA-1357 U (°C)", "30-C-1301 TIA-1358 V (°C)",	
+    "30-C-1301 TIA-1359 W (°C)"
   ],
   "STARTUP BLOWER C-1302": [
     "30-C-1302 TISA-1367 (°C)", "30-C-1302 TISA-1368 (°C)", "30-C-1302 TISA-1371 (°C)",	
