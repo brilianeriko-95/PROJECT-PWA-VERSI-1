@@ -950,4 +950,3 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
         }, 400); 
     }
 }
-
