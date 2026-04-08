@@ -368,6 +368,35 @@ function setupParamPhotoListeners() {
     }
 }
 
+// Fungsi Cerdas untuk Navigasi Enter (Mendukung Kotak Angka & Dropdown Pilihan)
+function setupEnterKeyNavigation() {
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' && event.target.tagName !== 'TEXTAREA') {
+            event.preventDefault(); // Cegah form tersubmit otomatis
+            
+            // 1. CEK MODE WIZARD (Layar 1 Parameter)
+            const allButtons = Array.from(document.querySelectorAll('button'));
+            const btnLanjut = allButtons.find(btn => 
+                btn.textContent.toLowerCase().includes('lanjut') || 
+                btn.textContent.toLowerCase().includes('next')
+            );
+
+            // 👇 PERUBAHAN DI SINI: Menambahkan dukungan untuk elemen SELECT (Dropdown)
+            if (btnLanjut && (event.target.tagName === 'INPUT' || event.target.tagName === 'SELECT')) {
+                btnLanjut.click(); // Langsung otomatis klik "Simpan & Lanjut"
+                return; // Hentikan fungsi di sini
+            }
+
+            // 2. CEK MODE FORM PANJANG
+            const focusableElements = Array.from(document.querySelectorAll('input:not([type="hidden"]), select, textarea'));
+            const currentIndex = focusableElements.indexOf(event.target);
+            
+            if (currentIndex > -1 && currentIndex < focusableElements.length - 1) {
+                focusableElements[currentIndex + 1].focus(); // Pindah ke input/dropdown berikutnya
+            }
+        }
+    });
+}
 // ============================================
 // 6. PWA INSTALLATION LOGIC
 // ============================================
@@ -564,10 +593,9 @@ window.addEventListener('DOMContentLoaded', () => {
     setupLoginListeners();
     setupTPMListeners();
     setupParamPhotoListeners();
-    
+    setupEnterKeyNavigation();    
     // Start premium loading animation
     simulateLoading();
     
     console.log(`${APP_NAME} v${APP_VERSION} initialized successfully`);
 });
-
