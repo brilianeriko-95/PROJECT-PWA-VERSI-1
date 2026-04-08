@@ -904,8 +904,8 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
     }
     
     localStorage.setItem(config.draftKey, JSON.stringify(univCurrentInput));
-}
-   // =========================================================
+
+    // =========================================================
     // FITUR BARU: AUTO-COLLAPSE (TUTUP OTOMATIS)
     // =========================================================
     const paramsList = config.areas[subAreaName];
