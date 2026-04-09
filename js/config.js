@@ -365,12 +365,10 @@ const AREAS_1300 = {
     "LEVEL TANK (%)"
   ]
 };
-// Data Parameter Area 1100 & 1200
+// Data Parameter Area 1100 & 1200 \\==FLOW FI-1103 (T/h) "TOTALIZER FQ-1103 (Ton)",
 const AREAS_1100 = {
   "MOLTEN SULPHUR SYSTEM": [
-    "FLOW FI-1103 (T/h)",
-    "TOTALIZER FQ-1103 (Ton)",
-    "VALVE HCV-1101 (%)",
+     "VALVE HCV-1101 (%)",
     "INLET PI-1001-5 (Kg/cm2)",
     "PUMP B-1102 A/B/C/D/E (%)",
     "LP STEAM JACKET TI-1001-16 (°C)"
