@@ -4,49 +4,47 @@
 
 // UPDATE MANUAL: Ubah nilai versi ini setiap kali Anda merilis pembaruan.
 // Perubahan pada file sw.js ini akan memicu browser untuk mendeteksi versi baru.
-const VERSION = '2.8.2'; // Versi dinaikkan untuk memaksa browser update cache
+const VERSION = '2.8.3'; // Versi dinaikkan untuk memaksa browser update cache
 const CACHE_NAME = `turbine-logsheets-v${VERSION}`;
 
 // ============================================
 // DAFTAR ASSETS UNTUK OFFLINE CACHE
 // ============================================
 const ASSETS = [
-    './',
-    './index.html',
-    './manifest.json',
-    './logo.png',
+    '/',
+    '/index.html',
+    '/manifest.json',
+    '/logo.png',
     
     // CSS Modules
-    './css/style.css',
-    './css/layout.css',
-    './css/components.css',
-    './css/screens.css',
+    '/css/style.css',
+    '/css/layout.css',
+    '/css/components.css',
+    '/css/screens.css',
     
     // JS Modules
-    './js/config.js',
-    './js/state.js',
-    './js/utils.js',
-    './js/auth.js',
-    './js/users.js',
-    './js/logsheet.js',
-    './js/tpm.js',
-    './js/balancing.js',
-    './js/main.js',
+    '/js/config.js',
+    '/js/state.js',
+    '/js/utils.js',
+    '/js/auth.js',
+    '/js/users.js',
+    '/js/logsheet.js',
+    '/js/tpm.js',
+    '/js/balancing.js',
+    '/js/main.js',
     
-    // PWA Icons (Diperbaiki path-nya mengarah ke folder icons/)
-    // PASTIKAN SEMUA FILE INI BENAR-BENAR ADA DI FOLDER 'icons'
-    './icons/icon-48x48.png',
-    './icons/icon-72x72.png',
-    './icons/icon-96x96.png',
-    './icons/icon-128x128.png',
-    './icons/icon-144x144.png',
-    './icons/icon-152x152.png',
-    './icons/icon-192x192.png',
-    './icons/icon-256x256.png',
-    './icons/icon-384x384.png',
-    './icons/icon-512x512.png'
+    // PWA Icons
+    '/icons/icon-48x48.png',
+    '/icons/icon-72x72.png',
+    '/icons/icon-96x96.png',
+    '/icons/icon-128x128.png',
+    '/icons/icon-144x144.png',
+    '/icons/icon-152x152.png',
+    '/icons/icon-192x192.png',
+    '/icons/icon-256x256.png',
+    '/icons/icon-384x384.png',
+    '/icons/icon-512x512.png'
 ];
-
 // ============================================
 // INSTALL EVENT - Caching Assets
 // ============================================
@@ -123,7 +121,7 @@ self.addEventListener('fetch', (event) => {
                         console.error('[SW] Fetch failed:', error);
                         // Jika offline dan membuka halaman utama, sajikan index.html
                         if (event.request.mode === 'navigate') {
-                            return caches.match('./index.html');
+                            return caches.match('/');
                         }
                     });
             })
