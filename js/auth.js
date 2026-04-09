@@ -252,6 +252,8 @@ function filterMenuByUnit() {
         const menu1000 = document.getElementById('menu-1000');
         const menuBalancing = document.getElementById('menu-balancing');
         const menuUser = document.getElementById('menu-user');
+        const menuPanelSTG = document.getElementById('menu-PanelSTG');
+        const menuPanelAsamSulfat = document.getElementById('menu-PanelAsamSulfat');
 
         // 3. RESET TAMPILAN LAYAR (Default State)
         if (homeScreen) homeScreen.style.display = 'block'; // Layar home biasa muncul
@@ -265,6 +267,8 @@ function filterMenuByUnit() {
         if (menu1000) menu1000.style.display = 'none';
         if (menuBalancing) menuBalancing.style.display = 'none';
         if (menuUser) menuUser.style.display = 'none';
+        if (menuPanelSTG) menuPanelSTG.style.display = 'none';
+        if (menuPanelAsamSulfat) menuPanelAsamSulfat.style.display = 'none';
 
 
         // ==========================================
@@ -302,6 +306,8 @@ function filterMenuByUnit() {
             if (menu1000) menu1000.style.display = 'flex';
             if (menuBalancing) menuBalancing.style.display = 'flex';
             if (menuUser) menuUser.style.display = 'flex';
+            if (menuPanelSTG) menuPanelSTG.style.display = 'flex';
+            if (menuPanelAsamSulfat) menuPanelAsamSulfat.style.display = 'flex';
         }
         // Jika bukan admin/supervisor, baru cek unitnya
         else if (unit.includes('UTILITAS') || unit.includes('UTIL')) {
@@ -309,11 +315,13 @@ function filterMenuByUnit() {
             if (menuTurbin) menuTurbin.style.display = 'flex';
             if (menuCT) menuCT.style.display = 'flex';
             if (menuBalancing) menuBalancing.style.display = 'flex';
+            if (menuPanelSTG) menuPanelSTG.style.display = 'flex';
         } 
         else if (unit.includes('SA') || unit.includes('SULFAT')) {
             console.log('✅ Menampilkan Menu SA (1100 & 1300)');
             if (menu1100) menu1100.style.display = 'flex';
             if (menu1300) menu1300.style.display = 'flex';
+            if (menuPanelAsamSulfat) menuPanelAsamSulfat.style.display = 'flex';
         } 
         else if (unit.includes('MELTER') || unit.includes('BELERANG')) {
             console.log('✅ Menampilkan Menu Melter (1000)');
