@@ -5,7 +5,7 @@
 // ============================================
 // 1. APP CONFIGURATION
 // ============================================
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '2.8.1';
 const APP_NAME = 'PROJECT LOGSHEET';
 
 const AUTH_CONFIG = {
@@ -50,7 +50,7 @@ const PHOTO_DRAFT_KEYS = {
 };
 
 // URL Google Apps Script Backend
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyGn61e-yIVOOv-lbvPHyT5UTutPTNizr87kbzKORw6YZykEl0Rik-SZ7NDgmFoZOI5/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxMnDj1TJcAAbEtnBC15KYDRrWjfJ2SdsDyXjVbQWXWoCNEw0OJD8do3kneg2WHvtfU/exec";
 
 // Fallback users untuk mode offline (legacy support)
 const OFFLINE_USERS = {
