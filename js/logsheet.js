@@ -906,14 +906,21 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
     localStorage.setItem(config.draftKey, JSON.stringify(univCurrentInput));
 
     // =========================================================
-    // FITUR BARU: AUTO-COLLAPSE (TUTUP OTOMATIS)
+    // FITUR BARU: AUTO-COLLAPSE (TUTUP OTOMATIS) DIPERBAIKI
     // =========================================================
     const paramsList = config.areas[subAreaName];
-    
-    // 1. Cek apakah parameter ini adalah parameter PALING TERAKHIR di grup tersebut
-    if (fullLabel === paramsList[paramsList.length - 1] && value.trim() !== '') {
+
+    // 1. CEK PINTAR: Pastikan TIDAK ADA parameter yang terlewat (kosong) di atasnya
+    const isAllFilled = paramsList.every(param =>
+        univCurrentInput[subAreaName] &&
+        univCurrentInput[subAreaName][param] &&
+        univCurrentInput[subAreaName][param].toString().trim() !== ''
+    );
+
+    // 2. Hanya pindah otomatis JIKA mengisi baris terakhir DAN semua data di grup ini sudah lengkap
+    if (fullLabel === paramsList[paramsList.length - 1] && isAllFilled && value.trim() !== '') {
         
-        // Jeda 0.4 detik agar operator melihat bahwa datanya sudah terisi
+        // 3. WAKTU JEDA DIPERLAMBAT (1500 = 1.5 detik. Bisa diganti jadi 2000 untuk 2 detik)
         setTimeout(() => {
             // Ambil semua kotak grup (<details>) di layar saat ini
             const allDetails = document.querySelectorAll('#panelSTGContent details');
@@ -927,7 +934,7 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
                 }
             });
 
-            // 2. Eksekusi Tutup & Buka Otomatis
+            // Eksekusi Tutup & Buka Otomatis
             if (currentIndex !== -1) {
                 // Tutup grup yang sudah selesai ini
                 allDetails[currentIndex].removeAttribute('open');
@@ -937,16 +944,16 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
                 if (nextDetail) {
                     nextDetail.setAttribute('open', '');
                     
-                    // 3. Gulir layar otomatis (Auto-Scroll) ke grup baru
+                    // Gulir layar otomatis (Auto-Scroll) ke grup baru
                     nextDetail.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     
-                    // 4. Fokuskan kursor ke isian pertama di grup baru
+                    // Fokuskan kursor ke isian pertama di grup baru
                     const nextInput = nextDetail.querySelector('input, select');
                     if (nextInput) {
                         setTimeout(() => nextInput.focus(), 300);
                     }
                 }
             }
-        }, 400); 
+        }, 2000); // <--- UBAH ANGKA WAKTU DI SINI
     }
 }
