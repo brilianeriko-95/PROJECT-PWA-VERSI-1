@@ -318,32 +318,38 @@ function openLogsheetMenu(menuKey) {
     window.currentActiveMenu = menuKey;
 
     // 3. Tentukan Layar Tujuan
-    // Balancing memiliki layout UI khusus, sedangkan yang lain menggunakan template universal
-    const targetScreen = (menuKey === 'BALANCING') ? 'balancingScreen' : 'areaListScreen';
+    const targetScreen = (menuKey === 'BALANCING') ? 'balancingScreen' : 'universalAreaListScreen';
     
     // 4. Jalankan Navigasi
     navigateTo(targetScreen);
 
     // 5. Update UI Header (Judul & Warna Tema Unit)
-    const headerTitle = document.querySelector(`#${targetScreen} .header-title h1`);
+    const headerTitle = document.querySelector(`#${targetScreen} .header-title h1`) || document.getElementById('univHeaderTitle');
     const headerBar = document.querySelector(`#${targetScreen} .header-bar`);
     
     if (headerTitle) headerTitle.textContent = config.title;
     
-    // Berikan identitas warna unik per unit (diambil dari config.themeColor)
+    // Berikan identitas warna unik per unit
     if (headerBar) {
         headerBar.style.background = config.themeColor || 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
     }
 
-    // 6. TRIGER PENTING: Render daftar area sesuai unit yang diklik
-    // Ini memanggil fungsi di logsheet.js yang akan menggambar kotak-kotak menu secara dinamis
-    if (typeof renderMenuUniversal === 'function') {
-        renderMenuUniversal(menuKey);
-    }
-
-    // 7. Ambil data terakhir dari server (Sinkronisasi angka shift sebelumnya)
-    if (typeof fetchLastDataUniversal === 'function') {
-        fetchLastDataUniversal(menuKey);
+    // =========================================================
+    // 6 & 7. PISAHKAN LOGIKA BALANCING VS LOGSHEET UNIVERSAL
+    // =========================================================
+    if (menuKey === 'BALANCING') {
+        // KHUSUS BALANCING: Panggil fungsi inisialisasi dari balancing.js
+        if (typeof initBalancingScreen === 'function') {
+            initBalancingScreen();
+        }
+    } else {
+        // KHUSUS LOGSHEET BIASA (Turbin, CT, 1300, dll)
+        if (typeof renderMenuUniversal === 'function') {
+            renderMenuUniversal(menuKey);
+        }
+        if (typeof fetchLastDataUniversal === 'function') {
+            fetchLastDataUniversal(menuKey);
+        }
     }
 }
 // ============================================
