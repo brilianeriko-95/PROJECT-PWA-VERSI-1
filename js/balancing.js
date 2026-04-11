@@ -392,6 +392,7 @@ async function submitBalancingData() {
     const lpBalance = calculateLPBalance();
     const config = LOGSHEET_CONFIG['BALANCING'];
     
+    // GANTI BAGIAN INI DENGAN MAPPING EKSPLISIT AGAR WHATSAPP TIDAK 'UNDEFINED'
     const balancingData = {
         type: config.submitType,
         Operator: currentUser ? currentUser.name : 'Unknown',
@@ -399,12 +400,62 @@ async function submitBalancingData() {
         Tanggal: document.getElementById('balancingDate')?.value || '',
         Jam: document.getElementById('balancingTime')?.value || '',
         Shift: currentShift,
+        
+        // Output Power
         'Load_MW': parseFloat(document.getElementById('loadMW')?.value) || 0,
         'Ekspor_Impor_MW': eksporValue,
         'Ekspor_Impor_Status': eksporValue > 0 ? 'Impor' : (eksporValue < 0 ? 'Ekspor' : 'Netral'),
+        
+        // Balance Power SCADA
+        'PLN_MW': parseFloat(document.getElementById('plnMW')?.value) || 0,
+        'UBB_MW': parseFloat(document.getElementById('ubbMW')?.value) || 0,
+        'PIE_MW': parseFloat(document.getElementById('pieMW')?.value) || 0,
+        'TG65_MW': parseFloat(document.getElementById('tg65MW')?.value) || 0,
+        'TG66_MW': parseFloat(document.getElementById('tg66MW')?.value) || 0,
+        'GTG_MW': parseFloat(document.getElementById('gtgMW')?.value) || 0,
+        
+        // Konsumsi Power 3B
+        'SS6500_MW': parseFloat(document.getElementById('ss6500MW')?.value) || 0,
+        'SS2000_Via': document.getElementById('ss2000Via')?.value || 'TR-Main01', // <--- PENYELAMAT UNDEFINED
+        'Active_Power_MW': parseFloat(document.getElementById('activePowerMW')?.value) || 0,
+        'Reactive_Power_MVAR': parseFloat(document.getElementById('reactivePowerMVAR')?.value) || 0,
+        'Current_S_A': parseFloat(document.getElementById('currentS')?.value) || 0,
+        'Voltage_V': parseFloat(document.getElementById('voltageV')?.value) || 0,
+        'HVS65_L02_MW': parseFloat(document.getElementById('hvs65l02MW')?.value) || 0,
+        'HVS65_L02_Current_A': parseFloat(document.getElementById('hvs65l02Current')?.value) || 0,
+        'Total_3B_MW': parseFloat(document.getElementById('total3BMW')?.value) || 0,
+        
+        // Steam Section
+        'Produksi_Steam_SA_t/h': parseFloat(document.getElementById('fq1105')?.value) || 0,
+        'STG_Steam_t/h': parseFloat(document.getElementById('stgSteam')?.value) || 0,
+        'PA2_Steam_t/h': parseFloat(document.getElementById('pa2Steam')?.value) || 0,
+        'Puri2_Steam_t/h': parseFloat(document.getElementById('puri2Steam')?.value) || 0,
+        'Melter_SA2_t/h': parseFloat(document.getElementById('melterSA2')?.value) || 0,
+        'Ejector_t/h': parseFloat(document.getElementById('ejectorSteam')?.value) || 0,
+        'Gland_Seal_t/h': parseFloat(document.getElementById('glandSealSteam')?.value) || 0,
+        'Deaerator_t/h': parseFloat(document.getElementById('deaeratorSteam')?.value) || 0,
+        'Dump_Condenser_t/h': parseFloat(document.getElementById('dumpCondenser')?.value) || 0,
+        'PCV6105_t/h': parseFloat(document.getElementById('pcv6105')?.value) || 0,
         'Total_Konsumsi_Steam_t/h': parseFloat(document.getElementById('totalKonsumsiSteam')?.textContent) || 0,
+        
+        // LPS Balance
         'LPS_Balance_t/h': Math.abs(lpBalance),
-        'LPS_Balance_Status': lpBalance < 0 ? 'Impor dari 3A' : 'Ekspor ke 3A'
+        'LPS_Balance_Status': lpBalance < 0 ? 'Impor dari 3A' : 'Ekspor ke 3A',
+        
+        // Monitoring
+        'PI6122_kg/cm2': parseFloat(document.getElementById('pi6122')?.value) || 0,
+        'TI6112_C': parseFloat(document.getElementById('ti6112')?.value) || 0,
+        'TI6146_C': parseFloat(document.getElementById('ti6146')?.value) || 0,
+        'TI6126_C': parseFloat(document.getElementById('ti6126')?.value) || 0,
+        'Axial_Displacement_mm': parseFloat(document.getElementById('axialDisplacement')?.value) || 0,
+        'VI6102_μm': parseFloat(document.getElementById('vi6102')?.value) || 0,
+        'TE6134_C': parseFloat(document.getElementById('te6134')?.value) || 0,
+        'CT_SU_Fan': parseInt(document.getElementById('ctSuFan')?.value) || 0,
+        'CT_SU_Pompa': parseInt(document.getElementById('ctSuPompa')?.value) || 0,
+        'CT_SA_Fan': parseInt(document.getElementById('ctSaFan')?.value) || 0,
+        'CT_SA_Pompa': parseInt(document.getElementById('ctSaPompa')?.value) || 0,
+        
+        'Kegiatan_Shift': document.getElementById('kegiatanShift')?.value || '-'
     };
     
     BALANCING_FIELDS.forEach(field => {
