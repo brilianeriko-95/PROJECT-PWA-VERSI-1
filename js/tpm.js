@@ -55,6 +55,11 @@ function renderTPMAreas() {
 // 1. UI & INITIALIZATION
 // ============================================
 
+// Gunakan variabel yang sudah dideklarasikan di state.js (Hapus kata 'let' agar tidak error)
+activeTPMArea = '';
+currentTPMPhoto = null;
+currentTPMStatus = '';
+
 function updateTPMUserInfo() {
     const tpmHeaderUser = document.getElementById('tpmHeaderUser');
     const tpmInputUser = document.getElementById('tpmInputUser');
