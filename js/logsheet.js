@@ -1,63 +1,71 @@
 /* ============================================
    TURBINE LOGSHEET PRO - LOGSHEET & CT MODULE
    ============================================ */
-// ============================================
-// UNIVERSAL FETCH LAST DATA MODULE (INSTANT LOAD)
-// ============================================
 
-// Variabel global untuk menyimpan data shift sebelumnya
 let univLastData = {};
+let silentFetchAbortController = null;
 
 function fetchLastDataUniversal(type) {
-    // 1. JALUR KILAT: Ambil dari cache, jika kosong jadikan objek kosong
     const cachedLastData = localStorage.getItem('last_data_' + type);
     univLastData = cachedLastData ? JSON.parse(cachedLastData) : {};
-    
-    // 2. JANGAN panggil openUniversalLogsheet di sini! 
-    // Navigasi sudah ditangani oleh openLogsheetMenu di main.js
-    
-    // 3. CURI START: Tarik data terbaru di latar belakang
     silentFetchLastData(type);
 }
-// Mesin pekerja di latar belakang (Background Worker)
+
 function silentFetchLastData(type) {
+    if (silentFetchAbortController) {
+        silentFetchAbortController.abort();
+        console.warn(`[Background Sync] Fetch data ${type} sebelumnya dibatalkan.`);
+    }
+
+    silentFetchAbortController = new AbortController();
+    const signal = silentFetchAbortController.signal;
+
     const callbackName = 'jsonp_silent_' + type + '_' + Date.now();
-    
+    const scriptId = 'script_' + callbackName;
+    let fetchTimeout;
+
     window[callbackName] = (data) => {
+        clearTimeout(fetchTimeout);
+        if (signal.aborted) {
+            cleanupJSONP(callbackName);
+            const oldScript = document.getElementById(scriptId);
+            if (oldScript) oldScript.remove();
+            return;
+        }
+
         if (data.success) {
-            // Simpan hasil tarikan terbaru ke memori HP
             localStorage.setItem('last_data_' + type, JSON.stringify(data.data));
             console.log(`[Background Sync] Data riwayat ${type} berhasil diperbarui.`);
         }
         cleanupJSONP(callbackName);
+        silentFetchAbortController = null;
     };
 
-    // =======================================================================
-    // AUTO-PILOT ROUTING (PENGGANTI IF-ELSE MANUAL)
-    // =======================================================================
-    // Syaratnya: 'type' yang dikirim harus 'LAPANGANTURBIN', '1100', 'CT', dsb.
     let actionParam = '&action=getLast' + type.toUpperCase();
-    // =======================================================================
-    
     const script = document.createElement('script');
+    script.id = scriptId;
     script.src = `${GAS_URL}?callback=${callbackName}${actionParam}`;
     
-    // === TAMBAHAN VARIABEL TIMEOUT AGAR TIDAK ERROR (Lihat Bug 2) ===
-    const timeout = setTimeout(() => {
+    signal.addEventListener('abort', () => {
+        clearTimeout(fetchTimeout);
+        const scriptToRemove = document.getElementById(scriptId);
+        if (scriptToRemove) scriptToRemove.remove();
+    });
+
+    fetchTimeout = setTimeout(() => {
         cleanupJSONP(callbackName);
         console.warn(`[Background Sync] Timeout saat menarik data ${type}.`);
     }, 15000);
-    // ================================================================
 
     script.onerror = () => {
-        clearTimeout(timeout);
+        clearTimeout(fetchTimeout);
         cleanupJSONP(callbackName);
-        // Hapus alert error di sini, karena background sync harus diam-diam!
         console.warn(`[Background Sync] Gagal menarik data ${type}.`);
     };
     
     document.body.appendChild(script);
-} // <--- ✅ PINDAHKAN KURUNG KURAWAL PENUTUP KE SINI!
+}
+
 
 function updateStatusIndicator(isOnline) {
     console.log('System Status:', isOnline ? 'Online' : 'Offline');
@@ -640,6 +648,12 @@ async function submitUniversalLogsheet() {
     if (!requireAuth()) return;
     
     const config = LOGSHEET_CONFIG[activeLogsheetType];
+   
+   // 👇👇👇 TAMBAHKAN DUA BARIS INI 👇👇👇
+    const confirmSubmit = confirm(`Yakin ingin mengirim laporan ${config.title} ke Server? Pastikan data sudah terisi semua.`);
+    if (!confirmSubmit) return;
+    // 👆👆👆 =========================== 👆👆👆
+   
     const progress = showUploadProgress(`Mengirim ${config.title} & Foto...`);
     progress.updateText('Mengumpulkan data...');
     currentUploadController = new AbortController();
@@ -826,7 +840,7 @@ function openGroupedSubAreas(groupName) {
         const paramsList = config.areas[subAreaName] || [];
         
         html += `
-        <details class="form-card glass" style="margin-bottom: 16px; padding: 16px; background: rgba(30, 41, 59, 0.7); border: 1px solid ${config.themeColor}40;">
+        <details data-area="${subAreaName}" class="form-card glass" style="margin-bottom: 16px; padding: 16px; background: rgba(30, 41, 59, 0.7); border: 1px solid ${config.themeColor}40;">
             <summary style="font-size: 1rem; font-weight: 700; color: ${config.themeColor}; cursor: pointer; outline: none; list-style-position: inside;">
                 ${subAreaName}
             </summary>
@@ -929,14 +943,12 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
             const allDetails = document.querySelectorAll('#panelSTGContent details');
             let currentIndex = -1;
 
-            // Cari tahu kotak mana yang sedang aktif/diisi
+            // 👇 UBAH CARA PENCARIAN MENJADI LEBIH AKURAT 👇
             allDetails.forEach((detail, index) => {
-                const summary = detail.querySelector('summary');
-                if (summary && summary.textContent.includes(subAreaName)) {
+                if (detail.getAttribute('data-area') === subAreaName) {
                     currentIndex = index;
                 }
             });
-
             // Eksekusi Tutup & Buka Otomatis
             if (currentIndex !== -1) {
                 // Tutup grup yang sudah selesai ini
