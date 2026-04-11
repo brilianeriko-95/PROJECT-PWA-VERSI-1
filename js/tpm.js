@@ -3,14 +3,67 @@
    ============================================ */
 
 // ============================================
+// 0. FITUR BARU: FILTER & RENDER AREA DINAMIS
+// ============================================
+
+function renderTPMAreas() {
+    const container = document.getElementById('tpmAreaListContainer');
+    if (!container) return;
+
+    const userUnit = currentUser ? currentUser.department.toUpperCase() : '';
+    const userRole = currentUser ? currentUser.role : 'operator';
+    
+    let areasToShow = [];
+
+    // LOGIKA FILTER:
+    // Karena Admin sekarang departemennya "MANAJEMEN", logika ini sudah sangat aman
+    if (userRole === 'admin' || userRole === 'supervisor' || userRole === 'avp' || userUnit.includes('MANAJEMEN')) {
+        areasToShow = [
+            ...(TPM_CONFIG_MASTER['UTILITAS'] || []), 
+            ...(TPM_CONFIG_MASTER['SULFAT'] || [])
+        ];
+    } else {
+        if (userUnit.includes('SULFAT') || userUnit.includes('SA')) {
+            areasToShow = TPM_CONFIG_MASTER['SULFAT'] || [];
+        } else {
+            areasToShow = TPM_CONFIG_MASTER['UTILITAS'] || [];
+        }
+    }
+
+    let html = '';
+    areasToShow.forEach(area => {
+        html += `
+        <div class="list-item" onclick="openTPMArea('${area.name}')">
+            <div class="item-icon" style="background: ${area.color}20; border: 1px solid ${area.color}50; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">
+                ${area.icon}
+            </div>
+            <div class="item-content">
+                <h4>${area.name}</h4>
+                <p>Maintenance & Pengecekan</p>
+            </div>
+            <svg class="item-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted)">
+                <path d="M9 18l6-6-6-6"/>
+            </svg>
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+// ============================================
 // 1. UI & INITIALIZATION
 // ============================================
+
+// 👇 PERBAIKAN 1: Tambahkan Deklarasi Variabel Global TPM di Sini 👇
+let activeTPMArea = '';
+let currentTPMPhoto = null;
+let currentTPMStatus = '';
 
 function updateTPMUserInfo() {
     const tpmHeaderUser = document.getElementById('tpmHeaderUser');
     const tpmInputUser = document.getElementById('tpmInputUser');
     
-    // currentUser berasal dari state.js
     if (tpmHeaderUser) tpmHeaderUser.textContent = currentUser?.name || 'Operator';
     if (tpmInputUser) tpmInputUser.textContent = currentUser?.name || 'Operator';
 }
@@ -18,7 +71,6 @@ function updateTPMUserInfo() {
 function openTPMArea(areaName) {
     if (!requireAuth()) return;
     
-    // Reset state TPM (variabel dari state.js)
     activeTPMArea = areaName;
     currentTPMPhoto = null;
     currentTPMStatus = '';
@@ -66,7 +118,7 @@ function resetTPMStatusButtons() {
 }
 
 function selectTPMStatus(status) {
-    currentTPMStatus = status; // Simpan ke state global
+    currentTPMStatus = status;
     resetTPMStatusButtons();
     
     const buttonMap = {
@@ -96,7 +148,6 @@ async function handleTPMPhoto(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    // Validasi ukuran awal (max 10MB untuk raw file)
     if (file.size > 10 * 1024 * 1024) {
         showCustomAlert('Ukuran file terlalu besar (>10MB). Pilih foto lain.', 'error');
         event.target.value = '';
@@ -112,79 +163,52 @@ async function handleTPMPhoto(event) {
     const reader = new FileReader();
     reader.onload = async function(e) {
         const originalDataUrl = e.target.result;
-        
-        // Show loading compression
         showCustomAlert('🔄 Mengkompresi foto TPM...', 'info');
         
         try {
-            // Kompresi dengan parameter optimal untuk dokumentasi TPM (Fungsi di utils.js)
             const result = await compressImage(originalDataUrl, {
-                maxWidth: 1600,      // Resolusi cukup untuk dokumentasi equipment
+                maxWidth: 1600,
                 maxHeight: 1600,
-                quality: 0.8,        // Balance kualitas & ukuran
+                quality: 0.8,
                 type: 'image/jpeg'
             });
             
-            currentTPMPhoto = result.dataUrl; // Simpan ke state global
+            currentTPMPhoto = result.dataUrl; 
             
             const preview = document.getElementById('tpmPhotoPreview');
             const photoSection = document.getElementById('tpmPhotoSection');
             
             if (preview) {
-                // Preview dengan badge ukuran
                 preview.innerHTML = `
                     <div style="position: relative; width: 100%; height: 100%;">
-                        <img src="${currentTPMPhoto}" 
-                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" 
-                             alt="TPM Photo">
-                        <div style="position: absolute; top: 8px; right: 8px; 
-                                    background: rgba(16, 185, 129, 0.9); color: white; 
-                                    padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; 
-                                    font-weight: 600; backdrop-filter: blur(4px);">
+                        <img src="${currentTPMPhoto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" alt="TPM Photo">
+                        <div style="position: absolute; top: 8px; right: 8px; background: rgba(16, 185, 129, 0.9); color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; backdrop-filter: blur(4px);">
                             ${result.compressedSize}KB ↓${result.reduction}%
                         </div>
                     </div>
                 `;
             }
-            
             if (photoSection) photoSection.classList.add('has-photo');
             
-            // Log hasil kompresi
-            console.log(`[TPM COMPRESSION] ${result.originalSize}KB → ${result.compressedSize}KB (-${result.reduction}%)`);
-            
-            showCustomAlert(
-                `✓ Foto TPM dikompresi: ${result.originalSize}KB → ${result.compressedSize}KB`, 
-                'success'
-            );
+            showCustomAlert(`✓ Foto TPM dikompresi: ${result.originalSize}KB → ${result.compressedSize}KB`, 'success');
             
         } catch (error) {
             console.error('Kompresi TPM gagal:', error);
-            
-            // Fallback: gunakan original tanpa kompresi
             currentTPMPhoto = originalDataUrl;
             
             const preview = document.getElementById('tpmPhotoPreview');
             const photoSection = document.getElementById('tpmPhotoSection');
             
             if (preview) {
-                preview.innerHTML = `
-                    <img src="${currentTPMPhoto}" 
-                         style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" 
-                         alt="TPM Photo">
-                `;
+                preview.innerHTML = `<img src="${currentTPMPhoto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" alt="TPM Photo">`;
             }
             if (photoSection) photoSection.classList.add('has-photo');
-            
             showCustomAlert('⚠️ Foto disimpan tanpa kompresi', 'warning');
         }
     };
-    
-    reader.onerror = function() {
-        showCustomAlert('Gagal membaca file foto.', 'error');
-    };
-    
+    reader.onerror = function() { showCustomAlert('Gagal membaca file foto.', 'error'); };
     reader.readAsDataURL(file);
-    event.target.value = ''; // Reset input
+    event.target.value = '';
 }
 
 // ============================================
@@ -201,16 +225,11 @@ async function submitTPMData() {
         showCustomAlert('Pilih status kondisi!', 'error');
         return;
     }
-    
     if (!currentTPMPhoto) {
         showCustomAlert('Ambil foto dokumentasi!', 'error');
         return;
     }
     
-    console.log('Preparing TPM data...');
-    console.log('Area:', activeTPMArea);
-    
-    // showUploadProgress ada di main.js
     const progress = showUploadProgress('Mengupload TPM...');
     
     const tpmData = {
@@ -219,15 +238,16 @@ async function submitTPMData() {
         status: currentTPMStatus,
         action: action,
         notes: notes,
-        photo: currentTPMPhoto,
+        photo: currentTPMPhoto, // Dikirim langsung jika online
         user: currentUser?.name || 'Unknown',
+        unit: currentUser?.department || 'UNIT_UNKNOWN',
         timestamp: new Date().toISOString()
     };
     
     try {
         const response = await fetch(GAS_URL, {
             method: 'POST',
-            mode: 'no-cors', // Penting untuk Google Apps Script
+            mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(tpmData)
         });
@@ -235,21 +255,29 @@ async function submitTPMData() {
         progress.complete();
         showCustomAlert('✓ Data TPM berhasil disimpan!', 'success');
         
-        // Reset State
         currentTPMPhoto = null;
         currentTPMStatus = '';
-        
         setTimeout(() => navigateTo('tpmScreen'), 1500);
         
     } catch (error) {
         console.error('TPM Submit Error:', error);
         progress.error();
+
+        // 👇 PERBAIKAN 2: Mencegah Payload Ganda saat Offline Sync 👇
+        const offlineData = { ...tpmData };
+        delete offlineData.photo; // Hapus base64 dari text body agar sync aman!
+
+        const offlineKey = 'offline_tpm';
+        let queue = JSON.parse(localStorage.getItem(offlineKey) || '[]');
+
+        queue.push({
+            ...offlineData, // Body tanpa base64 foto
+            photos: { "TPM_PHOTO": currentTPMPhoto } // Foto ditaruh di keranjang terpisah
+        });
+
+        localStorage.setItem(offlineKey, JSON.stringify(queue));
         
-        // Simpan offline jika gagal
-        let offlineTPM = JSON.parse(localStorage.getItem(DRAFT_KEYS.TPM_OFFLINE) || '[]');
-        offlineTPM.push(tpmData);
-        localStorage.setItem(DRAFT_KEYS.TPM_OFFLINE, JSON.stringify(offlineTPM));
-        
-        showCustomAlert('Gagal upload. Data disimpan lokal.', 'error');
+        checkOfflineData(); 
+        showCustomAlert('Gagal upload. Laporan TPM disimpan offline.', 'warning');
     }
 }
