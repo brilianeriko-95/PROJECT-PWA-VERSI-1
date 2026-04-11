@@ -2,68 +2,70 @@
    TURBINE LOGSHEET PRO - LOGSHEET & CT MODULE
    ============================================ */
 
-// ============================================
-// UNIVERSAL FETCH LAST DATA MODULE (INSTANT LOAD)
-// ============================================
-
-// Variabel global untuk menyimpan data shift sebelumnya
 let univLastData = {};
+let silentFetchAbortController = null;
 
-function fetchUniversalLastData(type) {
-    // 1. JALUR KILAT: Langsung ambil dari memori HP (Cache) dalam 0.1 detik
+function fetchLastDataUniversal(type) {
     const cachedLastData = localStorage.getItem('last_data_' + type);
-    if (cachedLastData) {
-        univLastData = JSON.parse(cachedLastData);
-    } else {
-        univLastData = {}; // Kosongkan jika baru pertama kali buka
-    }
-    
-    // 2. Langsung buka layar Logsheet TANPA LOADING!
-    openUniversalLogsheet(type);
-    
-    // 3. CURI START: Diam-diam minta data terbaru ke server untuk shift berikutnya
+    univLastData = cachedLastData ? JSON.parse(cachedLastData) : {};
     silentFetchLastData(type);
 }
 
-// Mesin pekerja di latar belakang (Background Worker)
 function silentFetchLastData(type) {
+    if (silentFetchAbortController) {
+        silentFetchAbortController.abort();
+        console.warn(`[Background Sync] Fetch data ${type} sebelumnya dibatalkan.`);
+    }
+
+    silentFetchAbortController = new AbortController();
+    const signal = silentFetchAbortController.signal;
+
     const callbackName = 'jsonp_silent_' + type + '_' + Date.now();
-    
+    const scriptId = 'script_' + callbackName;
+    let fetchTimeout;
+
     window[callbackName] = (data) => {
+        clearTimeout(fetchTimeout);
+        if (signal.aborted) {
+            cleanupJSONP(callbackName);
+            const oldScript = document.getElementById(scriptId);
+            if (oldScript) oldScript.remove();
+            return;
+        }
+
         if (data.success) {
-            // Simpan hasil tarikan terbaru ke memori HP
             localStorage.setItem('last_data_' + type, JSON.stringify(data.data));
             console.log(`[Background Sync] Data riwayat ${type} berhasil diperbarui.`);
         }
         cleanupJSONP(callbackName);
+        silentFetchAbortController = null;
     };
 
-    // =======================================================================
-    // AUTO-PILOT ROUTING (PENGGANTI IF-ELSE MANUAL)
-    // =======================================================================
-    // Syaratnya: 'type' yang dikirim harus 'LAPANGANTURBIN', '1100', 'CT', dsb.
     let actionParam = '&action=getLast' + type.toUpperCase();
-    // =======================================================================
-    
     const script = document.createElement('script');
+    script.id = scriptId;
     script.src = `${GAS_URL}?callback=${callbackName}${actionParam}`;
     
-    // === TAMBAHAN VARIABEL TIMEOUT AGAR TIDAK ERROR (Lihat Bug 2) ===
-    const timeout = setTimeout(() => {
+    signal.addEventListener('abort', () => {
+        clearTimeout(fetchTimeout);
+        const scriptToRemove = document.getElementById(scriptId);
+        if (scriptToRemove) scriptToRemove.remove();
+    });
+
+    fetchTimeout = setTimeout(() => {
         cleanupJSONP(callbackName);
         console.warn(`[Background Sync] Timeout saat menarik data ${type}.`);
     }, 15000);
-    // ================================================================
 
     script.onerror = () => {
-        clearTimeout(timeout);
+        clearTimeout(fetchTimeout);
         cleanupJSONP(callbackName);
-        // Hapus alert error di sini, karena background sync harus diam-diam!
         console.warn(`[Background Sync] Gagal menarik data ${type}.`);
     };
     
     document.body.appendChild(script);
-} // <--- ✅ PINDAHKAN KURUNG KURAWAL PENUTUP KE SINI!
+}
+
 
 function updateStatusIndicator(isOnline) {
     console.log('System Status:', isOnline ? 'Online' : 'Offline');
@@ -101,46 +103,40 @@ let univParamPhotos = {};      // Foto sementara
  */
 function openUniversalLogsheet(type) {
     const config = LOGSHEET_CONFIG[type];
-    
-    if (!config) {
-        console.error("Wah, tipe logsheet " + type + " tidak ditemukan di config!");
-        return;
-    }
+    if (!config) return;
 
-    // 1. Set tipe logsheet yang sedang aktif
     activeLogsheetType = type;
-   
-    // === INTERCEPT UNTUK SEMUA LOGSHEET BERBASIS GRUP/FOLDER ===
+    
+    // Cek Grouped Logsheet
     if (config.groups) {
         openGroupedLogsheet();
         return; 
     }
-    // 2. Ubah Judul & Info User di Header
+
+    // Header & User
     document.getElementById('univHeaderTitle').textContent = config.title;
     document.getElementById('univAreaListUser').textContent = (currentUser && currentUser.name) ? currentUser.name : 'Operator';
 
-    // 3. Ambil Draf dari LocalStorage (Agar aman saat offline/refresh)
-    const savedDraft = localStorage.getItem(config.draftKey);
-    if (savedDraft) {
-        univCurrentInput = JSON.parse(savedDraft);
-    } else {
-        univCurrentInput = {}; // Mulai kosong jika tidak ada draf
-    }
+    // AMBIL DATA LANGSUNG DARI WINDOW (Hasil load main.js)
+    univCurrentInput = window.activeDrafts[type] || {};
+    univParamPhotos = window.activePhotos[type] || {};
 
-    // 4. Render Daftar Area & Progress-nya
-    renderUniversalAreaList();
-
-    // 5. Tampilkan Layar
+    renderMenuUniversal(type);
     navigateTo('universalAreaListScreen');
 }
-
 /**
- * Fungsi untuk merender daftar kotak Area secara otomatis (PREMIUM UI)
+ * Fungsi untuk merender daftar kotak Area secara otomatis (DIUBAH NAMANYA AGAR SINKRON)
  */
-function renderUniversalAreaList() {
-    const config = LOGSHEET_CONFIG[activeLogsheetType];
+function renderMenuUniversal(menuKey) {
+    const config = LOGSHEET_CONFIG[menuKey];
     const listContainer = document.getElementById('univAreaList');
-    if (!listContainer) return;
+   // 👇 TAMBAHKAN PENGAMAN INI agar Balancing tidak crash 👇
+    if (!listContainer || !config || !config.areas) return;
+    
+    activeLogsheetType = menuKey; // Pastikan state lokal sinkron
+
+    // AMBIL DATA DARI STATE GLOBAL window.activeDrafts
+    const currentDraft = window.activeDrafts[menuKey] || {};
     
     let html = '';
     let totalParams = 0;
@@ -152,9 +148,8 @@ function renderUniversalAreaList() {
         totalParams += areaTotal;
 
         paramsList.forEach(fullLabel => {
-            if (univCurrentInput[areaName] && 
-                univCurrentInput[areaName][fullLabel] !== undefined && 
-                univCurrentInput[areaName][fullLabel] !== '') {
+            // Cek di currentDraft (State Global)
+            if (currentDraft[areaName] && currentDraft[areaName][fullLabel]) {
                 areaFilled++;
                 filledParams++;
             }
@@ -410,7 +405,9 @@ function saveUnivStep() {
         delete univCurrentInput[activeUnivArea][fullLabel];
     }
     
-    // Simpan ke LocalStorage sesuai logsheet yang aktif
+    // UPDATE STATE GLOBAL JUGA
+    window.activeDrafts[activeLogsheetType] = univCurrentInput;
+    
     localStorage.setItem(config.draftKey, JSON.stringify(univCurrentInput));
 }
 
@@ -427,7 +424,7 @@ function nextUnivStep() {
     } else {
         showCustomAlert(`Area ${activeUnivArea} selesai!`, 'success');
         setTimeout(() => {
-            renderUniversalAreaList();
+            renderMenuUniversal(activeLogsheetType); // <--- JADI INI
             navigateTo('universalAreaListScreen');
         }, 1200);
     }
@@ -442,7 +439,7 @@ function prevUnivStep(forceBack = false) {
         activeUnivIdx--;
         showUnivStep();
     } else {
-        renderUniversalAreaList();
+        renderMenuUniversal(activeLogsheetType); // <--- GANTI JUGA DI SINI
         navigateTo('universalAreaListScreen');
     }
 }
@@ -651,6 +648,9 @@ async function submitUniversalLogsheet() {
     if (!requireAuth()) return;
     
     const config = LOGSHEET_CONFIG[activeLogsheetType];
+    
+    // Bagian konfirmasi telah dihapus agar pengiriman data lebih cepat
+    
     const progress = showUploadProgress(`Mengirim ${config.title} & Foto...`);
     progress.updateText('Mengumpulkan data...');
     currentUploadController = new AbortController();
@@ -674,7 +674,7 @@ async function submitUniversalLogsheet() {
     });
     
     const finalData = {
-        type: config.submitType, // Dari Config (Misal: LOGSHEET_1300)
+        type: config.submitType,
         Operator: currentUser ? currentUser.name : 'Unknown',
         OperatorId: currentUser ? currentUser.username : 'Unknown',
         Group: currentUser ? (currentUser.group || '-') : '-',
@@ -701,7 +701,7 @@ async function submitUniversalLogsheet() {
                     body: JSON.stringify(photoPayload),
                     signal: currentUploadController.signal
                 });
-                await new Promise(resolve => setTimeout(resolve, 200)); // Delay agar Google Apps Script tidak error
+                await new Promise(resolve => setTimeout(resolve, 200)); 
             } catch (error) { console.warn('Error upload foto:', error); }
         }
     }
@@ -719,7 +719,7 @@ async function submitUniversalLogsheet() {
         progress.complete();
         showCustomAlert('✓ Data Logsheet berhasil dikirim ke server!', 'success');
         
-        // Bersihkan data draf karena sudah selesai dikirim
+        // Bersihkan data draf
         univCurrentInput = {};
         univParamPhotos = {};
         localStorage.removeItem(config.draftKey);
@@ -729,12 +729,20 @@ async function submitUniversalLogsheet() {
         setTimeout(() => navigateTo('homeScreen'), 1500);
         
     } catch (error) {
+        console.error('Logsheet Submit Error:', error);
         progress.error();
-        // Simpan sebagai draf offline jika internet terputus
-        let offlineData = JSON.parse(localStorage.getItem(config.offlineKey) || '[]');
-        offlineData.push({...finalData, photos: allPhotos});
-        localStorage.setItem(config.offlineKey, JSON.stringify(offlineData));
-        setTimeout(() => showCustomAlert('Gagal mengirim. Data disimpan sementara ke memori lokal.', 'error'), 500);
+
+        let queue = JSON.parse(localStorage.getItem(config.offlineKey) || '[]');
+
+        queue.push({
+            ...finalData,
+            photos: allPhotos 
+        });
+
+        localStorage.setItem(config.offlineKey, JSON.stringify(queue));
+        checkOfflineData(); 
+        
+        showCustomAlert('Sinyal lemah! Data disimpan aman di memori HP.', 'warning');
     }
 }
 
@@ -824,7 +832,7 @@ function openGroupedSubAreas(groupName) {
         const paramsList = config.areas[subAreaName] || [];
         
         html += `
-        <details class="form-card glass" style="margin-bottom: 16px; padding: 16px; background: rgba(30, 41, 59, 0.7); border: 1px solid ${config.themeColor}40;">
+        <details data-area="${subAreaName}" class="form-card glass" style="margin-bottom: 16px; padding: 16px; background: rgba(30, 41, 59, 0.7); border: 1px solid ${config.themeColor}40;">
             <summary style="font-size: 1rem; font-weight: 700; color: ${config.themeColor}; cursor: pointer; outline: none; list-style-position: inside;">
                 ${subAreaName}
             </summary>
@@ -892,17 +900,23 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
         univCurrentInput[subAreaName] = {};
     }
     
+    // PERBAIKAN 1: Gunakan parameter 'value', bukan 'valueToSave'
     if (value.trim() !== '') {
         univCurrentInput[subAreaName][fullLabel] = value;
     } else {
+        // PERBAIKAN 2: Gunakan 'subAreaName', bukan 'activeUnivArea'
         delete univCurrentInput[subAreaName][fullLabel];
     }
+    
+    // UPDATE STATE GLOBAL JUGA
+    window.activeDrafts[activeLogsheetType] = univCurrentInput;
     
     localStorage.setItem(config.draftKey, JSON.stringify(univCurrentInput));
 
     // =========================================================
     // FITUR BARU: AUTO-COLLAPSE (TUTUP OTOMATIS) DIPERBAIKI
     // =========================================================
+    // PERBAIKAN 3: Logika ini harus berada DI DALAM fungsi saveGroupedInput
     const paramsList = config.areas[subAreaName];
 
     // 1. CEK PINTAR: Pastikan TIDAK ADA parameter yang terlewat (kosong) di atasnya
@@ -915,20 +929,18 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
     // 2. Hanya pindah otomatis JIKA mengisi baris terakhir DAN semua data di grup ini sudah lengkap
     if (fullLabel === paramsList[paramsList.length - 1] && isAllFilled && value.trim() !== '') {
         
-        // 3. WAKTU JEDA DIPERLAMBAT (1500 = 1.5 detik. Bisa diganti jadi 2000 untuk 2 detik)
+        // 3. WAKTU JEDA DIPERLAMBAT (2000 = 2 detik)
         setTimeout(() => {
             // Ambil semua kotak grup (<details>) di layar saat ini
             const allDetails = document.querySelectorAll('#panelSTGContent details');
             let currentIndex = -1;
 
-            // Cari tahu kotak mana yang sedang aktif/diisi
+            // 👇 UBAH CARA PENCARIAN MENJADI LEBIH AKURAT 👇
             allDetails.forEach((detail, index) => {
-                const summary = detail.querySelector('summary');
-                if (summary && summary.textContent.includes(subAreaName)) {
+                if (detail.getAttribute('data-area') === subAreaName) {
                     currentIndex = index;
                 }
             });
-
             // Eksekusi Tutup & Buka Otomatis
             if (currentIndex !== -1) {
                 // Tutup grup yang sudah selesai ini
@@ -949,6 +961,6 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
                     }
                 }
             }
-        }, 2000); // <--- UBAH ANGKA WAKTU DI SINI
+        }, 2000); 
     }
 }

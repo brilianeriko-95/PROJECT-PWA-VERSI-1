@@ -8,45 +8,29 @@
 
 function initState() {
     try {
-        const savedDraft = localStorage.getItem(DRAFT_KEYS.LOGSHEET);
-        if (savedDraft) currentInput = JSON.parse(savedDraft);
-        
-        const savedCTDraft = localStorage.getItem(DRAFT_KEYS_CT.LOGSHEET);
-        if (savedCTDraft) currentInputCT = JSON.parse(savedCTDraft);
-        
-        if (typeof loadParamPhotosFromDraft === 'function') loadParamPhotosFromDraft();
-        if (typeof loadCTParamPhotosFromDraft === 'function') loadCTParamPhotosFromDraft();
-        
-        totalParams = Object.values(AREAS).reduce((acc, arr) => acc + arr.length, 0);
-        totalParamsCT = Object.values(AREAS_CT).reduce((acc, arr) => acc + arr.length, 0);
-    } catch (e) {
-        console.error('Error loading state:', e);
-    }
-}
+        // 1. MUAT DRAFT LOGSHEET UNIVERSAL
+        // Mengambil semua menu (LAPANGANTURBIN, CT, 1300, dst) secara otomatis
+        Object.keys(LOGSHEET_CONFIG).forEach(menuKey => {
+            const config = LOGSHEET_CONFIG[menuKey];
+            const savedData = localStorage.getItem(config.draftKey);
+            const savedPhotos = localStorage.getItem(config.photoKey);
 
-// Register Service Worker untuk PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-                console.log('SW registered:', registration.scope);
-                registration.update();
+            // Simpan ke state global window agar bisa diakses oleh module lain
+            if (!window.activeDrafts) window.activeDrafts = {};
+            if (!window.activePhotos) window.activePhotos = {};
 
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            showUpdateAlert();
-                        }
-                    });
-                });
-            })
-            .catch(err => console.error('SW registration failed:', err));
-            
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            window.location.reload();
+            window.activeDrafts[menuKey] = savedData ? JSON.parse(savedData) : {};
+            window.activePhotos[menuKey] = savedPhotos ? JSON.parse(savedPhotos) : {};
         });
-    });
+
+        // 2. MUAT DRAFT TPM UNIVERSAL
+        const savedTPM = localStorage.getItem('draft_tpm');
+        window.activeTPMDraft = savedTPM ? JSON.parse(savedTPM) : {};
+
+        console.log("✅ Seluruh state draf universal berhasil diinisialisasi.");
+    } catch (e) {
+        console.error('Error saat inisialisasi state:', e);
+    }
 }
 
 // ============================================
@@ -263,69 +247,111 @@ function renderSampleJobs() {
     
     jobListContainer.innerHTML = html;
 }
-
 // ============================================
 // 4. UI & NAVIGATION HELPERS
 // ============================================
 
-function goToLogsheetTurbin() {
-    navigateTo('areaListScreen');
-    if (typeof fetchLastData === 'function') {
-        fetchLastData(); 
-    } else if (typeof renderMenu === 'function') {
-        renderMenu();
-    }
-}
+// State Global untuk menandai posisi operator
+window.currentActiveMenu = ''; 
 
-function goToLogsheetCT() {
-    navigateTo('ctAreaListScreen');
-    if (typeof fetchLastDataCT === 'function') {
-        fetchLastDataCT();
-    } else if (typeof renderCTMenu === 'function') {
-        renderCTMenu();
-    }
-}
+/**
+ * Mesin Navigasi Utama PWA
+ * Mengatur perpindahan layar dengan transisi halus dan pemicu data otomatis.
+ */
+function navigateTo(screenId) {
+    console.log('🚀 Navigating to screen:', screenId);
+    
+    // 1. Amankan posisi scroll ke atas setiap ganti layar
+    window.scrollTo(0, 0);
 
-function goToBalancing() {
-    navigateTo('balancingScreen');
-    if (typeof initBalancingScreen === 'function') {
-        initBalancingScreen();
-    }
-}
-
-function toggleBranchMenuPopup() {
-    const overlay = document.getElementById('branchMenuPopupOverlay');
-    if (overlay) overlay.classList.toggle('hidden');
-}
-
-function closeBranchMenuPopup() {
-    const overlay = document.getElementById('branchMenuPopupOverlay');
-    if (overlay) overlay.classList.add('hidden');
-}
-
-function showUpdateAlert() {
-    const updateAlert = document.getElementById('updateAlert');
-    if (updateAlert) {
-        updateAlert.classList.remove('hidden');
-    }
-}
-
-function applyUpdate() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration().then(reg => {
-            if (reg && reg.waiting) {
-                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-            } else {
-                window.location.reload();
-            }
-        });
-    }
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
+    // 2. Sembunyikan semua layar secara paksa
+    const allScreens = document.querySelectorAll('.screen');
+    allScreens.forEach(screen => {
+        screen.classList.remove('active');
+        screen.style.display = 'none';
     });
+
+    // 3. Tampilkan layar tujuan
+    const targetScreen = document.getElementById(screenId);
+    if (targetScreen) {
+        targetScreen.style.display = 'block';
+        // Delay sedikit agar browser sempat memproses display:block sebelum animasi CSS jalan
+        setTimeout(() => {
+            targetScreen.classList.add('active');
+        }, 10);
+    }
+
+    // --- LOGIKA INTERCEPTOR KHUSUS (Pemicu Otomatis) ---
+    
+    // Sinkronisasi data offline saat kembali ke Home
+    if (screenId === 'homeScreen') {
+        checkOfflineData();
+    }
+
+    // Render ulang area TPM jika masuk ke menu TPM
+    if (screenId === 'tpmScreen' && typeof renderTPMAreas === 'function') {
+        renderTPMAreas();
+    }
+
+    // Update data dashboard jika supervisor masuk
+    if (screenId === 'dashboardSupervisor' && typeof loadSupervisorDashboard === 'function') {
+        loadSupervisorDashboard();
+    }
 }
 
+/**
+ * PINTU MASUK UNIVERSAL (Gatekeeper Unit)
+ * Digunakan oleh semua tombol menu di Home (Turbin, CT, 1300, 1100, 1000, Panel)
+ * @param {string} menuKey - Key dari LOGSHEET_CONFIG di config.js
+ */
+function openLogsheetMenu(menuKey) {
+    const config = LOGSHEET_CONFIG[menuKey];
+    
+    // 1. Validasi Konfigurasi
+    if (!config) {
+        console.error("❌ Config tidak ditemukan untuk key:", menuKey);
+        if (typeof showCustomAlert === 'function') showCustomAlert("Menu belum dikonfigurasi!", "error");
+        return;
+    }
+
+    // 2. Set State Global agar sistem tahu unit mana yang sedang diisi
+    window.currentActiveMenu = menuKey;
+
+    // 3. Tentukan Layar Tujuan
+    const targetScreen = (menuKey === 'BALANCING') ? 'balancingScreen' : 'universalAreaListScreen';
+    
+    // 4. Jalankan Navigasi
+    navigateTo(targetScreen);
+
+    // 5. Update UI Header (Judul & Warna Tema Unit)
+    const headerTitle = document.querySelector(`#${targetScreen} .header-title h1`) || document.getElementById('univHeaderTitle');
+    const headerBar = document.querySelector(`#${targetScreen} .header-bar`);
+    
+    if (headerTitle) headerTitle.textContent = config.title;
+    
+    // Berikan identitas warna unik per unit
+    if (headerBar) {
+        headerBar.style.background = config.themeColor || 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
+    }
+
+    // =========================================================
+    // 6 & 7. PISAHKAN LOGIKA BALANCING VS LOGSHEET UNIVERSAL
+    // =========================================================
+    if (menuKey === 'BALANCING') {
+        // KHUSUS BALANCING: Panggil fungsi inisialisasi dari balancing.js
+        if (typeof initBalancingScreen === 'function') {
+            initBalancingScreen();
+        }
+    } else {
+        // KHUSUS LOGSHEET BIASA (Turbin, CT, 1300, dll)
+        if (typeof renderMenuUniversal === 'function') {
+            renderMenuUniversal(menuKey);
+        }
+        if (typeof fetchLastDataUniversal === 'function') {
+            fetchLastDataUniversal(menuKey);
+        }
+    }
+}
 // ============================================
 // 5. UI SETUP & LISTENERS
 // ============================================
@@ -441,134 +467,120 @@ window.addEventListener('appinstalled', (evt) => {
 // ============================================
 // 8. OFFLINE SYNC ENGINE (MESIN PENGIRIMAN BACKUP)
 // ============================================
-
-/**
- * Mencari dan menghitung semua data tertunda di memori HP
- */
 function checkOfflineData() {
     let totalOffline = 0;
     
-    // Cari semua data di localStorage yang kuncinya mengandung kata 'offline'
+    // 1. SCANNING OTOMATIS: Kelilingi seluruh memori localStorage
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
+        
+        // 2. FILTER CERDAS: Ambil hanya kunci yang mengandung kata 'offline'
         if (key && key.toLowerCase().includes('offline')) {
             try {
                 const data = JSON.parse(localStorage.getItem(key) || '[]');
                 if (Array.isArray(data)) {
-                    totalOffline += data.length;
+                    totalOffline += data.length; // Tambahkan jumlah antrean dari kunci ini
                 }
             } catch (e) {
-                console.warn('Gagal membaca draf offline untuk key:', key);
+                console.warn('Gagal membaca draf otomatis untuk kunci:', key);
             }
         }
     }
 
-    // Update UI Tombol
+    // 3. UPDATE UI: Tampilkan total akumulasi ke Operator
     const syncContainer = document.getElementById('offlineSyncContainer');
     const syncBadge = document.getElementById('offlineSyncBadge');
     const syncText = document.getElementById('offlineSyncText');
 
     if (syncContainer) {
         if (totalOffline > 0) {
-            syncContainer.style.display = 'block'; // Munculkan tombol
-            if (syncBadge) syncBadge.textContent = totalOffline;
-            if (syncText) syncText.textContent = `Ada ${totalOffline} data belum terkirim`;
+            syncContainer.style.display = 'block'; 
+            if (syncBadge) syncBadge.textContent = totalOffline; 
+            if (syncText) syncText.textContent = `Ada ${totalOffline} laporan tertunda (Klik untuk sinkron)`; 
         } else {
-            syncContainer.style.display = 'none'; // Sembunyikan tombol jika bersih
+            syncContainer.style.display = 'none'; 
         }
     }
 }
 
 /**
- * Menjalankan proses pengiriman data yang tertunda
+ * Menjalankan proses pengiriman data yang tertunda (Versi Perbaikan)
  */
 async function syncOfflineData() {
     if (!navigator.onLine) {
-        showCustomAlert('Anda masih offline! Cari sinyal internet/Wi-Fi terlebih dahulu.', 'error');
+        showCustomAlert('Masih Offline! Cari sinyal stabil dulu.', 'error'); 
         return;
     }
 
-    const progress = showUploadProgress('Menyiapkan Sinkronisasi...');
+    const progress = showUploadProgress('Sinkronisasi Seluruh Unit...');
     let totalSuccess = 0;
-    currentUploadController = new AbortController();
+    currentUploadController = new AbortController(); 
 
-    // Loop semua kunci di memori HP
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key || !key.toLowerCase().includes('offline')) continue;
+    // 1. BUAT DAFTAR KUNCI STATIS (Agar indeks tidak bergeser saat dihapus)
+    const offlineKeys = Object.keys(localStorage).filter(key => key.toLowerCase().includes('offline'));
 
-        let offlineArray = [];
-        try {
-            offlineArray = JSON.parse(localStorage.getItem(key) || '[]');
-        } catch (e) { continue; }
+    for (const key of offlineKeys) {
+        let offlineArray = JSON.parse(localStorage.getItem(key) || '[]'); 
+        if (offlineArray.length === 0) continue;
 
-        if (!Array.isArray(offlineArray) || offlineArray.length === 0) continue;
+        let failedItems = []; 
 
-        let failedArray = []; // Untuk menyimpan data yang masih gagal
-
-        // Loop setiap data tertunda di dalam kategori ini
         for (let j = 0; j < offlineArray.length; j++) {
             const item = offlineArray[j];
-            progress.updateText(`Mengirim data ${j + 1}/${offlineArray.length}...`);
+            progress.updateText(`Mengirim ${key}: ${j + 1}/${offlineArray.length}`); 
 
-            // Pisahkan foto dari payload teks (sesuai format asli Anda)
             const photos = item.photos || {};
-            delete item.photos; 
+            delete item.photos;
 
             try {
-                // 1. Kirim Foto Dulu (Jika ada)
+                // A. Kirim Foto dengan Jeda Singkat (Mencegah Rate Limit)
                 for (const [photoKey, photoData] of Object.entries(photos)) {
-                    const photoPayload = {
-                        type: 'LOGSHEET_PHOTO',
-                        parentType: item.type || 'LOGSHEET',
-                        Operator: item.Operator || 'Unknown',
-                        photoKey: photoKey,
-                        photo: photoData,
-                        timestamp: new Date().toISOString()
-                    };
                     await fetch(GAS_URL, {
                         method: 'POST', mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(photoPayload),
-                        signal: currentUploadController.signal
+                        body: JSON.stringify({
+                            type: 'LOGSHEET_PHOTO',
+                            parentType: item.type || 'LOGSHEET_GENERAL', 
+                            photo: photoData,
+                            photoKey: photoKey,
+                            timestamp: new Date().toISOString()
+                        })
                     });
-                    await new Promise(r => setTimeout(r, 300)); // Jeda agar server tidak kaget
+                    // Jeda 300ms antar foto agar server tidak overload
+                    await new Promise(resolve => setTimeout(resolve, 300));
                 }
 
-                // 2. Kirim Data Teks Utama
+                // B. Kirim Data Teks Utama
                 await fetch(GAS_URL, {
                     method: 'POST', mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(item),
                     signal: currentUploadController.signal
                 });
-
+                
                 totalSuccess++;
+                
+                // Tambahkan jeda acak 1-2 detik antar laporan agar distribusi beban merata
+                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
 
             } catch (error) {
-                console.error('Gagal mengirim item tertunda:', error);
-                // Jika gagal, kembalikan foto ke item, dan masukkan ke daftar gagal
+                console.error('Gagal kirim item:', error);
                 item.photos = photos;
-                failedArray.push(item);
+                failedItems.push(item); 
             }
         }
 
-        // Update memori lokal: Simpan yang gagal, hapus jika sukses semua
-        if (failedArray.length > 0) {
-            localStorage.setItem(key, JSON.stringify(failedArray));
+        // C. Update memori HP secara bersih
+        if (failedItems.length > 0) {
+            localStorage.setItem(key, JSON.stringify(failedItems));
         } else {
             localStorage.removeItem(key);
         }
     }
 
-    progress.complete();
-    checkOfflineData(); // Cek ulang dan update UI
-
-    if (totalSuccess > 0) {
-        showCustomAlert(`✓ Luar biasa! ${totalSuccess} data tertunda berhasil masuk ke server.`, 'success');
-    } else {
-        showCustomAlert('Sinkronisasi selesai. Pastikan koneksi internet stabil.', 'info');
-    }
+    progress.complete(); 
+    checkOfflineData();
+    showCustomAlert(`✓ Sukses sinkronisasi ${totalSuccess} data!`, 'success'); 
 }
 // ============================================
 // 7. DOM READY INITIALIZATION
@@ -578,6 +590,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initState();
     loadTodayJobs();
     checkOfflineData();
+    runStorageMaintenance();
 
     // Deteksi jika aplikasi dibuka dari Homescreen HP (Standalone Mode)
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
@@ -617,3 +630,82 @@ window.addEventListener('DOMContentLoaded', () => {
     
     console.log(`${APP_NAME} v${APP_VERSION} initialized successfully`);
 });
+
+// =======================================================================
+// 🛡️ STORAGE MANAGEMENT & AUTO-CLEANUP (FAIL-SAFE SYSTEM)
+// =======================================================================
+
+function runStorageMaintenance() {
+    // 1. Jalankan pembersihan draf usang terlebih dahulu
+    autoCleanupOldDrafts();
+    
+    // 2. Setelah dibersihkan, baru hitung sisa kuotanya
+    setTimeout(() => {
+        checkStorageQuota();
+    }, 1000);
+}
+
+function autoCleanupOldDrafts() {
+    const MAX_DAYS = 3; // Batas umur draf (hari)
+    const now = new Date().getTime();
+    let deletedCount = 0;
+
+    Object.keys(localStorage).forEach(key => {
+        // Kita fokus membersihkan Draf (Teks) yang usang
+        if (key.startsWith('draft_')) {
+            try {
+                const data = JSON.parse(localStorage.getItem(key));
+                
+                // Cek apakah ada stempel waktu pembuatannya
+                if (data && data._savedAt) {
+                    const savedTime = new Date(data._savedAt).getTime();
+                    const daysOld = (now - savedTime) / (1000 * 3600 * 24);
+
+                    if (daysOld > MAX_DAYS) {
+                        // Hapus Draf Teks
+                        localStorage.removeItem(key);
+                        
+                        // Hapus Draf Foto yang terkait (otomatis mendeteksi nama key fotonya)
+                        // Contoh: 'draft_1300' akan mencari 'photos_1300'
+                        const photoKey = key.replace('draft_', 'photos_');
+                        if (localStorage.getItem(photoKey)) {
+                            localStorage.removeItem(photoKey);
+                        }
+                        
+                        deletedCount++;
+                        console.warn(`[Auto-Cleanup] Menghapus draf & foto usang (>3 hari): ${key}`);
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal membaca draf untuk cleanup:', e);
+            }
+        }
+    });
+
+    if (deletedCount > 0) {
+        console.log(`[Auto-Cleanup] ${deletedCount} pasang draf dan foto usang berhasil dibersihkan untuk melegakan memori.`);
+    }
+}
+
+function checkStorageQuota() {
+    let totalBytes = 0;
+    const keys = Object.keys(localStorage);
+    
+    keys.forEach(key => {
+        // String di JavaScript menggunakan format UTF-16 (2 byte per karakter)
+        const item = localStorage.getItem(key);
+        totalBytes += (item ? item.length * 2 : 0);
+    });
+
+    const mbUsed = (totalBytes / (1024 * 1024)).toFixed(2);
+    console.log(`[Storage Check] Kapasitas memori terpakai: ${mbUsed} MB`);
+
+    // Batas aman localStorage adalah 5MB. Kita beri peringatan keras jika menyentuh 4MB.
+    if (mbUsed > 4.0) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert(`⚠️ Memori HP Penuh (${mbUsed}MB)! Segera SINKRONISASI antrean merah atau aplikasi akan macet.`, 'error');
+        } else {
+            alert(`⚠️ Memori HP Penuh (${mbUsed}MB)! Segera SINKRONISASI data offline Anda.`);
+        }
+    }
+}

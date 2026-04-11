@@ -2,9 +2,11 @@
    TURBINE LOGSHEET PRO - CONFIGURATION
    ============================================ */
 
-// ============================================
+/* ============================================
+   TURBINE LOGSHEET PRO - CONFIGURATION (V 2.8.5)
+   ============================================ */
+
 // 1. APP CONFIGURATION
-// ============================================
 const APP_VERSION = '2.8.5';
 const APP_NAME = 'PROJECT LOGSHEET';
 
@@ -12,51 +14,17 @@ const AUTH_CONFIG = {
     SESSION_KEY: 'turbine_session',
     USER_KEY: 'turbine_user',
     USERS_CACHE_KEY: 'turbine_users_cache',
-    SESSION_DURATION: 8 * 60 * 60 * 1000,           // 8 jam
-    REMEMBER_ME_DURATION: 30 * 24 * 60 * 60 * 1000  // 30 hari
+    SESSION_DURATION: 8 * 60 * 60 * 1000,
+    REMEMBER_ME_DURATION: 30 * 24 * 60 * 60 * 1000
 };
 
-const DRAFT_KEYS = {
-    LOGSHEET: 'draft_turbine',
-    LOGSHEET_BACKUP: 'draft_turbine_backup',
-    BALANCING: 'balancing_draft',
-    TPM_OFFLINE: 'tpm_offline',
-    LOGSHEET_OFFLINE: 'offline_logsheets',
-    BALANCING_OFFLINE: 'balancing_offline',
-    TPM_HISTORY: 'tpm_history',
-    BALANCING_HISTORY: 'balancing_history'
-};
+// 2. BACKEND & USER SETUP
+const GAS_URL = "https://script.google.com/macros/s/AKfycby2GCbRkqpZUcSnZ3ibQD_VGHBA_00sbT9NZ2acNClvYoHfJgL1T703_6UYiALnuG5y/exec";
 
-const DRAFT_KEYS_CT = {
-    LOGSHEET: 'draft_ct_logsheet',
-    OFFLINE: 'offline_ct_logsheets'
-};
-
-const DRAFT_KEYS_1300 = {
-    LOGSHEET: 'draft_1300_logsheet',
-    OFFLINE: 'offline_1300_logsheets'
-};
-
-const DRAFT_KEYS_1100 = {
-    LOGSHEET: 'draft_logsheet_1100',
-    OFFLINE: 'offline_logsheet_1100'
-};
-
-const PHOTO_DRAFT_KEYS = {
-    TURBINE: 'draft_turbine_photos',
-    CT: 'draft_ct_photos',
-    AREA1300: 'draft_1300_photos',
-    AREA1100: 'draft_photos_1100'
-};
-
-// URL Google Apps Script Backend
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyK0pjnioSRa_xXqqZDWVhyzPpf5dIOHUUeXdGWzONjDS24WEg_wpxiauBPHtfR0NXl/exec";
-
-// Fallback users untuk mode offline (legacy support)
 const OFFLINE_USERS = {
-    'admin': { password: 'admin123', role: 'admin', name: 'Administrator', department: 'Unit Utilitas 3B' },
-    'operator': { password: 'operator123', role: 'operator', name: 'Operator Shift', department: 'Unit Utilitas 3B' },
-    'utilitas3b': { password: 'pgresik2024', role: 'operator', name: 'Unit Utilitas 3B', department: 'Unit Utilitas 3B' }
+    // Ubah ke MANAJEMEN agar Admin otomatis bisa melihat seluruh menu (SA & SU)
+    'admin': { password: 'admin123', role: 'admin', name: 'Administrator', department: 'MANAJEMEN' },
+    'utilitas3b': { password: 'pgresik2024', role: 'operator', name: 'Unit Utilitas 3B', department: 'UNIT UTILITAS 3B' }
 };
 
 // Field configuration untuk Balancing
@@ -882,26 +850,25 @@ const GROUPS_PANEL_STG175 = {
 };
 
 // ============================================
-// MASTER CONFIGURATION UNTUK DYNAMIC TEMPLATE
+// 3. MASTER CONFIGURATION (PUSAT KENDALI DRAFT & OFFLINE)
 // ============================================
 const LOGSHEET_CONFIG = {
     'LAPANGANTURBIN': {
         title: 'Logsheet Turbin',
-        subtitle: 'Input data operasional turbine',
-        areas: AREAS,
-        draftKey: DRAFT_KEYS.LOGSHEET,
-        offlineKey: DRAFT_KEYS.LOGSHEET_OFFLINE,
-        photoKey: PHOTO_DRAFT_KEYS.TURBINE,
         submitType: 'LOGSHEET_LAPANGANTURBIN',
+        areas: AREAS,
+        draftKey: 'draft_turbine',
+        offlineKey: 'offline_turbine',
+        photoKey: 'photos_turbine',
         themeColor: '#3b82f6'
     },
     'CT': {
         title: 'Logsheet Cooling Tower',
         subtitle: 'Input data operasional basin & pompa',
         areas: AREAS_CT,
-        draftKey: DRAFT_KEYS_CT.LOGSHEET,
-        offlineKey: DRAFT_KEYS_CT.OFFLINE,
-        photoKey: PHOTO_DRAFT_KEYS.CT,
+        draftKey: 'draft_ct',
+        offlineKey: 'offline_ct',
+        photoKey: 'photos_ct',
         submitType: 'LOGSHEET_CT',
         themeColor: '#06b6d4'
     },
@@ -909,9 +876,9 @@ const LOGSHEET_CONFIG = {
         title: 'Logsheet Area 1300',
         subtitle: 'Drying Air, Absorber & Lube Oil',
         areas: AREAS_1300,
-        draftKey: DRAFT_KEYS_1300.LOGSHEET,
-        offlineKey: DRAFT_KEYS_1300.OFFLINE,
-        photoKey: PHOTO_DRAFT_KEYS.AREA1300,
+        draftKey: 'draft_1300',
+        offlineKey: 'offline_1300',
+        photoKey: 'photos_1300',
         submitType: 'LOGSHEET_1300',
         themeColor: '#8b5cf6'
     },
@@ -919,9 +886,9 @@ const LOGSHEET_CONFIG = {
         title: 'Logsheet Area 1100/1200',
         subtitle: 'Sulphur, Furnace, WHB',
         areas: AREAS_1100,
-        draftKey: DRAFT_KEYS_1100.LOGSHEET,
-        offlineKey: DRAFT_KEYS_1100.OFFLINE,
-        photoKey: PHOTO_DRAFT_KEYS.AREA1100,
+        draftKey: 'draft_1100',
+        offlineKey: 'offline_1100',
+        photoKey: 'photos_1100',
         submitType: 'LOGSHEET_1100_1200',
         themeColor: '#eab308'
     },
@@ -931,7 +898,7 @@ const LOGSHEET_CONFIG = {
         areas: AREAS_1000,
         draftKey: 'draft_1000',
         offlineKey: 'offline_1000',
-        photoKey: 'draft_1000_photos',
+        photoKey: 'photos_1000',
         submitType: 'LOGSHEET_1000',
         themeColor: '#ef4444'
     },
@@ -939,23 +906,47 @@ const LOGSHEET_CONFIG = {
         title: 'Logsheet Panel STG 17.5 MW',
         submitType: 'LOGSHEET_PANEL_STG',
         draftKey: 'draft_panel_stg',
-        photoKey: 'photos_panel_stg',
         offlineKey: 'offline_panel_stg',
+        photoKey: 'photos_panel_stg',
         themeColor: '#1d6be8',
         areas: AREAS_PANEL_STG175,
         groups: GROUPS_PANEL_STG175
-      },
+    },
     'PANEL_ASAM_SULFAT': {
         title: 'Panel Asam Sulfat',
         submitType: 'LOGSHEET_PANEL_ASAM_SULFAT',
         draftKey: 'draft_panel_asam_sulfat',
-        photoKey: 'photos_panel_asam_sulfat',
         offlineKey: 'offline_panel_asam_sulfat',
+        photoKey: 'photos_panel_asam_sulfat',
         themeColor: '#eab308',
         areas: AREAS_PANEL_ASAM_SULFAT,
         groups: GROUPS_PANEL_ASAM_SULFAT
+    },
+    'BALANCING': {
+        title: 'Balancing Power & Steam',
+        submitType: 'BALANCING',
+        draftKey: 'draft_balancing',
+        offlineKey: 'offline_balancing',
+        photoKey: 'photos_balancing',
+        themeColor: '#10b981'
     }
-}; // <--- Penutup LOGSHEET_CONFIG
+};
+// ============================================
+// 4. TPM CONFIG MASTER (STANDALONE)
+// ============================================
+const TPM_CONFIG_MASTER = {
+    'SULFAT': [
+        { name: "AREA 1100 / 1200", icon: "🏭", color: "#eab308" },
+        { name: "AREA 1300", icon: "⚙️", color: "#8b5cf6" },
+        { name: "AREA 1000", icon: "🔥", color: "#ef4444" }
+    ],
+    'UTILITAS': [
+        { name: "AREA #6200", icon: "🔧", color: "#3b82f6" },
+        { name: "AREA TURBIN", icon: "⚡", color: "#06b6d4" },
+        { name: "COOLING TOWER", icon: "🗼", color: "#10b981" },
+        { name: "AREA COMPRESSOR", icon: "🌬️", color: "#f59e0b" }
+    ]
+};
 
 // ============================================
 // KONFIGURASI INPUT KHUSUS (DROPDOWN DLL)
