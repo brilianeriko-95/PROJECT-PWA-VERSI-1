@@ -50,7 +50,7 @@ const PHOTO_DRAFT_KEYS = {
 };
 
 // URL Google Apps Script Backend
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxuk3V5Zoyhem-D9m7EptCK2hcOJyqZ9JGVQzEOJGUbCv8YngswP34rUVXyDC7GIVVl/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxjyoYPNcR6szhfGS2bislBjQpz9Xey9r-p18TCCDCkbpk5zN7jCSc5aO3tuIx7A7vr/exec";
 
 // Fallback users untuk mode offline (legacy support)
 const OFFLINE_USERS = {
@@ -860,7 +860,7 @@ const AREAS_PANEL_ASAM_SULFAT = {
   ],
   "STARTUP BLOWER C-1302": [
     "30-C-1302 TISA-1367 (°C)", "30-C-1302 TISA-1368 (°C)", "30-C-1302 TISA-1371 (°C)",	
-    "30-C-1302 TISA-1372 (°C)", "30-C-1302 TISA-1373 (°C)"
+    "30-C-1302 TISA-1372 (°C)", "30-C-1302 TISA-1373 (°C)", "30-C-1302 TISA-1364 (°C)","30-C-1302 TISA-1365 (°C)","30-C-1302 TISA-1366 (°C)"
   ]
 };
 // ============================================
@@ -885,14 +885,14 @@ const GROUPS_PANEL_STG175 = {
 // MASTER CONFIGURATION UNTUK DYNAMIC TEMPLATE
 // ============================================
 const LOGSHEET_CONFIG = {
-    'TURBINE': {
+    'LAPANGANTURBIN': {
         title: 'Logsheet Turbin',
         subtitle: 'Input data operasional turbine',
         areas: AREAS,
         draftKey: DRAFT_KEYS.LOGSHEET,
         offlineKey: DRAFT_KEYS.LOGSHEET_OFFLINE,
         photoKey: PHOTO_DRAFT_KEYS.TURBINE,
-        submitType: 'LOGSHEET',
+        submitType: 'LOGSHEET_LAPANGANTURBIN',
         themeColor: '#3b82f6'
     },
     'CT': {
