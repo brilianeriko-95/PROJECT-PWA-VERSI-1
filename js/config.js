@@ -50,7 +50,7 @@ const PHOTO_DRAFT_KEYS = {
 };
 
 // URL Google Apps Script Backend
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzS29mBRkbjy4HJL-wFve_irPV3JV4sEC-j2-KkJaYtf77oxKr8hrKqTCTcrA8c4nBt/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbzdF7JWH7l3uAxmucox6GLsTFRDFb5yT4IXbojzKRAGCdWFB2FKevZW4iFYANjSH-NF/exec";
 
 // Fallback users untuk mode offline (legacy support)
 const OFFLINE_USERS = {
@@ -892,7 +892,7 @@ const LOGSHEET_CONFIG = {
         draftKey: DRAFT_KEYS.LOGSHEET,
         offlineKey: DRAFT_KEYS.LOGSHEET_OFFLINE,
         photoKey: PHOTO_DRAFT_KEYS.TURBINE,
-        submitType: 'LOGSHEET',
+        submitType: 'LOGSHEET_LAPANGANTURBIN',
         themeColor: '#3b82f6'
     },
     'CT': {
