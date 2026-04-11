@@ -55,11 +55,6 @@ function renderTPMAreas() {
 // 1. UI & INITIALIZATION
 // ============================================
 
-// 👇 PERBAIKAN 1: Tambahkan Deklarasi Variabel Global TPM di Sini 👇
-let activeTPMArea = '';
-let currentTPMPhoto = null;
-let currentTPMStatus = '';
-
 function updateTPMUserInfo() {
     const tpmHeaderUser = document.getElementById('tpmHeaderUser');
     const tpmInputUser = document.getElementById('tpmInputUser');
