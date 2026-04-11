@@ -24,7 +24,7 @@ function initState() {
         });
 
         // 2. MUAT DRAFT TPM UNIVERSAL
-        const savedTPM = localStorage.getItem(DRAFT_KEYS.TPM_UNIVERSAL);
+        const savedTPM = localStorage.getItem('draft_tpm');
         window.activeTPMDraft = savedTPM ? JSON.parse(savedTPM) : {};
 
         console.log("✅ Seluruh state draf universal berhasil diinisialisasi.");
