@@ -648,12 +648,9 @@ async function submitUniversalLogsheet() {
     if (!requireAuth()) return;
     
     const config = LOGSHEET_CONFIG[activeLogsheetType];
-   
-   // 👇👇👇 TAMBAHKAN DUA BARIS INI 👇👇👇
-    const confirmSubmit = confirm(`Yakin ingin mengirim laporan ${config.title} ke Server? Pastikan data sudah terisi semua.`);
-    if (!confirmSubmit) return;
-    // 👆👆👆 =========================== 👆👆👆
-   
+    
+    // Bagian konfirmasi telah dihapus agar pengiriman data lebih cepat
+    
     const progress = showUploadProgress(`Mengirim ${config.title} & Foto...`);
     progress.updateText('Mengumpulkan data...');
     currentUploadController = new AbortController();
@@ -677,7 +674,7 @@ async function submitUniversalLogsheet() {
     });
     
     const finalData = {
-        type: config.submitType, // Dari Config (Misal: LOGSHEET_1300)
+        type: config.submitType,
         Operator: currentUser ? currentUser.name : 'Unknown',
         OperatorId: currentUser ? currentUser.username : 'Unknown',
         Group: currentUser ? (currentUser.group || '-') : '-',
@@ -704,7 +701,7 @@ async function submitUniversalLogsheet() {
                     body: JSON.stringify(photoPayload),
                     signal: currentUploadController.signal
                 });
-                await new Promise(resolve => setTimeout(resolve, 200)); // Delay agar Google Apps Script tidak error
+                await new Promise(resolve => setTimeout(resolve, 200)); 
             } catch (error) { console.warn('Error upload foto:', error); }
         }
     }
@@ -722,7 +719,7 @@ async function submitUniversalLogsheet() {
         progress.complete();
         showCustomAlert('✓ Data Logsheet berhasil dikirim ke server!', 'success');
         
-        // Bersihkan data draf karena sudah selesai dikirim
+        // Bersihkan data draf
         univCurrentInput = {};
         univParamPhotos = {};
         localStorage.removeItem(config.draftKey);
@@ -735,19 +732,14 @@ async function submitUniversalLogsheet() {
         console.error('Logsheet Submit Error:', error);
         progress.error();
 
-        // 1. Ambil antrean offline (contoh key: 'offline_logsheets') [cite: 294-295]
         let queue = JSON.parse(localStorage.getItem(config.offlineKey) || '[]');
 
-        // 2. Bungkus data dan foto menjadi satu paket [cite: 337-338]
         queue.push({
             ...finalData,
             photos: allPhotos 
         });
 
-        // 3. Simpan ke memori HP
         localStorage.setItem(config.offlineKey, JSON.stringify(queue));
-
-        // 4. Picu tombol sinkronisasi di Home 
         checkOfflineData(); 
         
         showCustomAlert('Sinyal lemah! Data disimpan aman di memori HP.', 'warning');
