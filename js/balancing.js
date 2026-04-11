@@ -318,8 +318,8 @@ function formatWhatsAppMessage(data) {
     message += `⠂ ${data.Ekspor_Impor_Status || 'Ekspor/Impor'} = ${formatNum(Math.abs(data.Ekspor_Impor_MW), 3)} MW\n\n`;
     
     message += `*Balance Power SCADA*\n`;
-    message += `⠂ PLN = ${formatNum(data.PLN_MW)}MW\n`;
-    message += `⠂ UBB = ${formatNum(data.UBB_MW)}MW\n`;
+    message += `⠂ PLN = ${formatNum(data.PLN_MW)} MW\n`;
+    message += `⠂ UBB = ${formatNum(data.UBB_MW)} MW\n`;
     message += `⠂ PIE = ${formatNum(data.PIE_MW)} MW\n`;
     message += `⠂ TG-65 = ${formatNum(data.TG65_MW)} MW\n`;
     message += `⠂ TG-66 = ${formatNum(data.TG66_MW)} MW\n`;
@@ -333,7 +333,7 @@ function formatWhatsAppMessage(data) {
     message += `  ⠂ Current S = ${formatNum(data.Current_S_A, 1)} A\n`;
     message += `  ⠂ Voltage = ${formatInt(data.Voltage_V)} V\n`;
     message += `  ⠂ (HVS65 L02) = ${formatNum(data.HVS65_L02_MW, 3)} MW (${formatInt(data.HVS65_L02_Current_A)} A)\n`;
-    message += `● Total 3B = ${formatNum(data.Total_3B_MW, 3)}MW\n\n`;
+    message += `● Total 3B = ${formatNum(data.Total_3B_MW, 3)} MW\n\n`;
     
     message += `*Produksi Steam SA*\n`;
     message += `⠂ FQ-1105 = ${formatNum(data['Produksi_Steam_SA_t/h'], 1)} t/h\n\n`;
