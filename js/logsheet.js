@@ -677,6 +677,7 @@ async function submitUniversalLogsheet() {
         type: config.submitType, // Dari Config (Misal: LOGSHEET_1300)
         Operator: currentUser ? currentUser.name : 'Unknown',
         OperatorId: currentUser ? currentUser.username : 'Unknown',
+        Group: currentUser ? (currentUser.group || '-') : '-',
         photoCount: Object.keys(allPhotos).length,
         ...allParameters
     };
