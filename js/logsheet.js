@@ -122,7 +122,7 @@ function openUniversalLogsheet(type) {
 function renderMenuUniversal(menuKey) {
     const config = LOGSHEET_CONFIG[menuKey];
     const listContainer = document.getElementById('univAreaList');
-    if (!listContainer) return;
+    if (!listContainer || !config || !config.areas) return;
     
     activeLogsheetType = menuKey; // Pastikan state lokal sinkron
 
@@ -415,7 +415,7 @@ function nextUnivStep() {
     } else {
         showCustomAlert(`Area ${activeUnivArea} selesai!`, 'success');
         setTimeout(() => {
-            renderUniversalAreaList();
+            renderMenuUniversal(activeLogsheetType); // <--- JADI INI
             navigateTo('universalAreaListScreen');
         }, 1200);
     }
@@ -430,7 +430,7 @@ function prevUnivStep(forceBack = false) {
         activeUnivIdx--;
         showUnivStep();
     } else {
-        renderUniversalAreaList();
+        renderMenuUniversal(activeLogsheetType); // <--- GANTI JUGA DI SINI
         navigateTo('universalAreaListScreen');
     }
 }
