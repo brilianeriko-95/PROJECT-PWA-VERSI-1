@@ -247,17 +247,6 @@ function renderSampleJobs() {
     
     jobListContainer.innerHTML = html;
 }
-
-Kode MapsTo Anda sudah sangat bagus, terutama bagian Logika Interceptor (baris 31-48). Penggunaan interceptor seperti itu adalah praktik terbaik agar data selalu diperbarui (fresh) setiap kali layar dibuka tanpa harus dipanggil manual dari banyak tempat.
-
-Namun, agar sinkron dengan Sistem Universal yang kita bangun di config.js, bagian navigasi spesifik (goToLogsheetTurbin, goToLogsheetCT, dll.) perlu kita "Universal-kan" juga.
-
-Berikut adalah revisi untuk bagian 4. UI & NAVIGATION HELPERS di main.js Anda:
-
-🛠️ Perbaikan Navigasi Universal (js/main.js)
-Ganti fungsi goToLogsheetTurbin, goToLogsheetCT, dan sejenisnya dengan kode yang lebih ringkas ini:
-
-JavaScript
 // ============================================
 // 4. UI & NAVIGATION HELPERS
 // ============================================
