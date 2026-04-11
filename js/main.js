@@ -504,7 +504,7 @@ function checkOfflineData() {
 }
 
 /**
- * Menjalankan proses pengiriman data yang tertunda
+ * Menjalankan proses pengiriman data yang tertunda (Versi Perbaikan)
  */
 async function syncOfflineData() {
     if (!navigator.onLine) {
@@ -512,53 +512,57 @@ async function syncOfflineData() {
         return;
     }
 
-    const progress = showUploadProgress('Sinkronisasi Otomatis Seluruh Unit...');
+    const progress = showUploadProgress('Sinkronisasi Seluruh Unit...');
     let totalSuccess = 0;
     currentUploadController = new AbortController(); 
 
-    // Loop otomatis mencari semua kunci 'offline' di localStorage
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key || !key.toLowerCase().includes('offline')) continue; 
+    // 1. BUAT DAFTAR KUNCI STATIS (Agar indeks tidak bergeser saat dihapus)
+    const offlineKeys = Object.keys(localStorage).filter(key => key.toLowerCase().includes('offline'));
 
+    for (const key of offlineKeys) {
         let offlineArray = JSON.parse(localStorage.getItem(key) || '[]'); 
         if (offlineArray.length === 0) continue;
 
-        let failedItems = []; // Untuk menampung jika ada yang gagal lagi
+        let failedItems = []; 
 
         for (let j = 0; j < offlineArray.length; j++) {
             const item = offlineArray[j];
             progress.updateText(`Mengirim ${key}: ${j + 1}/${offlineArray.length}`); 
 
-            // Pisahkan foto jika ada (logika sesuai format data asli Anda)
             const photos = item.photos || {};
             delete item.photos;
 
             try {
-                // 1. Kirim Foto Dulu
+                // A. Kirim Foto dengan Jeda Singkat (Mencegah Rate Limit)
                 for (const [photoKey, photoData] of Object.entries(photos)) {
                     await fetch(GAS_URL, {
                         method: 'POST', mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             type: 'LOGSHEET_PHOTO',
-                            // AMBIL TYPE ASLI (misal: LOGSHEET_1300) agar backend tidak bingung
-                            parentType: item.type || (LOGSHEET_CONFIG[key] ? LOGSHEET_CONFIG[key].submitType : 'LOGSHEET_GENERAL'), 
+                            parentType: item.type || 'LOGSHEET_GENERAL', 
                             photo: photoData,
                             photoKey: photoKey,
                             timestamp: new Date().toISOString()
                         })
                     });
+                    // Jeda 300ms antar foto agar server tidak overload
+                    await new Promise(resolve => setTimeout(resolve, 300));
                 }
 
-                // 2. Kirim Data Teks Utama
+                // B. Kirim Data Teks Utama
                 await fetch(GAS_URL, {
                     method: 'POST', mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(item),
                     signal: currentUploadController.signal
                 });
+                
                 totalSuccess++;
+                
+                // Tambahkan jeda acak 1-2 detik antar laporan agar distribusi beban merata
+                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+
             } catch (error) {
                 console.error('Gagal kirim item:', error);
                 item.photos = photos;
@@ -566,7 +570,7 @@ async function syncOfflineData() {
             }
         }
 
-        // Update memori HP: Jika ada yang gagal, simpan kembali. Jika sukses, hapus kunci. 
+        // C. Update memori HP secara bersih
         if (failedItems.length > 0) {
             localStorage.setItem(key, JSON.stringify(failedItems));
         } else {
@@ -575,8 +579,8 @@ async function syncOfflineData() {
     }
 
     progress.complete(); 
-    checkOfflineData(); // Refresh tampilan tombol
-    showCustomAlert(`✓ Sukses mengirim ${totalSuccess} data dari seluruh unit!`, 'success'); 
+    checkOfflineData();
+    showCustomAlert(`✓ Sukses sinkronisasi ${totalSuccess} data!`, 'success'); 
 }
 // ============================================
 // 7. DOM READY INITIALIZATION
@@ -586,6 +590,7 @@ window.addEventListener('DOMContentLoaded', () => {
     initState();
     loadTodayJobs();
     checkOfflineData();
+    runStorageMaintenance();
 
     // Deteksi jika aplikasi dibuka dari Homescreen HP (Standalone Mode)
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
@@ -625,3 +630,82 @@ window.addEventListener('DOMContentLoaded', () => {
     
     console.log(`${APP_NAME} v${APP_VERSION} initialized successfully`);
 });
+
+// =======================================================================
+// 🛡️ STORAGE MANAGEMENT & AUTO-CLEANUP (FAIL-SAFE SYSTEM)
+// =======================================================================
+
+function runStorageMaintenance() {
+    // 1. Jalankan pembersihan draf usang terlebih dahulu
+    autoCleanupOldDrafts();
+    
+    // 2. Setelah dibersihkan, baru hitung sisa kuotanya
+    setTimeout(() => {
+        checkStorageQuota();
+    }, 1000);
+}
+
+function autoCleanupOldDrafts() {
+    const MAX_DAYS = 3; // Batas umur draf (hari)
+    const now = new Date().getTime();
+    let deletedCount = 0;
+
+    Object.keys(localStorage).forEach(key => {
+        // Kita fokus membersihkan Draf (Teks) yang usang
+        if (key.startsWith('draft_')) {
+            try {
+                const data = JSON.parse(localStorage.getItem(key));
+                
+                // Cek apakah ada stempel waktu pembuatannya
+                if (data && data._savedAt) {
+                    const savedTime = new Date(data._savedAt).getTime();
+                    const daysOld = (now - savedTime) / (1000 * 3600 * 24);
+
+                    if (daysOld > MAX_DAYS) {
+                        // Hapus Draf Teks
+                        localStorage.removeItem(key);
+                        
+                        // Hapus Draf Foto yang terkait (otomatis mendeteksi nama key fotonya)
+                        // Contoh: 'draft_1300' akan mencari 'photos_1300'
+                        const photoKey = key.replace('draft_', 'photos_');
+                        if (localStorage.getItem(photoKey)) {
+                            localStorage.removeItem(photoKey);
+                        }
+                        
+                        deletedCount++;
+                        console.warn(`[Auto-Cleanup] Menghapus draf & foto usang (>3 hari): ${key}`);
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal membaca draf untuk cleanup:', e);
+            }
+        }
+    });
+
+    if (deletedCount > 0) {
+        console.log(`[Auto-Cleanup] ${deletedCount} pasang draf dan foto usang berhasil dibersihkan untuk melegakan memori.`);
+    }
+}
+
+function checkStorageQuota() {
+    let totalBytes = 0;
+    const keys = Object.keys(localStorage);
+    
+    keys.forEach(key => {
+        // String di JavaScript menggunakan format UTF-16 (2 byte per karakter)
+        const item = localStorage.getItem(key);
+        totalBytes += (item ? item.length * 2 : 0);
+    });
+
+    const mbUsed = (totalBytes / (1024 * 1024)).toFixed(2);
+    console.log(`[Storage Check] Kapasitas memori terpakai: ${mbUsed} MB`);
+
+    // Batas aman localStorage adalah 5MB. Kita beri peringatan keras jika menyentuh 4MB.
+    if (mbUsed > 4.0) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert(`⚠️ Memori HP Penuh (${mbUsed}MB)! Segera SINKRONISASI antrean merah atau aplikasi akan macet.`, 'error');
+        } else {
+            alert(`⚠️ Memori HP Penuh (${mbUsed}MB)! Segera SINKRONISASI data offline Anda.`);
+        }
+    }
+}
