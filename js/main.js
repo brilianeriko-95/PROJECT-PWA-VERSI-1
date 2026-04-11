@@ -8,45 +8,29 @@
 
 function initState() {
     try {
-        const savedDraft = localStorage.getItem(DRAFT_KEYS.LOGSHEET);
-        if (savedDraft) currentInput = JSON.parse(savedDraft);
-        
-        const savedCTDraft = localStorage.getItem(DRAFT_KEYS_CT.LOGSHEET);
-        if (savedCTDraft) currentInputCT = JSON.parse(savedCTDraft);
-        
-        if (typeof loadParamPhotosFromDraft === 'function') loadParamPhotosFromDraft();
-        if (typeof loadCTParamPhotosFromDraft === 'function') loadCTParamPhotosFromDraft();
-        
-        totalParams = Object.values(AREAS).reduce((acc, arr) => acc + arr.length, 0);
-        totalParamsCT = Object.values(AREAS_CT).reduce((acc, arr) => acc + arr.length, 0);
-    } catch (e) {
-        console.error('Error loading state:', e);
-    }
-}
+        // 1. MUAT DRAFT LOGSHEET UNIVERSAL
+        // Mengambil semua menu (LAPANGANTURBIN, CT, 1300, dst) secara otomatis
+        Object.keys(LOGSHEET_CONFIG).forEach(menuKey => {
+            const config = LOGSHEET_CONFIG[menuKey];
+            const savedData = localStorage.getItem(config.draftKey);
+            const savedPhotos = localStorage.getItem(config.photoKey);
 
-// Register Service Worker untuk PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js')
-            .then(registration => {
-                console.log('SW registered:', registration.scope);
-                registration.update();
+            // Simpan ke state global window agar bisa diakses oleh module lain
+            if (!window.activeDrafts) window.activeDrafts = {};
+            if (!window.activePhotos) window.activePhotos = {};
 
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            showUpdateAlert();
-                        }
-                    });
-                });
-            })
-            .catch(err => console.error('SW registration failed:', err));
-            
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-            window.location.reload();
+            window.activeDrafts[menuKey] = savedData ? JSON.parse(savedData) : {};
+            window.activePhotos[menuKey] = savedPhotos ? JSON.parse(savedPhotos) : {};
         });
-    });
+
+        // 2. MUAT DRAFT TPM UNIVERSAL
+        const savedTPM = localStorage.getItem(DRAFT_KEYS.TPM_UNIVERSAL);
+        window.activeTPMDraft = savedTPM ? JSON.parse(savedTPM) : {};
+
+        console.log("✅ Seluruh state draf universal berhasil diinisialisasi.");
+    } catch (e) {
+        console.error('Error saat inisialisasi state:', e);
+    }
 }
 
 // ============================================
@@ -264,68 +248,115 @@ function renderSampleJobs() {
     jobListContainer.innerHTML = html;
 }
 
+Kode MapsTo Anda sudah sangat bagus, terutama bagian Logika Interceptor (baris 31-48). Penggunaan interceptor seperti itu adalah praktik terbaik agar data selalu diperbarui (fresh) setiap kali layar dibuka tanpa harus dipanggil manual dari banyak tempat.
+
+Namun, agar sinkron dengan Sistem Universal yang kita bangun di config.js, bagian navigasi spesifik (goToLogsheetTurbin, goToLogsheetCT, dll.) perlu kita "Universal-kan" juga.
+
+Berikut adalah revisi untuk bagian 4. UI & NAVIGATION HELPERS di main.js Anda:
+
+🛠️ Perbaikan Navigasi Universal (js/main.js)
+Ganti fungsi goToLogsheetTurbin, goToLogsheetCT, dan sejenisnya dengan kode yang lebih ringkas ini:
+
+JavaScript
 // ============================================
 // 4. UI & NAVIGATION HELPERS
 // ============================================
 
-function goToLogsheetTurbin() {
-    navigateTo('areaListScreen');
-    if (typeof fetchLastData === 'function') {
-        fetchLastData(); 
-    } else if (typeof renderMenu === 'function') {
-        renderMenu();
-    }
-}
+// State Global untuk menandai posisi operator
+window.currentActiveMenu = ''; 
 
-function goToLogsheetCT() {
-    navigateTo('ctAreaListScreen');
-    if (typeof fetchLastDataCT === 'function') {
-        fetchLastDataCT();
-    } else if (typeof renderCTMenu === 'function') {
-        renderCTMenu();
-    }
-}
+/**
+ * Mesin Navigasi Utama PWA
+ * Mengatur perpindahan layar dengan transisi halus dan pemicu data otomatis.
+ */
+function navigateTo(screenId) {
+    console.log('🚀 Navigating to screen:', screenId);
+    
+    // 1. Amankan posisi scroll ke atas setiap ganti layar
+    window.scrollTo(0, 0);
 
-function goToBalancing() {
-    navigateTo('balancingScreen');
-    if (typeof initBalancingScreen === 'function') {
-        initBalancingScreen();
-    }
-}
-
-function toggleBranchMenuPopup() {
-    const overlay = document.getElementById('branchMenuPopupOverlay');
-    if (overlay) overlay.classList.toggle('hidden');
-}
-
-function closeBranchMenuPopup() {
-    const overlay = document.getElementById('branchMenuPopupOverlay');
-    if (overlay) overlay.classList.add('hidden');
-}
-
-function showUpdateAlert() {
-    const updateAlert = document.getElementById('updateAlert');
-    if (updateAlert) {
-        updateAlert.classList.remove('hidden');
-    }
-}
-
-function applyUpdate() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistration().then(reg => {
-            if (reg && reg.waiting) {
-                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-            } else {
-                window.location.reload();
-            }
-        });
-    }
-
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
+    // 2. Sembunyikan semua layar secara paksa
+    const allScreens = document.querySelectorAll('.screen');
+    allScreens.forEach(screen => {
+        screen.classList.remove('active');
+        screen.style.display = 'none';
     });
+
+    // 3. Tampilkan layar tujuan
+    const targetScreen = document.getElementById(screenId);
+    if (targetScreen) {
+        targetScreen.style.display = 'block';
+        // Delay sedikit agar browser sempat memproses display:block sebelum animasi CSS jalan
+        setTimeout(() => {
+            targetScreen.classList.add('active');
+        }, 10);
+    }
+
+    // --- LOGIKA INTERCEPTOR KHUSUS (Pemicu Otomatis) ---
+    
+    // Sinkronisasi data offline saat kembali ke Home
+    if (screenId === 'homeScreen') {
+        checkOfflineData();
+    }
+
+    // Render ulang area TPM jika masuk ke menu TPM
+    if (screenId === 'tpmScreen' && typeof renderTPMAreas === 'function') {
+        renderTPMAreas();
+    }
+
+    // Update data dashboard jika supervisor masuk
+    if (screenId === 'dashboardSupervisor' && typeof loadSupervisorDashboard === 'function') {
+        loadSupervisorDashboard();
+    }
 }
 
+/**
+ * PINTU MASUK UNIVERSAL (Gatekeeper Unit)
+ * Digunakan oleh semua tombol menu di Home (Turbin, CT, 1300, 1100, 1000, Panel)
+ * @param {string} menuKey - Key dari LOGSHEET_CONFIG di config.js
+ */
+function openLogsheetMenu(menuKey) {
+    const config = LOGSHEET_CONFIG[menuKey];
+    
+    // 1. Validasi Konfigurasi
+    if (!config) {
+        console.error("❌ Config tidak ditemukan untuk key:", menuKey);
+        if (typeof showCustomAlert === 'function') showCustomAlert("Menu belum dikonfigurasi!", "error");
+        return;
+    }
+
+    // 2. Set State Global agar sistem tahu unit mana yang sedang diisi
+    window.currentActiveMenu = menuKey;
+
+    // 3. Tentukan Layar Tujuan
+    // Balancing memiliki layout UI khusus, sedangkan yang lain menggunakan template universal
+    const targetScreen = (menuKey === 'BALANCING') ? 'balancingScreen' : 'areaListScreen';
+    
+    // 4. Jalankan Navigasi
+    navigateTo(targetScreen);
+
+    // 5. Update UI Header (Judul & Warna Tema Unit)
+    const headerTitle = document.querySelector(`#${targetScreen} .header-title h1`);
+    const headerBar = document.querySelector(`#${targetScreen} .header-bar`);
+    
+    if (headerTitle) headerTitle.textContent = config.title;
+    
+    // Berikan identitas warna unik per unit (diambil dari config.themeColor)
+    if (headerBar) {
+        headerBar.style.background = config.themeColor || 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
+    }
+
+    // 6. TRIGER PENTING: Render daftar area sesuai unit yang diklik
+    // Ini memanggil fungsi di logsheet.js yang akan menggambar kotak-kotak menu secara dinamis
+    if (typeof renderMenuUniversal === 'function') {
+        renderMenuUniversal(menuKey);
+    }
+
+    // 7. Ambil data terakhir dari server (Sinkronisasi angka shift sebelumnya)
+    if (typeof fetchLastDataUniversal === 'function') {
+        fetchLastDataUniversal(menuKey);
+    }
+}
 // ============================================
 // 5. UI SETUP & LISTENERS
 // ============================================
@@ -441,40 +472,38 @@ window.addEventListener('appinstalled', (evt) => {
 // ============================================
 // 8. OFFLINE SYNC ENGINE (MESIN PENGIRIMAN BACKUP)
 // ============================================
-
-/**
- * Mencari dan menghitung semua data tertunda di memori HP
- */
 function checkOfflineData() {
     let totalOffline = 0;
     
-    // Cari semua data di localStorage yang kuncinya mengandung kata 'offline'
+    // 1. SCANNING OTOMATIS: Kelilingi seluruh memori localStorage
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
+        
+        // 2. FILTER CERDAS: Ambil hanya kunci yang mengandung kata 'offline'
         if (key && key.toLowerCase().includes('offline')) {
             try {
                 const data = JSON.parse(localStorage.getItem(key) || '[]');
                 if (Array.isArray(data)) {
-                    totalOffline += data.length;
+                    totalOffline += data.length; // Tambahkan jumlah antrean dari kunci ini
                 }
             } catch (e) {
-                console.warn('Gagal membaca draf offline untuk key:', key);
+                console.warn('Gagal membaca draf otomatis untuk kunci:', key);
             }
         }
     }
 
-    // Update UI Tombol
+    // 3. UPDATE UI: Tampilkan total akumulasi ke Operator
     const syncContainer = document.getElementById('offlineSyncContainer');
     const syncBadge = document.getElementById('offlineSyncBadge');
     const syncText = document.getElementById('offlineSyncText');
 
     if (syncContainer) {
         if (totalOffline > 0) {
-            syncContainer.style.display = 'block'; // Munculkan tombol
-            if (syncBadge) syncBadge.textContent = totalOffline;
-            if (syncText) syncText.textContent = `Ada ${totalOffline} data belum terkirim`;
+            syncContainer.style.display = 'block'; 
+            if (syncBadge) syncBadge.textContent = totalOffline; 
+            if (syncText) syncText.textContent = `Ada ${totalOffline} laporan tertunda (Klik untuk sinkron)`; 
         } else {
-            syncContainer.style.display = 'none'; // Sembunyikan tombol jika bersih
+            syncContainer.style.display = 'none'; 
         }
     }
 }
@@ -484,55 +513,47 @@ function checkOfflineData() {
  */
 async function syncOfflineData() {
     if (!navigator.onLine) {
-        showCustomAlert('Anda masih offline! Cari sinyal internet/Wi-Fi terlebih dahulu.', 'error');
+        showCustomAlert('Masih Offline! Cari sinyal stabil dulu.', 'error'); 
         return;
     }
 
-    const progress = showUploadProgress('Menyiapkan Sinkronisasi...');
+    const progress = showUploadProgress('Sinkronisasi Otomatis Seluruh Unit...');
     let totalSuccess = 0;
-    currentUploadController = new AbortController();
+    currentUploadController = new AbortController(); 
 
-    // Loop semua kunci di memori HP
+    // Loop otomatis mencari semua kunci 'offline' di localStorage
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (!key || !key.toLowerCase().includes('offline')) continue;
+        if (!key || !key.toLowerCase().includes('offline')) continue; 
 
-        let offlineArray = [];
-        try {
-            offlineArray = JSON.parse(localStorage.getItem(key) || '[]');
-        } catch (e) { continue; }
+        let offlineArray = JSON.parse(localStorage.getItem(key) || '[]'); 
+        if (offlineArray.length === 0) continue;
 
-        if (!Array.isArray(offlineArray) || offlineArray.length === 0) continue;
+        let failedItems = []; // Untuk menampung jika ada yang gagal lagi
 
-        let failedArray = []; // Untuk menyimpan data yang masih gagal
-
-        // Loop setiap data tertunda di dalam kategori ini
         for (let j = 0; j < offlineArray.length; j++) {
             const item = offlineArray[j];
-            progress.updateText(`Mengirim data ${j + 1}/${offlineArray.length}...`);
+            progress.updateText(`Mengirim ${key}: ${j + 1}/${offlineArray.length}`); 
 
-            // Pisahkan foto dari payload teks (sesuai format asli Anda)
+            // Pisahkan foto jika ada (logika sesuai format data asli Anda)
             const photos = item.photos || {};
-            delete item.photos; 
+            delete item.photos;
 
             try {
-                // 1. Kirim Foto Dulu (Jika ada)
+                // 1. Kirim Foto Dulu
                 for (const [photoKey, photoData] of Object.entries(photos)) {
-                    const photoPayload = {
-                        type: 'LOGSHEET_PHOTO',
-                        parentType: item.type || 'LOGSHEET',
-                        Operator: item.Operator || 'Unknown',
-                        photoKey: photoKey,
-                        photo: photoData,
-                        timestamp: new Date().toISOString()
-                    };
                     await fetch(GAS_URL, {
                         method: 'POST', mode: 'no-cors',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(photoPayload),
-                        signal: currentUploadController.signal
+                        body: JSON.stringify({
+                            type: 'LOGSHEET_PHOTO',
+                            // AMBIL TYPE ASLI (misal: LOGSHEET_1300) agar backend tidak bingung
+                            parentType: item.type || (LOGSHEET_CONFIG[key] ? LOGSHEET_CONFIG[key].submitType : 'LOGSHEET_GENERAL'), 
+                            photo: photoData,
+                            photoKey: photoKey,
+                            timestamp: new Date().toISOString()
+                        })
                     });
-                    await new Promise(r => setTimeout(r, 300)); // Jeda agar server tidak kaget
                 }
 
                 // 2. Kirim Data Teks Utama
@@ -542,33 +563,25 @@ async function syncOfflineData() {
                     body: JSON.stringify(item),
                     signal: currentUploadController.signal
                 });
-
                 totalSuccess++;
-
             } catch (error) {
-                console.error('Gagal mengirim item tertunda:', error);
-                // Jika gagal, kembalikan foto ke item, dan masukkan ke daftar gagal
+                console.error('Gagal kirim item:', error);
                 item.photos = photos;
-                failedArray.push(item);
+                failedItems.push(item); 
             }
         }
 
-        // Update memori lokal: Simpan yang gagal, hapus jika sukses semua
-        if (failedArray.length > 0) {
-            localStorage.setItem(key, JSON.stringify(failedArray));
+        // Update memori HP: Jika ada yang gagal, simpan kembali. Jika sukses, hapus kunci. 
+        if (failedItems.length > 0) {
+            localStorage.setItem(key, JSON.stringify(failedItems));
         } else {
             localStorage.removeItem(key);
         }
     }
 
-    progress.complete();
-    checkOfflineData(); // Cek ulang dan update UI
-
-    if (totalSuccess > 0) {
-        showCustomAlert(`✓ Luar biasa! ${totalSuccess} data tertunda berhasil masuk ke server.`, 'success');
-    } else {
-        showCustomAlert('Sinkronisasi selesai. Pastikan koneksi internet stabil.', 'info');
-    }
+    progress.complete(); 
+    checkOfflineData(); // Refresh tampilan tombol
+    showCustomAlert(`✓ Sukses mengirim ${totalSuccess} data dari seluruh unit!`, 'success'); 
 }
 // ============================================
 // 7. DOM READY INITIALIZATION
