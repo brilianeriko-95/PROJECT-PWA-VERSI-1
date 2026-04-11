@@ -885,7 +885,7 @@ const GROUPS_PANEL_STG175 = {
 // MASTER CONFIGURATION UNTUK DYNAMIC TEMPLATE
 // ============================================
 const LOGSHEET_CONFIG = {
-    'TURBINE': {
+    'LAPANGANTURBIN': {
         title: 'Logsheet Turbin',
         subtitle: 'Input data operasional turbine',
         areas: AREAS,
