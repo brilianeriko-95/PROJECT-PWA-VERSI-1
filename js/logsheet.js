@@ -41,14 +41,8 @@ function silentFetchLastData(type) {
     // =======================================================================
     // AUTO-PILOT ROUTING (PENGGANTI IF-ELSE MANUAL)
     // =======================================================================
-    let actionParam = '';
-    if (type === 'TURBINE') {
-        // Pengecualian khusus Turbine lama karena format nama sheet di backend berbeda
-        actionParam = '&action=getLastTurbine'; 
-    } else {
-        // AUTO-PILOT untuk semua menu: CT, 1300, 1100_1200, PANEL_STG, GENSET, dll.
-        actionParam = '&action=getLast' + type; 
-    }
+    // Syaratnya: 'type' yang dikirim harus 'LAPANGANTURBIN', '1100', 'CT', dsb.
+    let actionParam = '&action=getLast' + type.toUpperCase();
     // =======================================================================
     
     const script = document.createElement('script');
