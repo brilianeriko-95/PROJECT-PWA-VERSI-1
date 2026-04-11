@@ -13,10 +13,10 @@ function fetchLastDataUniversal(type) {
     const cachedLastData = localStorage.getItem('last_data_' + type);
     univLastData = cachedLastData ? JSON.parse(cachedLastData) : {};
     
-    // 2. Langsung buka layar Logsheet TANPA LOADING!
-    openUniversalLogsheet(type);
+    // 2. JANGAN panggil openUniversalLogsheet di sini! 
+    // Navigasi sudah ditangani oleh openLogsheetMenu di main.js
     
-    // 3. CURI START: Diam-diam minta data terbaru ke server untuk shift berikutnya
+    // 3. CURI START: Tarik data terbaru di latar belakang
     silentFetchLastData(type);
 }
 // Mesin pekerja di latar belakang (Background Worker)
@@ -122,6 +122,7 @@ function openUniversalLogsheet(type) {
 function renderMenuUniversal(menuKey) {
     const config = LOGSHEET_CONFIG[menuKey];
     const listContainer = document.getElementById('univAreaList');
+   // 👇 TAMBAHKAN PENGAMAN INI agar Balancing tidak crash 👇
     if (!listContainer || !config || !config.areas) return;
     
     activeLogsheetType = menuKey; // Pastikan state lokal sinkron
