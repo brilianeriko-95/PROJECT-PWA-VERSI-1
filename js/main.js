@@ -301,8 +301,6 @@ function navigateTo(screenId) {
 
 /**
  * PINTU MASUK UNIVERSAL (Gatekeeper Unit)
- * Digunakan oleh semua tombol menu di Home (Turbin, CT, 1300, 1100, 1000, Panel)
- * @param {string} menuKey - Key dari LOGSHEET_CONFIG di config.js
  */
 function openLogsheetMenu(menuKey) {
     const config = LOGSHEET_CONFIG[menuKey];
@@ -314,44 +312,29 @@ function openLogsheetMenu(menuKey) {
         return;
     }
 
-    // 2. Set State Global agar sistem tahu unit mana yang sedang diisi
+    // 2. Set State Global
     window.currentActiveMenu = menuKey;
 
-    // 3. Tentukan Layar Tujuan
-    const targetScreen = (menuKey === 'BALANCING') ? 'balancingScreen' : 'universalAreaListScreen';
-    
-    // 4. Jalankan Navigasi
-    navigateTo(targetScreen);
-
-    // 5. Update UI Header (Judul & Warna Tema Unit)
-    const headerTitle = document.querySelector(`#${targetScreen} .header-title h1`) || document.getElementById('univHeaderTitle');
-    const headerBar = document.querySelector(`#${targetScreen} .header-bar`);
-    
-    if (headerTitle) headerTitle.textContent = config.title;
-    
-    // Berikan identitas warna unik per unit
-    if (headerBar) {
-        headerBar.style.background = config.themeColor || 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)';
-    }
-
-    // =========================================================
-    // 6 & 7. PISAHKAN LOGIKA BALANCING VS LOGSHEET UNIVERSAL
-    // =========================================================
+    // 3. PISAHKAN LOGIKA BALANCING VS LOGSHEET UNIVERSAL
     if (menuKey === 'BALANCING') {
-        // KHUSUS BALANCING: Panggil fungsi inisialisasi dari balancing.js
+        navigateTo('balancingScreen');
         if (typeof initBalancingScreen === 'function') {
             initBalancingScreen();
         }
     } else {
-        // KHUSUS LOGSHEET BIASA (Turbin, CT, 1300, dll)
-        if (typeof renderMenuUniversal === 'function') {
-            renderMenuUniversal(menuKey);
+        // PENTING: Panggil openUniversalLogsheet agar logsheet.js bisa mengecek 
+        // apakah config unit ini memiliki properti 'groups' (Panel) atau tidak (Wizard).
+        if (typeof openUniversalLogsheet === 'function') {
+            openUniversalLogsheet(menuKey);
         }
+        
+        // Tarik data background secara diam-diam
         if (typeof fetchLastDataUniversal === 'function') {
             fetchLastDataUniversal(menuKey);
         }
     }
 }
+   
 // ============================================
 // 5. UI SETUP & LISTENERS
 // ============================================
