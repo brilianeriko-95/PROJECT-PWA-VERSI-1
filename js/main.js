@@ -3,6 +3,49 @@
    ============================================ */
 
 // ============================================
+// 0. SERVICE WORKER REGISTRATION & UPDATE
+// ============================================
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+            // Deteksi jika ada update yang sedang menunggu (Waiting)
+            reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // TAMPILKAN NOTIFIKASI KE OPERATOR
+                        showUpdateNotification(reg);
+                    }
+                });
+            });
+
+            // Jika aplikasi dibuka dan sudah ada update yang menunggu
+            if (reg.waiting) {
+                showUpdateNotification(reg);
+            }
+        });
+    });
+}
+
+/**
+ * Memunculkan popup konfirmasi update
+ */
+function showUpdateNotification(reg) {
+    const userConfirm = confirm("Versi Baru (v" + APP_VERSION + ") Tersedia! Update sekarang untuk fitur terbaru?");
+    
+    if (userConfirm) {
+        // Kirim perintah SKIP_WAITING ke sw.js
+        if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        }
+        
+        // Refresh halaman otomatis setelah versi baru aktif
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            window.location.reload();
+        });
+    }
+}
+// ============================================
 // 1. INITIALIZATION & SERVICE WORKER
 // ============================================
 
