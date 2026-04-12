@@ -729,6 +729,10 @@ async function submitUniversalLogsheet() {
         univParamPhotos = {};
         localStorage.removeItem(config.draftKey);
         localStorage.removeItem(config.photoKey);
+         // 👇 TAMBAHKAN DUA BARIS INI: Hapus dari RAM global 👇
+         if (window.activeDrafts) delete window.activeDrafts[activeLogsheetType];
+         if (window.activePhotos) delete window.activePhotos[activeLogsheetType];
+         // 👆 ============================================== 👆
         
         // Kembali ke Menu Utama
         setTimeout(() => navigateTo('homeScreen'), 1500);
