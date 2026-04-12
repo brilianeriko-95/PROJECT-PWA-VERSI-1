@@ -7,7 +7,7 @@
    ============================================ */
 
 // 1. APP CONFIGURATION
-const APP_VERSION = '2.9.2';
+const APP_VERSION = '2.9.3';
 const APP_NAME = 'PROJECT LOGSHEET';
 
 const AUTH_CONFIG = {
