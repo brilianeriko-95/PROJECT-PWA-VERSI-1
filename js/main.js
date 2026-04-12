@@ -337,6 +337,25 @@ function navigateTo(screenId) {
     }
 
     // --- LOGIKA INTERCEPTOR KHUSUS (Pemicu Otomatis) ---
+
+    // 👇 PERBAIKAN: Update otomatis semua nama user ("-") di setiap layar 👇
+    if (typeof currentUser !== 'undefined' && currentUser) {
+        const userName = currentUser.name || 'Operator';
+        
+        // Update elemen badge di berbagai layar
+        const userBadgeIds = [
+            'logsheetSelectUser', // Layar Pilih Logsheet
+            'tpmHeaderUser',      // Layar Daftar TPM
+            'tpmInputUser',       // Layar Input TPM
+            'balancingUser'       // Layar Balancing
+        ];
+        
+        userBadgeIds.forEach(id => {
+            const badgeEl = document.getElementById(id);
+            if (badgeEl) badgeEl.textContent = userName;
+        });
+    }
+    // 👆 ================================================================ 👆
     
     // Sinkronisasi data offline saat kembali ke Home
     if (screenId === 'homeScreen') {
