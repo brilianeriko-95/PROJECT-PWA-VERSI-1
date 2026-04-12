@@ -7,7 +7,7 @@
    ============================================ */
 
 // 1. APP CONFIGURATION
-const APP_VERSION = '2.8.7';
+const APP_VERSION = '2.8.8';
 const APP_NAME = 'PROJECT LOGSHEET';
 
 const AUTH_CONFIG = {
@@ -954,8 +954,10 @@ const TPM_CONFIG_MASTER = {
 const INPUT_TYPES = {
     PUMP_STATUS: {
         patterns: [
-            '(A/B)', '(ON/OFF)', '(On/Off)', '(Running/Stop)', '(Remote/Running/Stop)', 
-            '(A/M)', 'STATUS', 'RUN/STANDBY', 'RUN/STOP', 'FILTRASI/STANDBY','(ON/AUTO)'
+            // Pola spesifik diletakkan di depan
+            'FILTRASI/STANDBY', '(Remote/Running/Stop)', '(Running/Stop)', 
+            '(ON/AUTO)', '(A/B)', '(ON/OFF)', '(On/Off)', '(A/M)', 
+            'RUN/STANDBY', 'RUN/STOP', 'STATUS' 
         ],
         options: {
             '(A/B)': ['A', 'B'],
