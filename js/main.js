@@ -28,22 +28,34 @@ if ('serviceWorker' in navigator) {
 }
 
 /**
- * Memunculkan popup konfirmasi update
+ * Memunculkan Custom Modal Notifikasi Update (Ganti fungsi lama)
  */
 function showUpdateNotification(reg) {
-    const userConfirm = confirm("Versi Baru (v" + APP_VERSION + ") Tersedia! Update sekarang untuk fitur terbaru?");
-    
-    if (userConfirm) {
-        // Kirim perintah SKIP_WAITING ke sw.js
+    const modal = document.getElementById('updateModal');
+    const btnUpdate = document.getElementById('btnUpdateNow');
+    const btnLater = document.getElementById('btnUpdateLater');
+
+    if (!modal) return;
+
+    // 1. Tampilkan modal dengan animasi halus
+    modal.classList.remove('hidden');
+
+    // 2. Aksi tombol "Update Sekarang"
+    btnUpdate.onclick = () => {
         if (reg.waiting) {
             reg.waiting.postMessage({ type: 'SKIP_WAITING' });
         }
         
-        // Refresh halaman otomatis setelah versi baru aktif
+        // Refresh otomatis setelah SW baru mengambil alih
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             window.location.reload();
         });
-    }
+    };
+
+    // 3. Aksi tombol "Nanti Saja"
+    btnLater.onclick = () => {
+        modal.classList.add('hidden');
+    };
 }
 // ============================================
 // 1. INITIALIZATION & SERVICE WORKER
