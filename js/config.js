@@ -19,7 +19,7 @@ const AUTH_CONFIG = {
 };
 
 // 2. BACKEND & USER SETUP
-const GAS_URL = "https://script.google.com/macros/s/AKfycby2GCbRkqpZUcSnZ3ibQD_VGHBA_00sbT9NZ2acNClvYoHfJgL1T703_6UYiALnuG5y/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx3-kh34LS0GkQWUaENiKAEoW-kO-EJcoxRIMAr5Qj6yDGNc-CfOywol_p2dfE31KId/exec";
 
 const OFFLINE_USERS = {
     // Ubah ke MANAJEMEN agar Admin otomatis bisa melihat seluruh menu (SA & SU)
