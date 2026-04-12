@@ -853,17 +853,18 @@ function openGroupedSubAreas(groupName) {
             const unitMatch = fullLabel.match(/\(([^)]+)\)/);
             const unit = unitMatch ? unitMatch[1] : '';
             
+            // Logika Parsing Data ERROR & Note
             const savedValue = (univCurrentInput[subAreaName] && univCurrentInput[subAreaName][fullLabel]) || '';
-            
+            const isErrorState = savedValue.toString().startsWith("ERROR");
+            const noteText = isErrorState ? savedValue.split('\n')[1] || '' : '';
+
             let lastDataVal = univLastData[fullLabel] || univLastData[nameOnly] || '';
-            
-            // 👇 TAMBAHKAN KEMBALI PENGAMAN INI 👇
+            // FIX: Pengaman agar tidak [object Object]
             if (typeof lastDataVal === 'object' && lastDataVal !== null) {
                 lastDataVal = lastDataVal.value || '-'; 
             }
             const lastTime = univLastData._lastTime || '--:--';
             
-            // Render Label & Baris Nilai Sebelumnya + Tombol ERROR
             html += `
                 <div class="form-field" style="margin-bottom: 20px;">
                     <label style="display: block; font-size: 0.85rem; color: #f8fafc; margin-bottom: 6px; font-weight: 600;">
@@ -871,11 +872,15 @@ function openGroupedSubAreas(groupName) {
                     </label>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <small style="color: #94a3b8;">🕒 Sblm (${lastTime}): <strong style="color: ${config.themeColor};">${lastDataVal || '-'}</strong></small>
-                        <button type="button" onclick="setGroupedError('${subAreaName}', '${fullLabel}', this)" style="padding: 4px 10px; font-size: 0.7rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 6px; cursor: pointer; font-weight: 700;">⚠️ ERROR</button>
+                        <button type="button" 
+                                onclick="setGroupedError('${subAreaName}', '${fullLabel}', this)" 
+                                data-active="${isErrorState}"
+                                style="padding: 4px 10px; font-size: 0.7rem; background: ${isErrorState ? '#ef4444' : 'rgba(239, 68, 68, 0.1)'}; border: 1px solid rgba(239, 68, 68, 0.4); color: ${isErrorState ? 'white' : '#f87171'}; border-radius: 6px; cursor: pointer; font-weight: 700;">
+                            ⚠️ ERROR
+                        </button>
                     </div>
             `;
 
-            // Cek tipe input (Select atau Text)
             let isDropdown = false;
             let dropdownOptions = [];
             for (const [key, rules] of Object.entries(INPUT_TYPES)) {
@@ -887,25 +892,36 @@ function openGroupedSubAreas(groupName) {
                 });
             }
 
-            // Wrapper Input dengan Satuan di Dalamnya
-            html += `<div style="display: flex; align-items: center; background: rgba(15, 23, 42, 0.6); border: 2px solid rgba(148, 163, 184, 0.2); border-radius: 12px; overflow: hidden;">`;
+            // Wrapper Input Utama (Disable jika ERROR)
+            html += `<div style="display: flex; align-items: center; background: rgba(15, 23, 42, 0.6); border: 2px solid rgba(148, 163, 184, 0.2); border-radius: 12px; overflow: hidden; opacity: ${isErrorState ? '0.3' : '1'};">`;
 
             if (isDropdown) {
-                html += `<select onchange="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1rem; outline: none;">
+                html += `<select ${isErrorState ? 'disabled' : ''} onchange="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1rem; outline: none;">
                             <option value="">Pilih...</option>`;
                 dropdownOptions.forEach(opt => {
                     html += `<option value="${opt}" ${savedValue === opt ? 'selected' : ''}>${opt}</option>`;
                 });
                 html += `</select>`;
             } else {
-                // Tambahkan inputmode="decimal" agar numpad (keyboard angka) muncul otomatis
-                html += `<input type="text" inputmode="decimal" placeholder="0.00" value="${savedValue}" oninput="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1.1rem; font-weight: 700; outline: none;">`;
+                html += `<input type="text" inputmode="decimal" ${isErrorState ? 'disabled' : ''} placeholder="0.00" value="${isErrorState ? '' : savedValue}" oninput="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1.1rem; font-weight: 700; outline: none;">`;
             }
 
-            // Box Satuan
             html += `<div style="padding: 0 12px; background: rgba(255,255,255,0.05); color: ${config.themeColor}; font-weight: 700; font-size: 0.85rem; border-left: 2px solid rgba(148, 163, 184, 0.2); min-height: 48px; display: flex; align-items: center; justify-content: center; min-width: 60px;">${unit || '--'}</div>`;
+            html += `</div>`;
+
+            // TAMBAHAN: Input Keterangan ERROR (Muncul jika tombol aktif)
+            html += `
+                <div class="grouped-note-container" style="display: ${isErrorState ? 'block' : 'none'}; margin-top: 10px;">
+                    <input type="text" 
+                           class="grouped-note-input" 
+                           placeholder="Keterangan masalah/kerusakan..." 
+                           value="${noteText}"
+                           oninput="updateGroupedNote('${subAreaName}', '${fullLabel}', this.value)"
+                           style="width: 100%; padding: 12px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; color: #fca5a5; font-size: 0.9rem; outline: none;">
+                </div>
+            `;
             
-            html += `</div></div>`; // Tutup wrapper & form-field
+            html += `</div>`;
         });
         
         html += `</div></details>`;
@@ -986,23 +1002,56 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
         }, 2000); 
     }
 }
+
 /**
- * Fungsi pintasan untuk mengisi status ERROR pada logsheet grouped
+ * Fungsi Pintasan ERROR dengan Toggle Saklar & Input Teks
  */
 function setGroupedError(subArea, label, btnElement) {
-    // Cari input di dalam container yang sama dengan tombol
     const container = btnElement.closest('.form-field');
-    const input = container.querySelector('input, select');
     
-    if (input) {
-        input.value = "ERROR";
-        // Trigger simpan data
-        saveGroupedInput(subArea, label, "ERROR");
+    // 1. Cari dulu input angkanya (Tukar urutannya ke atas)
+    const mainInput = container.querySelector('input:not(.grouped-note-input), select');
+    
+    // 2. Ambil langsung bungkusnya (parentElement) agar tidak salah target div
+    const mainWrapper = mainInput.parentElement; 
+    
+    const noteContainer = container.querySelector('.grouped-note-container');
+    const noteInput = container.querySelector('.grouped-note-input');
+    
+    // Cek status saklar saat ini
+    const isNowError = btnElement.getAttribute('data-active') === 'true';
+    
+    if (!isNowError) {
+        // AKTIFKAN MODE ERROR
+        btnElement.setAttribute('data-active', 'true');
+        btnElement.style.background = "#ef4444";
+        btnElement.style.color = "white";
         
-        // Efek visual singkat
-        input.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
-        setTimeout(() => { input.style.backgroundColor = "transparent"; }, 500);
+        mainInput.value = ""; 
+        mainInput.disabled = true;
+        mainWrapper.style.opacity = "0.3"; // <--- Sekarang yang buram 100% benar kotak inputnya
         
-        showCustomAlert('Parameter ditandai ERROR', 'info');
+        noteContainer.style.display = "block";
+        saveGroupedInput(subArea, label, "ERROR"); // Simpan status awal
+        setTimeout(() => noteInput.focus(), 150);
+    } else {
+        // MATIKAN MODE ERROR (KEMBALI NORMAL)
+        btnElement.setAttribute('data-active', 'false');
+        btnElement.style.background = "rgba(239, 68, 68, 0.1)";
+        btnElement.style.color = "#f87171";
+        
+        mainInput.disabled = false;
+        mainWrapper.style.opacity = "1";
+        
+        noteContainer.style.display = "none";
+        noteInput.value = "";
+        saveGroupedInput(subArea, label, ""); // Kosongkan data
+        setTimeout(() => mainInput.focus(), 150);
     }
+}
+/**
+ * Helper untuk menggabungkan kata "ERROR" dengan catatan teks
+ */
+function updateGroupedNote(subArea, label, noteValue) {
+    saveGroupedInput(subArea, label, "ERROR\n" + noteValue);
 }
