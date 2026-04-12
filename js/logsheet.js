@@ -894,7 +894,7 @@ function openGroupedSubAreas(groupName) {
                 // Jika butuh huruf, gunakan type="text", jika angka saja gunakan type="number" (atau text decimal)
                 let inputTag = isTextNeeded ? `type="text"` : `type="text" inputmode="decimal"`;
                 
-                html += `<input ${inputTag} placeholder="Contoh: 0.00" value="${savedValue}" oninput="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 10px; color: white; font-size: 1rem; outline: none;"></div>`;
+                html += `<input ${inputTag} placeholder="0.00" value="${savedValue}" oninput="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 10px; color: white; font-size: 1rem; outline: none;"></div>`;
                 // 👆 =================================== 👆
             }
         });
