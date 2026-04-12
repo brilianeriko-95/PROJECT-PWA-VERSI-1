@@ -659,6 +659,15 @@ input, textarea, select {
 /* 7.4. Lists & Parameters */
 .list-container, .areas-list { padding: var(--md) var(--lg); padding-bottom: calc(var(--xl) + 80px); }
 .list-item, .area-item { display: flex; align-items: center; gap: var(--md); padding: var(--lg); background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(17, 24, 39, 0.8) 100%); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: var(--md); cursor: pointer; transition: all 0.3s ease; }
+.premium-area-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+}
+.premium-area-card:active {
+    transform: scale(0.96); /* Efek membal saat ditekan di HP */
+    filter: brightness(1.2);
+    box-shadow: 0 0 20px var(--theme-color);
+}
 .list-item:hover, .area-item:hover { border-color: var(--border-hover); transform: translateX(4px); }
 .item-icon, .area-icon { width: 48px; height: 48px; min-width: 48px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
 .item-content, .area-info { flex: 1; min-width: 0; }
@@ -729,4 +738,107 @@ input, textarea, select {
         --bg: #0a0f1c;
         --text: #f8fafc;
     }
+}
+
+/* Update Modal - Premium Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(7, 10, 19, 0.85);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    transition: all 0.3s ease;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.update-card {
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    border-radius: 28px;
+    width: 85%;
+    max-width: 380px;
+    text-align: center;
+    transform: translateY(0);
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.update-icon-circle {
+    width: 64px;
+    height: 64px;
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+}
+
+.version-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.update-body h2 {
+    color: #f8fafc;
+    font-size: 1.5rem;
+    margin: 15px 0 10px;
+}
+
+.update-body p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.update-features {
+    text-align: left;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 15px;
+    border-radius: 16px;
+    margin: 20px 0;
+}
+
+.feature-item {
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+}
+
+.btn-update-primary {
+    width: 100%;
+    padding: 16px;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+    margin-bottom: 10px;
+}
+
+.btn-update-secondary {
+    width: 100%;
+    padding: 10px;
+    background: transparent;
+    color: #64748b;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
 }
