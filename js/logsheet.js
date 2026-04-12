@@ -356,7 +356,12 @@ function showUnivStep() {
         });
         inputContainer.innerHTML = `<select id="univValInput" class="status-select" style="width:100%; border:none; background:transparent; color:white; font-size:1.4rem; font-weight:700;">${optionsHtml}</select>`;
     } else {
-        inputContainer.innerHTML = `<input type="text" id="univValInput" inputmode="decimal" placeholder="0.00" value="${displayValue}" autocomplete="off" style="width:100%; border:none; background:transparent; color:white; font-size:1.6rem; font-weight:700; outline:none;">`;
+        // 👇 PERBAIKAN LOGIKA KEYBOARD DI SINI UNTUK MODE WIZARD 👇
+        let isTextNeeded = fullLabel.includes('A/B/C/D/E') || fullLabel.includes('A/B/C');
+        let keyboardMode = isTextNeeded ? "text" : "decimal";
+        
+        inputContainer.innerHTML = `<input type="text" id="univValInput" inputmode="${keyboardMode}" placeholder="${isTextNeeded ? 'Contoh: CE20' : '0.00'}" value="${displayValue}" autocomplete="off" style="width:100%; border:none; background:transparent; color:white; font-size:1.6rem; font-weight:700; outline:none;">`;
+        // 👆 ====================================================== 👆
     }
 
     // Load Status Abnormal (Checkbox)
@@ -882,7 +887,15 @@ function openGroupedSubAreas(groupName) {
                 });
                 html += `</select></div>`;
             } else {
-                html += `<input type="number" step="any" placeholder="0.00" value="${savedValue}" oninput="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 10px; color: white; font-size: 1rem; outline: none;"></div>`;
+                // 👇 PERBAIKAN LOGIKA KEYBOARD DI SINI 👇
+                // Cek apakah parameter ini butuh kombinasi huruf & angka
+                let isTextNeeded = fullLabel.includes('A/B/C/D/E') || fullLabel.includes('A/B/C');
+                
+                // Jika butuh huruf, gunakan type="text", jika angka saja gunakan type="number" (atau text decimal)
+                let inputTag = isTextNeeded ? `type="text"` : `type="text" inputmode="decimal"`;
+                
+                html += `<input ${inputTag} placeholder="Contoh: CE20" value="${savedValue}" oninput="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 10px; color: white; font-size: 1rem; outline: none;"></div>`;
+                // 👆 =================================== 👆
             }
         });
         
