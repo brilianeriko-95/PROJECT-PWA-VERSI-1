@@ -856,13 +856,26 @@ function openGroupedSubAreas(groupName) {
             const savedValue = (univCurrentInput[subAreaName] && univCurrentInput[subAreaName][fullLabel]) || '';
             
             let lastDataVal = univLastData[fullLabel] || univLastData[nameOnly] || '';
+            
+            // 👇 TAMBAHKAN KEMBALI PENGAMAN INI 👇
             if (typeof lastDataVal === 'object' && lastDataVal !== null) {
                 lastDataVal = lastDataVal.value || '-'; 
             }
             const lastTime = univLastData._lastTime || '--:--';
             
-            let lastDataHtml = lastDataVal ? `<small style="color: #94a3b8; display: block; margin-bottom: 6px;">🕒 Sblm (${lastTime}): <strong style="color: ${config.themeColor};">${lastDataVal}</strong></small>` : '';
+            // Render Label & Baris Nilai Sebelumnya + Tombol ERROR
+            html += `
+                <div class="form-field" style="margin-bottom: 20px;">
+                    <label style="display: block; font-size: 0.85rem; color: #f8fafc; margin-bottom: 6px; font-weight: 600;">
+                        ${nameOnly}
+                    </label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <small style="color: #94a3b8;">🕒 Sblm (${lastTime}): <strong style="color: ${config.themeColor};">${lastDataVal || '-'}</strong></small>
+                        <button type="button" onclick="setGroupedError('${subAreaName}', '${fullLabel}', this)" style="padding: 4px 10px; font-size: 0.7rem; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 6px; cursor: pointer; font-weight: 700;">⚠️ ERROR</button>
+                    </div>
+            `;
 
+            // Cek tipe input (Select atau Text)
             let isDropdown = false;
             let dropdownOptions = [];
             for (const [key, rules] of Object.entries(INPUT_TYPES)) {
@@ -874,33 +887,25 @@ function openGroupedSubAreas(groupName) {
                 });
             }
 
-            html += `
-                <div class="form-field" style="margin-bottom: 16px;">
-                    <label style="display: block; font-size: 0.85rem; color: #f8fafc; margin-bottom: 4px; font-weight: 600;">
-                        ${nameOnly} <span style="color: ${config.themeColor};">${unit ? `(${unit})` : ''}</span>
-                    </label>
-                    ${lastDataHtml}
-            `;
+            // Wrapper Input dengan Satuan di Dalamnya
+            html += `<div style="display: flex; align-items: center; background: rgba(15, 23, 42, 0.6); border: 2px solid rgba(148, 163, 184, 0.2); border-radius: 12px; overflow: hidden;">`;
 
             if (isDropdown) {
-                html += `<select onchange="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 10px; color: white; font-size: 1rem; outline: none;">
-                            <option value="">Pilih status...</option>`;
+                html += `<select onchange="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1rem; outline: none;">
+                            <option value="">Pilih...</option>`;
                 dropdownOptions.forEach(opt => {
-                    const selected = savedValue === opt ? 'selected' : '';
-                    html += `<option value="${opt}" ${selected}>${opt}</option>`;
+                    html += `<option value="${opt}" ${savedValue === opt ? 'selected' : ''}>${opt}</option>`;
                 });
-                html += `</select></div>`;
+                html += `</select>`;
             } else {
-                // 👇 PERBAIKAN LOGIKA KEYBOARD DI SINI 👇
-                // Cek apakah parameter ini butuh kombinasi huruf & angka
-                let isTextNeeded = fullLabel.includes('A/B/C/D/E') || fullLabel.includes('A/B/C');
-                
-                // Jika butuh huruf, gunakan type="text", jika angka saja gunakan type="number" (atau text decimal)
-                let inputTag = isTextNeeded ? `type="text"` : `type="text" inputmode="decimal"`;
-                
-                html += `<input ${inputTag} placeholder="0.00" value="${savedValue}" oninput="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 10px; color: white; font-size: 1rem; outline: none;"></div>`;
-                // 👆 =================================== 👆
+                // Tambahkan inputmode="decimal" agar numpad (keyboard angka) muncul otomatis
+                html += `<input type="text" inputmode="decimal" placeholder="0.00" value="${savedValue}" oninput="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1.1rem; font-weight: 700; outline: none;">`;
             }
+
+            // Box Satuan
+            html += `<div style="padding: 0 12px; background: rgba(255,255,255,0.05); color: ${config.themeColor}; font-weight: 700; font-size: 0.85rem; border-left: 2px solid rgba(148, 163, 184, 0.2); min-height: 48px; display: flex; align-items: center; justify-content: center; min-width: 60px;">${unit || '--'}</div>`;
+            
+            html += `</div></div>`; // Tutup wrapper & form-field
         });
         
         html += `</div></details>`;
@@ -979,5 +984,25 @@ function saveGroupedInput(subAreaName, fullLabel, value) {
                 }
             }
         }, 2000); 
+    }
+}
+/**
+ * Fungsi pintasan untuk mengisi status ERROR pada logsheet grouped
+ */
+function setGroupedError(subArea, label, btnElement) {
+    // Cari input di dalam container yang sama dengan tombol
+    const container = btnElement.closest('.form-field');
+    const input = container.querySelector('input, select');
+    
+    if (input) {
+        input.value = "ERROR";
+        // Trigger simpan data
+        saveGroupedInput(subArea, label, "ERROR");
+        
+        // Efek visual singkat
+        input.style.backgroundColor = "rgba(239, 68, 68, 0.2)";
+        setTimeout(() => { input.style.backgroundColor = "transparent"; }, 500);
+        
+        showCustomAlert('Parameter ditandai ERROR', 'info');
     }
 }
