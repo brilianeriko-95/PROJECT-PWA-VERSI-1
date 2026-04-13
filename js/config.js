@@ -954,8 +954,10 @@ const TPM_CONFIG_MASTER = {
         { name: "COOLING TOWER", icon: "🗼", color: "#10b981" },
         { name: "AREA COMPRESSOR", icon: "🌬️", color: "#f59e0b" }
     ],
-   'BELERANG': [
-        { name: "AREA 1000", icon: "🔥", color: "#ef4444" }
+   'MELTER': [
+        { name: "AREA 1000 - MELTER", icon: "🔥", color: "#ef4444" },
+        { name: "AREA 1000 - FILTRASI", icon: "🧪", color: "#f87171" },
+        { name: "AREA 1000 - POMPA", icon: "⚙️", color: "#dc2626" }
       ]
 };
 
