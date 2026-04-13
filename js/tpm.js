@@ -16,14 +16,18 @@ function renderTPMAreas() {
     let areasToShow = [];
 
     // LOGIKA FILTER:
-    // Karena Admin sekarang departemennya "MANAJEMEN", logika ini sudah sangat aman
     if (userRole === 'admin' || userRole === 'supervisor' || userRole === 'avp' || userUnit.includes('MANAJEMEN')) {
+        // Admin & SPV melihat gabungan ketiganya
         areasToShow = [
-            ...(TPM_CONFIG_MASTER['UTILITAS'] || []), 
-            ...(TPM_CONFIG_MASTER['SULFAT'] || [])
+            ...(TPM_CONFIG_MASTER['MELTER'] || []),
+            ...(TPM_CONFIG_MASTER['SULFAT'] || []),
+            ...(TPM_CONFIG_MASTER['UTILITAS'] || [])
         ];
     } else {
-        if (userUnit.includes('SULFAT') || userUnit.includes('SA')) {
+        // Pemisahan berdasarkan Departemen User
+        if (userUnit.includes('1000') || userUnit.includes('MELTER')) {
+            areasToShow = TPM_CONFIG_MASTER['MELTER'] || [];
+        } else if (userUnit.includes('SULFAT') || userUnit.includes('SA')) {
             areasToShow = TPM_CONFIG_MASTER['SULFAT'] || [];
         } else {
             areasToShow = TPM_CONFIG_MASTER['UTILITAS'] || [];
