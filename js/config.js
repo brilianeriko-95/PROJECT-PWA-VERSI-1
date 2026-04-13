@@ -19,7 +19,7 @@ const AUTH_CONFIG = {
 };
 
 // 2. BACKEND & USER SETUP
-const GAS_URL = "https://script.google.com/macros/s/AKfycbx3-kh34LS0GkQWUaENiKAEoW-kO-EJcoxRIMAr5Qj6yDGNc-CfOywol_p2dfE31KId/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbylQSWTaCLefp-U5-g3gVfASPX10Wo9JlR51X-gORxg-0oSgSXp6dACwJ06In-3I1Yl/exec";
 
 const OFFLINE_USERS = {
     // Ubah ke MANAJEMEN agar Admin otomatis bisa melihat seluruh menu (SA & SU)
@@ -710,7 +710,7 @@ const AREAS_PANEL_STG175 = {
     "PIA-6207 A/B (kg/cm2)",
     "PISA-6210 (kg/cm2)"
   ],
-  "ELECTRICAL FEEDER LOAD": [
+  "SS-1000": [
     "SCADA/UBB Power (kW)",
     "TR-MAIN01 Winding Temp (°C)",
     "TR-MAIN01 Oil Temp (°C)",
@@ -727,6 +727,15 @@ const AREAS_PANEL_STG175 = {
     "30-P6201A Power (kW)",
     "30-TR-10 Power (kW)",
     "SS-6500 via TR-MAIN02 Power (kW)"
+  ],
+  "SCADA PEMBANGKIT": [
+   "Power Pabrik 3B (MW)",
+   "PLN (MW)",
+   "UBB (MW)",
+   "PIE / GGCP (MW)",
+   "TG-65 (MW)",
+   "TG-66 (MW)",
+   "GTG (MW)"
   ]
 };
 
@@ -844,7 +853,7 @@ const GROUPS_PANEL_STG175 = {
             "1. Steam & Condenser System": ["STEAM SYSTEM MAIN","GLAND STEAM SYSTEM","STEAM EXTRACTION","MAIN CONDENSER"],
             "2. Turbine Oil Systems": ["LUBE OIL SYSTEM","HP OIL SYSTEM","SHAFT LINE LUBE OIL"],
             "3. Temperature Monitoring": ["TURBINE BEARING TEMPERATURE","GEARBOX TEMPERATURE","GENERATOR TEMPERATURE","VIBRATION SYSTEM"],
-            "4. Synchonizarion & Power": ["SYNCHRONIZATION & EXCITATION","ELECTRICAL FEEDER LOAD"],
+            "4. Synchonizarion & Power": ["SYNCHRONIZATION & EXCITATION","SS-1000","SCADA PEMBANGKIT"],
             "5. PRDS & Condensate Recovery": ["TEMP & PRESS REDUCING","STEAM CONDENSATE RECOVERY SYSTEM"],
             "6. Deaerator & Electrical Load": ["DEAERATION & WATER FEEDING SYSTEM","BFW PUMP COOLING & SEALING"]
 };
