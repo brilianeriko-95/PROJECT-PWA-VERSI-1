@@ -946,15 +946,17 @@ const LOGSHEET_CONFIG = {
 const TPM_CONFIG_MASTER = {
     'SULFAT': [
         { name: "AREA 1100 / 1200", icon: "🏭", color: "#eab308" },
-        { name: "AREA 1300", icon: "⚙️", color: "#8b5cf6" },
-        { name: "AREA 1000", icon: "🔥", color: "#ef4444" }
+        { name: "AREA 1300", icon: "⚙️", color: "#8b5cf6" }
     ],
     'UTILITAS': [
         { name: "AREA #6200", icon: "🔧", color: "#3b82f6" },
         { name: "AREA TURBIN", icon: "⚡", color: "#06b6d4" },
         { name: "COOLING TOWER", icon: "🗼", color: "#10b981" },
         { name: "AREA COMPRESSOR", icon: "🌬️", color: "#f59e0b" }
-    ]
+    ],
+   'BELERANG': [
+        { name: "AREA 1000", icon: "🔥", color: "#ef4444" }
+      ]
 };
 
 // ============================================
