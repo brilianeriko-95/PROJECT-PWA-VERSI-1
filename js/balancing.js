@@ -234,18 +234,38 @@ function calculateLPBalance() {
     konsumsiIds.forEach(id => totalCons += parseFloat(document.getElementById(id)?.value) || 0);
     
     const balance = prod - totalCons;
+    
+    // 1. Update Nilai Angka (Selalu Positif/Absolute)
     const display = document.getElementById('lpBalanceValue');
     if (display) display.value = Math.abs(balance).toFixed(1);
     
+    // 2. Tentukan Teks dan Warna
+    // Jika balance < 0 maka IMPOR (Kurang Steam), jika > 0 maka EKSPOR (Lebih Steam)
+    const isImport = balance < 0;
+    const statusText = isImport ? 'LPS Impor dari SU 3A (t/h)' : 'LPS Ekspor ke SU 3A (t/h)';
+    const statusColor = isImport ? '#ef4444' : '#10b981'; // Merah untuk Impor, Hijau untuk Ekspor
+    
+    // 3. Update Label Utama
     const statusLabel = document.getElementById('lpBalanceLabel');
-    if (statusLabel) statusLabel.textContent = balance < 0 ? 'LPS Impor dari SU 3A (t/h)' : 'LPS Ekspor ke SU 3A (t/h)';
+    if (statusLabel) {
+        statusLabel.textContent = statusText;
+        statusLabel.style.color = statusColor;
+    }
+    
+    // 👇 TAMBAHAN: Update elemen "Posisi" jika ada ID 'lpBalanceStatus' di HTML 👇
+    const statusBadge = document.getElementById('lpBalanceStatus'); 
+    if (statusBadge) {
+        statusBadge.textContent = isImport ? 'Posisi: IMPOR' : 'Posisi: EKSPOR';
+        statusBadge.style.backgroundColor = statusColor + '20'; // Warna transparan 20%
+        statusBadge.style.color = statusColor;
+    }
+    // 👆 ================================================================= 👆
     
     const totalDisplay = document.getElementById('totalKonsumsiSteam');
     if (totalDisplay) totalDisplay.textContent = totalCons.toFixed(1) + ' t/h';
     
     return balance;
 }
-
 function startRealtimeClock() {
     if (window.realtimeClockInterval) clearInterval(window.realtimeClockInterval);
     updateBalancingDateTime();
