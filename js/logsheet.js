@@ -1100,12 +1100,18 @@ async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
     
     // 1. Tampilkan Notifikasi Toast (Tidak menghalangi layar)
     showCustomAlert(`⬆️ Mengirim foto ${shortName}...`, 'info');
-    
-    // 2. Ubah UI Badge (Tulisan di pojok foto) menjadi Proses
-    const badge = document.getElementById('univParamPhotoBadge');
-    if (badge) {
-        badge.textContent = '⏳ MENGIRIM...';
-        badge.style.backgroundColor = '#f59e0b'; // Warna oranye
+    // 👇 FUNGSI PINTAR: Cek apakah layar PWA masih di parameter yang sama
+    const isStillOnScreen = () => {
+        return activeUnivArea === areaName && config.areas[activeUnivArea][activeUnivIdx] === paramLabel;
+    };
+
+    // Update awal (MENGIRIM) - Hanya jika belum pindah layar
+    if (isStillOnScreen()) {
+        const badge = document.getElementById('univParamPhotoBadge');
+        if (badge) {
+            badge.textContent = '⏳ MENGIRIM...';
+            badge.style.backgroundColor = '#f59e0b'; // Oranye
+        }
     }
 
     try {
@@ -1126,26 +1132,36 @@ async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
             body: JSON.stringify(photoPayload)
         });
 
-        // 3. JIKA SUKSES: Hapus data Base64 yang bikin berat, ganti dengan penanda
+        // JIKA SUKSES: Selalu update memori (di layar manapun operator berada)
         if (univParamPhotos[areaName] && univParamPhotos[areaName][paramLabel]) {
             univParamPhotos[areaName][paramLabel] = 'UPLOADED_BACKGROUND';
-            localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos)); // Update memori
+            localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos)); 
         }
 
-        // Update UI Badge jadi Sukses
-        if (badge) {
-            badge.textContent = '✓ TERKIRIM';
-            badge.style.backgroundColor = '#10b981'; // Warna hijau
+        showCustomAlert(`✅ Foto ${shortName} aman!`, 'success');
+
+        // 👇 KUNCI PERBAIKAN: Hanya ubah badge jika layar belum berpindah
+        if (isStillOnScreen()) {
+            const badge = document.getElementById('univParamPhotoBadge');
+            if (badge) {
+                badge.textContent = '✓ TERKIRIM';
+                badge.style.backgroundColor = '#10b981'; // Hijau
+            }
+            // Render ulang area foto menjadi ikon "Awan"
+            loadUnivParamPhotoForCurrentStep();
         }
-        showCustomAlert(`✅ Foto ${shortName} berhasil diamankan ke server!`, 'success');
 
     } catch (error) {
         console.error('Background upload gagal:', error);
-        if (badge) {
-            badge.textContent = '⚠️ TERTUNDA';
-            badge.style.backgroundColor = '#ef4444'; // Warna merah
-        }
         showCustomAlert(`📶 Sinyal lemah. Foto ${shortName} masuk antrean.`, 'warning');
-        // Biarkan base64 tetap ada, agar dikirim rombongan saat submit di akhir
+        
+        // 👇 Hanya ubah badge jadi merah jika layar belum berpindah
+        if (isStillOnScreen()) {
+            const badge = document.getElementById('univParamPhotoBadge');
+            if (badge) {
+                badge.textContent = '⚠️ TERTUNDA';
+                badge.style.backgroundColor = '#ef4444'; // Merah
+            }
+        }
     }
 }
