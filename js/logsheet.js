@@ -422,23 +422,46 @@ function saveUnivStep() {
 function nextUnivStep() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     saveUnivStep();
-    // 👇 TAMBAHAN BARU: Pemicu Background Upload Foto 👇
+    
+    // 👇 PERBAIKAN: Logika Background Upload yang Benar 👇
     const fullLabel = config.areas[activeUnivArea][activeUnivIdx];
     const currentPhoto = univParamPhotos[activeUnivArea]?.[fullLabel];
     
-    // Jika ada foto baru (ukurannya besar / masih format Base64)
+    // Jika ada foto baru (ukurannya besar / format Base64)
     if (currentPhoto && currentPhoto.length > 100 && currentPhoto !== 'UPLOADED_BACKGROUND') {
-        // Panggil TANPA 'await' agar pindah layar tetap ngebut, tidak tertahan loading
-        uploadPhotoInBackground(activeUnivArea, fullLabel, currentPhoto);
+        
+        if (navigator.onLine) {
+            // Panggil fungsi kirim di latar belakang
+            uploadPhotoInBackground(activeUnivArea, fullLabel, currentPhoto);
+            
+            // Ubah Base64 raksasa jadi teks kecil
+            univParamPhotos[activeUnivArea][fullLabel] = 'UPLOADED_BACKGROUND';
+            
+            // 👇 INI YANG WAJIB ADA (Pengaman Anti-Crash) 👇
+            try {
+                localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
+            } catch(e) {
+                // JIKA MEMORI FULL, BIARKAN SAJA! Jangan hentikan aplikasi.
+                // Toh foto aslinya sudah dilempar ke uploadPhotoInBackground
+                console.warn('Gagal menyimpan status UPLOADED_BACKGROUND ke lokal karena memori penuh. Abaikan.');
+            }
+            // 👆 ========================================= 👆
+            
+        } else {
+            if (typeof showTemporaryToast === 'function') {
+                showTemporaryToast('Sinyal hilang. Foto disimpan di memori HP.', 'warning');
+            }
+        }
     }
     // 👆 ============================================== 👆
+    
     if (activeUnivIdx < config.areas[activeUnivArea].length - 1) {
         activeUnivIdx++;
         showUnivStep();
     } else {
         showCustomAlert(`Area ${activeUnivArea} selesai!`, 'success');
         setTimeout(() => {
-            renderMenuUniversal(activeLogsheetType); // <--- JADI INI
+            renderMenuUniversal(activeLogsheetType); 
             navigateTo('universalAreaListScreen');
         }, 1200);
     }
@@ -561,33 +584,62 @@ function handleUnivParamPhoto(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    if (file.size > 10 * 1024 * 1024) {
-        showCustomAlert('Ukuran file terlalu besar (>10MB).', 'error');
+    // 1. Pengaman Ukuran Ekstrem
+    if (file.size > 15 * 1024 * 1024) { 
+        showCustomAlert('Ukuran file terlalu besar (>15MB).', 'error');
         event.target.value = '';
         return;
     }
 
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('🔄 Memproses foto...', 'info');
+    } else {
+        showCustomAlert('🔄 Memproses foto...', 'info');
+    }
+    
+    // 2. Kita gunakan kembali FileReader karena utils.js Anda membutuhkannya
+    // TAPI kita eksekusi kompresinya secara Asinkron agar UI tidak membeku
     const reader = new FileReader();
+    
     reader.onload = async function(e) {
         const originalDataUrl = e.target.result;
-        showCustomAlert('🔄 Mengkompresi foto...', 'info');
         
         try {
-            const result = await compressImage(originalDataUrl, { maxWidth: 1600, maxHeight: 1600, quality: 0.75, type: 'image/jpeg' });
+            // Gunakan fungsi kompresi asli Anda yang sudah berjalan baik sebelumnya
+            const result = await compressImage(originalDataUrl, { 
+                maxWidth: 1200, 
+                maxHeight: 1200, 
+                quality: 0.6, 
+                type: 'image/jpeg' 
+            });
             
+            // Masukkan hasil kompresi ke variabel universal
             univCurrentPhoto = result.dataUrl;
+            
             if (!univParamPhotos[activeUnivArea]) univParamPhotos[activeUnivArea] = {};
+            
             const config = LOGSHEET_CONFIG[activeLogsheetType];
             const fullLabel = config.areas[activeUnivArea][activeUnivIdx];
             
-            univParamPhotos[activeUnivArea][fullLabel] = univCurrentPhoto;
-            
-            // Simpan draft foto
-            localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
-            
-            // Render UI
+            // 👇 PENGAMAN MEMORI LOKAL PENUH 👇
+            try {
+                univParamPhotos[activeUnivArea][fullLabel] = univCurrentPhoto;
+                localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
+            } catch (storageError) {
+                console.warn("[Memori Penuh] Mengosongkan draf yang tidak dikirim...");
+                // Paksa jadikan hanya 1 foto di dalam draf area ini
+                univParamPhotos = { [activeUnivArea]: { [fullLabel]: univCurrentPhoto } };
+                localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
+                
+                if (typeof showTemporaryToast === 'function') {
+                    showTemporaryToast('⚠️ Memori HP penuh. Draf foto lama dihapus.', 'warning');
+                }
+            }
+
+            // 👇 RENDER UI (Tampilkan Thumbnail) 👇
             const preview = document.getElementById('univParamPhotoPreview');
             const badge = document.getElementById('univParamPhotoBadge');
+            
             if (preview) {
                 preview.innerHTML = `
                     <div style="position: relative; width: 100%; height: 100%;">
@@ -597,19 +649,25 @@ function handleUnivParamPhoto(event) {
                         </div>
                     </div>`;
             }
+            
             if (badge) {
                 badge.textContent = `✓ ${result.compressedSize}KB`;
                 badge.style.backgroundColor = config.themeColor;
                 badge.style.color = 'white';
             }
-            showCustomAlert(`✓ Foto berhasil dikompresi: ${result.compressedSize}KB`, 'success');
+            
+            if (typeof closeAlert === 'function') closeAlert();
             
         } catch (error) {
             console.error('Kompresi gagal:', error);
-            showCustomAlert('Gagal memproses foto', 'error');
+            showCustomAlert('Gagal memproses foto. Coba foto lain.', 'error');
         }
     };
+    
+    // Mulai pembacaan file
     reader.readAsDataURL(file);
+    
+    // Reset input file agar bisa memilih foto yang sama lagi jika perlu
     event.target.value = '';
 }
 
@@ -777,17 +835,42 @@ async function submitUniversalLogsheet() {
         console.error('Logsheet Submit Error:', error);
         progress.error();
 
-        let queue = JSON.parse(localStorage.getItem(config.offlineKey) || '[]');
+        let queue = [];
+        try {
+            queue = JSON.parse(localStorage.getItem(config.offlineKey) || '[]');
+        } catch(e) { queue = []; }
 
-        queue.push({
+        // 👇 PERBAIKAN: Perlindungan Error Saat Memasukkan Data Offline Besar 👇
+        const newOfflineData = {
             ...finalData,
             photos: pendingPhotos 
-        });
+        };
 
-        localStorage.setItem(config.offlineKey, JSON.stringify(queue));
-        checkOfflineData(); 
-        
-        showCustomAlert('Sinyal lemah! Data disimpan aman di memori HP.', 'warning');
+        queue.push(newOfflineData);
+
+        try {
+            localStorage.setItem(config.offlineKey, JSON.stringify(queue));
+            checkOfflineData(); 
+            showCustomAlert('Sinyal lemah! Data disimpan aman di memori HP.', 'warning');
+            
+            // Karena sukses disimpan offline, kita bisa legakan memori draf
+            univCurrentInput = {};
+            univParamPhotos = {};
+            localStorage.removeItem(config.draftKey);
+            localStorage.removeItem(config.photoKey);
+            if (window.activeDrafts) delete window.activeDrafts[activeLogsheetType];
+            if (window.activePhotos) delete window.activePhotos[activeLogsheetType];
+            setTimeout(() => navigateTo('homeScreen'), 1500);
+
+        } catch (storageError) {
+            // JIKA GAGAL DISIMPAN OFFLINE KARENA MEMORI BENAR-BENAR PENUH
+            console.error("Gagal simpan offline:", storageError);
+            queue.pop(); // Keluarkan data yang barusan dimasukkan karena bikin penuh
+            localStorage.setItem(config.offlineKey, JSON.stringify(queue)); // Kembalikan ke state awal
+            
+            showCustomAlert('MEMORI HP PENUH! Tidak bisa menyimpan offline. Hapus cache atau cari sinyal Wi-Fi untuk mengirim!', 'error');
+        }
+        // 👆 ========================================================= 👆
     }
 }
 
