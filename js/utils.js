@@ -350,3 +350,60 @@ function getCurrentDutyGroup() {
         schedule: scheduleToday
     };
 }
+// ====================================================================
+// FUNGSI BARU: Notifikasi yang hilang otomatis (Auto-Dismiss Toast)
+// ====================================================================
+function showTemporaryToast(message, type = 'info', duration = 2500) {
+    const toast = document.createElement('div');
+    
+    // 👇 PERBAIKAN 1: GANTI NAMA CLASS 👇
+    // Jangan gunakan "custom-alert" lagi. Gunakan nama yang bebas dari CSS lama.
+    toast.className = `toast-notif-kecil toast-${type}`; 
+    
+    // Styling INLINE (Aman dari bentrok)
+    toast.style.position = 'fixed';
+    toast.style.top = '20px';
+    toast.style.right = '20px';
+    toast.style.zIndex = '999999'; // Pastikan di atas segalanya
+    toast.style.padding = '12px 20px';
+    toast.style.borderRadius = '8px';
+    toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-20px)';
+    toast.style.transition = 'all 0.3s ease-in-out';
+    toast.style.fontFamily = 'sans-serif';
+    toast.style.fontSize = '14px';
+    toast.style.width = 'auto'; // Paksa lebar menyesuaikan teks, bukan layar
+    toast.style.maxWidth = '300px'; 
+    toast.style.pointerEvents = 'none'; // Agar operator tetap bisa ngetik meskipun notif muncul
+    
+    // Konten teks
+    toast.innerHTML = `<span style="font-weight:bold;">${message}</span>`;
+
+    // Warna
+    if (type === 'success') {
+        toast.style.backgroundColor = '#10b981'; // Hijau
+        toast.style.color = '#ffffff';
+    } else if (type === 'info') {
+        toast.style.backgroundColor = '#3b82f6'; // Biru
+        toast.style.color = '#ffffff';
+    } else if (type === 'warning') {
+        toast.style.backgroundColor = '#f59e0b'; // Oranye
+        toast.style.color = '#ffffff';
+    }
+
+    document.body.appendChild(toast);
+
+    // Animasi Muncul
+    setTimeout(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateY(0)';
+    }, 10);
+
+    // Animasi Menghilang
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => toast.remove(), 300);
+    }, duration);
+}
