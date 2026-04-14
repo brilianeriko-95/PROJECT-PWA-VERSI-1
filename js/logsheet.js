@@ -1096,21 +1096,20 @@ function updateGroupedNote(subArea, label, noteValue) {
  */
 async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
-    const shortName = paramLabel.split(' (')[0]; // Ambil nama parameter tanpa satuan
+    const shortName = paramLabel.split(' (')[0]; 
     
-    // 1. Tampilkan Notifikasi Toast (Tidak menghalangi layar)
-    showCustomAlert(`⬆️ Mengirim foto ${shortName}...`, 'info');
-    // 👇 FUNGSI PINTAR: Cek apakah layar PWA masih di parameter yang sama
+    // 1. Tampilkan Notifikasi Toast (UBAH KE showTemporaryToast)
+    showTemporaryToast(`⬆️ Mengirim foto ${shortName}...`, 'info'); // Muncul sekejap lalu hilang
+    
     const isStillOnScreen = () => {
         return activeUnivArea === areaName && config.areas[activeUnivArea][activeUnivIdx] === paramLabel;
     };
 
-    // Update awal (MENGIRIM) - Hanya jika belum pindah layar
     if (isStillOnScreen()) {
         const badge = document.getElementById('univParamPhotoBadge');
         if (badge) {
             badge.textContent = '⏳ MENGIRIM...';
-            badge.style.backgroundColor = '#f59e0b'; // Oranye
+            badge.style.backgroundColor = '#f59e0b'; 
         }
     }
 
@@ -1132,35 +1131,34 @@ async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
             body: JSON.stringify(photoPayload)
         });
 
-        // JIKA SUKSES: Selalu update memori (di layar manapun operator berada)
         if (univParamPhotos[areaName] && univParamPhotos[areaName][paramLabel]) {
             univParamPhotos[areaName][paramLabel] = 'UPLOADED_BACKGROUND';
             localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos)); 
         }
 
-        showCustomAlert(`✅ Foto ${shortName} aman!`, 'success');
+        // 2. Notifikasi Sukses (UBAH KE showTemporaryToast)
+        showTemporaryToast(`✅ Foto ${shortName} aman!`, 'success'); // Muncul sekejap lalu hilang
 
-        // 👇 KUNCI PERBAIKAN: Hanya ubah badge jika layar belum berpindah
         if (isStillOnScreen()) {
             const badge = document.getElementById('univParamPhotoBadge');
             if (badge) {
                 badge.textContent = '✓ TERKIRIM';
-                badge.style.backgroundColor = '#10b981'; // Hijau
+                badge.style.backgroundColor = '#10b981'; 
             }
-            // Render ulang area foto menjadi ikon "Awan"
             loadUnivParamPhotoForCurrentStep();
         }
 
     } catch (error) {
         console.error('Background upload gagal:', error);
-        showCustomAlert(`📶 Sinyal lemah. Foto ${shortName} masuk antrean.`, 'warning');
         
-        // 👇 Hanya ubah badge jadi merah jika layar belum berpindah
+        // 3. Notifikasi Peringatan (UBAH KE showTemporaryToast)
+        showTemporaryToast(`📶 Sinyal lemah. Foto ${shortName} ditunda.`, 'warning', 3500); // Tampil sedikit lebih lama (3.5 detik)
+        
         if (isStillOnScreen()) {
             const badge = document.getElementById('univParamPhotoBadge');
             if (badge) {
                 badge.textContent = '⚠️ TERTUNDA';
-                badge.style.backgroundColor = '#ef4444'; // Merah
+                badge.style.backgroundColor = '#ef4444'; 
             }
         }
     }
