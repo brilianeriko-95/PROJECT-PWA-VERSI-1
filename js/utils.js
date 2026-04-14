@@ -154,7 +154,7 @@ function cancelUpload() {
 }
 
 // ============================================
-// 3. IMAGE COMPRESSION (CLIENT-SIDE)
+// 3. IMAGE COMPRESSION (CLIENT-SIDE) - ✅ FUNGSI PENTING ANTI MEMORI PENUH
 // ============================================
 
 function compressImage(imageUrl, options = {}) {
@@ -189,13 +189,13 @@ function compressImage(imageUrl, options = {}) {
             ctx.drawImage(img, 0, 0, width, height);
 
             // Ekspor ke format JPEG dengan kualitas kompresi (0.1 - 1.0)
-            const quality = options.quality || 0.6; // 60% sangat aman untuk memori
+            const quality = options.quality || 0.6; // 60% sangat aman untuk memori HP
             const type = options.type || 'image/jpeg';
             const compressedDataUrl = canvas.toDataURL(type, quality);
 
             // Kalkulasi ukuran (Aman dari error Blob URL)
             const compressedSize = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
-            const originalSize = Math.round((width * height * 3) / 1024 / 1024); // Perkiraan kasar dari dimensi asli
+            const originalSize = Math.round((width * height * 3) / 1024 / 1024); // Perkiraan kasar
             
             let reduction = 0;
             if (originalSize > compressedSize) {
@@ -217,6 +217,7 @@ function compressImage(imageUrl, options = {}) {
         img.src = imageUrl;
     });
 }
+
 // ============================================
 // 4. JSONP CLEANUP HELPER
 // ============================================
@@ -229,6 +230,7 @@ function cleanupJSONP(callbackName) {
     const scripts = document.querySelectorAll(`script[src*="${callbackName}"]`);
     scripts.forEach(script => script.remove());
 }
+
 // ============================================
 // 5. MENU NAVIGATION HELPERS
 // ============================================
@@ -360,14 +362,13 @@ function getCurrentDutyGroup() {
         schedule: scheduleToday
     };
 }
+
 // ====================================================================
 // FUNGSI BARU: Notifikasi yang hilang otomatis (Auto-Dismiss Toast)
 // ====================================================================
 function showTemporaryToast(message, type = 'info', duration = 2500) {
     const toast = document.createElement('div');
     
-    // 👇 PERBAIKAN 1: GANTI NAMA CLASS 👇
-    // Jangan gunakan "custom-alert" lagi. Gunakan nama yang bebas dari CSS lama.
     toast.className = `toast-notif-kecil toast-${type}`; 
     
     // Styling INLINE (Aman dari bentrok)
@@ -399,6 +400,9 @@ function showTemporaryToast(message, type = 'info', duration = 2500) {
         toast.style.color = '#ffffff';
     } else if (type === 'warning') {
         toast.style.backgroundColor = '#f59e0b'; // Oranye
+        toast.style.color = '#ffffff';
+    } else {
+        toast.style.backgroundColor = '#3b82f6';
         toast.style.color = '#ffffff';
     }
 
