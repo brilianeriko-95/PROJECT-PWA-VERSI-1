@@ -157,28 +157,30 @@ function cancelUpload() {
 // 3. IMAGE COMPRESSION (CLIENT-SIDE)
 // ============================================
 
-function compressImage(dataUrl, options = {}) {
+function compressImage(imageUrl, options = {}) {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        
         img.onload = () => {
-            const maxWidth = options.maxWidth || 1600;
-            const maxHeight = options.maxHeight || 1600;
+            const maxWidth = options.maxWidth || 1200;
+            const maxHeight = options.maxHeight || 1200;
             let width = img.width;
             let height = img.height;
 
             // Hitung rasio aspek baru
             if (width > height) {
                 if (width > maxWidth) {
-                    height = Math.round((height *= maxWidth / width));
+                    height = Math.round((height * maxWidth) / width);
                     width = maxWidth;
                 }
             } else {
                 if (height > maxHeight) {
-                    width = Math.round((width *= maxHeight / height));
+                    width = Math.round((width * maxHeight) / height);
                     height = maxHeight;
                 }
             }
 
+            // Gunakan canvas untuk menggambar ulang gambar dengan ukuran lebih kecil
             const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
@@ -186,27 +188,35 @@ function compressImage(dataUrl, options = {}) {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            const quality = options.quality || 0.8; // Kualitas standar 80%
+            // Ekspor ke format JPEG dengan kualitas kompresi (0.1 - 1.0)
+            const quality = options.quality || 0.6; // 60% sangat aman untuk memori
             const type = options.type || 'image/jpeg';
             const compressedDataUrl = canvas.toDataURL(type, quality);
 
-            // Hitung persentase reduksi ukuran file
-            const originalSize = Math.round((dataUrl.length * 3) / 4 / 1024);
+            // Kalkulasi ukuran (Aman dari error Blob URL)
             const compressedSize = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
-            const reduction = Math.round(((originalSize - compressedSize) / originalSize) * 100);
+            const originalSize = Math.round((width * height * 3) / 1024 / 1024); // Perkiraan kasar dari dimensi asli
+            
+            let reduction = 0;
+            if (originalSize > compressedSize) {
+                reduction = Math.round(((originalSize - compressedSize) / originalSize) * 100);
+                if (reduction > 99) reduction = 99;
+            }
 
             resolve({
                 dataUrl: compressedDataUrl,
-                originalSize,
-                compressedSize,
-                reduction
+                originalSize: originalSize,
+                compressedSize: compressedSize,
+                reduction: reduction
             });
         };
-        img.onerror = reject;
-        img.src = dataUrl;
+        
+        img.onerror = (err) => reject(new Error("File gambar rusak atau tidak terbaca"));
+        
+        // Mulai memuat gambar dari URL
+        img.src = imageUrl;
     });
 }
-
 // ============================================
 // 4. JSONP CLEANUP HELPER
 // ============================================
