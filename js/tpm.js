@@ -145,15 +145,16 @@ function selectTPMStatus(status) {
 }
 
 // ============================================
-// 2. PHOTO HANDLING & COMPRESSION
+// 2. PHOTO HANDLING & COMPRESSION (ANTI-CRASH)
 // ============================================
 
-async function handleTPMPhoto(event) {
+function handleTPMPhoto(event) {
     const file = event.target.files[0];
     if (!file) return;
     
-    if (file.size > 10 * 1024 * 1024) {
-        showCustomAlert('Ukuran file terlalu besar (>10MB). Pilih foto lain.', 'error');
+    // Pengaman Ukuran Ekstrem
+    if (file.size > 15 * 1024 * 1024) {
+        showCustomAlert('Ukuran file terlalu besar (>15MB). Pilih foto lain.', 'error');
         event.target.value = '';
         return;
     }
@@ -164,18 +165,24 @@ async function handleTPMPhoto(event) {
         return;
     }
 
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-        const originalDataUrl = e.target.result;
-        showCustomAlert('🔄 Mengkompresi foto TPM...', 'info');
-        
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('🔄 Memproses foto TPM...', 'info');
+    }
+
+    // 👇 PENGAMAN RAM: Gunakan ObjectURL agar HP tidak ngos-ngosan 👇
+    const imageUrl = URL.createObjectURL(file);
+    
+    setTimeout(async () => {
         try {
-            const result = await compressImage(originalDataUrl, {
-                maxWidth: 1600,
-                maxHeight: 1600,
-                quality: 0.8,
+            const result = await compressImage(imageUrl, {
+                maxWidth: 1200, // Disamakan dengan logsheet agar ringan
+                maxHeight: 1200,
+                quality: 0.6,   // Kualitas 60% sudah cukup jelas untuk laporan
                 type: 'image/jpeg'
             });
+            
+            // Bebaskan RAM
+            URL.revokeObjectURL(imageUrl);
             
             currentTPMPhoto = result.dataUrl; 
             
@@ -194,29 +201,20 @@ async function handleTPMPhoto(event) {
             }
             if (photoSection) photoSection.classList.add('has-photo');
             
-            showCustomAlert(`✓ Foto TPM dikompresi: ${result.originalSize}KB → ${result.compressedSize}KB`, 'success');
+            if (typeof closeAlert === 'function') closeAlert();
             
         } catch (error) {
+            URL.revokeObjectURL(imageUrl);
             console.error('Kompresi TPM gagal:', error);
-            currentTPMPhoto = originalDataUrl;
-            
-            const preview = document.getElementById('tpmPhotoPreview');
-            const photoSection = document.getElementById('tpmPhotoSection');
-            
-            if (preview) {
-                preview.innerHTML = `<img src="${currentTPMPhoto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" alt="TPM Photo">`;
-            }
-            if (photoSection) photoSection.classList.add('has-photo');
-            showCustomAlert('⚠️ Foto disimpan tanpa kompresi', 'warning');
+            showCustomAlert('Gagal memproses foto TPM. Coba lagi.', 'error');
         }
-    };
-    reader.onerror = function() { showCustomAlert('Gagal membaca file foto.', 'error'); };
-    reader.readAsDataURL(file);
+    }, 50);
+    
     event.target.value = '';
 }
 
 // ============================================
-// 3. SUBMIT DATA TO SERVER
+// 3. SUBMIT DATA TO SERVER (ANTI-CRASH)
 // ============================================
 
 async function submitTPMData() {
@@ -242,7 +240,7 @@ async function submitTPMData() {
         status: currentTPMStatus,
         action: action,
         notes: notes,
-        photo: currentTPMPhoto, // Dikirim langsung jika online
+        photo: currentTPMPhoto, 
         user: currentUser?.name || 'Unknown',
         unit: currentUser?.department || 'UNIT_UNKNOWN',
         timestamp: new Date().toISOString()
@@ -267,21 +265,33 @@ async function submitTPMData() {
         console.error('TPM Submit Error:', error);
         progress.error();
 
-        // 👇 PERBAIKAN 2: Mencegah Payload Ganda saat Offline Sync 👇
         const offlineData = { ...tpmData };
-        delete offlineData.photo; // Hapus base64 dari text body agar sync aman!
+        delete offlineData.photo; 
 
         const offlineKey = 'offline_tpm';
-        let queue = JSON.parse(localStorage.getItem(offlineKey) || '[]');
+        let queue = [];
+        try {
+            queue = JSON.parse(localStorage.getItem(offlineKey) || '[]');
+        } catch(e) { queue = []; }
 
         queue.push({
-            ...offlineData, // Body tanpa base64 foto
-            photos: { "TPM_PHOTO": currentTPMPhoto } // Foto ditaruh di keranjang terpisah
+            ...offlineData, 
+            photos: { "TPM_PHOTO": currentTPMPhoto } 
         });
 
-        localStorage.setItem(offlineKey, JSON.stringify(queue));
-        
-        checkOfflineData(); 
-        showCustomAlert('Gagal upload. Laporan TPM disimpan offline.', 'warning');
+        // 👇 PENGAMAN STORAGE: Cegah Crash kalau memori Offline penuh 👇
+        try {
+            localStorage.setItem(offlineKey, JSON.stringify(queue));
+            checkOfflineData(); 
+            showCustomAlert('Sinyal lemah! Laporan TPM disimpan offline.', 'warning');
+            currentTPMPhoto = null;
+            currentTPMStatus = '';
+            setTimeout(() => navigateTo('tpmScreen'), 1500);
+        } catch (storageError) {
+            console.error("Gagal simpan offline:", storageError);
+            queue.pop(); // Batalkan data terakhir
+            localStorage.setItem(offlineKey, JSON.stringify(queue)); // Kembalikan ke state awal
+            showCustomAlert('MEMORI HP PENUH! Tidak bisa menyimpan TPM offline. Cari sinyal Wi-Fi untuk mengirim data!', 'error');
+        }
     }
 }
