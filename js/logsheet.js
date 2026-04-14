@@ -422,7 +422,16 @@ function saveUnivStep() {
 function nextUnivStep() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     saveUnivStep();
+    // 👇 TAMBAHAN BARU: Pemicu Background Upload Foto 👇
+    const fullLabel = config.areas[activeUnivArea][activeUnivIdx];
+    const currentPhoto = univParamPhotos[activeUnivArea]?.[fullLabel];
     
+    // Jika ada foto baru (ukurannya besar / masih format Base64)
+    if (currentPhoto && currentPhoto.length > 100 && currentPhoto !== 'UPLOADED_BACKGROUND') {
+        // Panggil TANPA 'await' agar pindah layar tetap ngebut, tidak tertahan loading
+        uploadPhotoInBackground(activeUnivArea, fullLabel, currentPhoto);
+    }
+    // 👆 ============================================== 👆
     if (activeUnivIdx < config.areas[activeUnivArea].length - 1) {
         activeUnivIdx++;
         showUnivStep();
@@ -620,14 +629,34 @@ function loadUnivParamPhotoForCurrentStep() {
     const preview = document.getElementById('univParamPhotoPreview');
     const badge = document.getElementById('univParamPhotoBadge');
     
-    if (univCurrentPhoto) {
+    // 👇 PERBAIKAN LOGIKA TAMPILAN FOTO 👇
+    if (univCurrentPhoto === 'UPLOADED_BACKGROUND') {
+        // Tampilan khusus jika foto sudah aman di server
+        if (preview) {
+            preview.innerHTML = `
+                <div class="photo-placeholder" style="text-align: center; color: #10b981;">
+                    <div style="font-size: 40px; margin-bottom: 8px;">☁️</div>
+                    <div style="font-weight: 700;">Foto Tersimpan di Server</div>
+                    <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 4px;">Memori HP telah dilegakan</div>
+                </div>`;
+        }
+        if (badge) {
+            badge.textContent = '✓ TERKIRIM';
+            badge.style.backgroundColor = '#10b981';
+            badge.style.color = 'white';
+        }
+    } 
+    else if (univCurrentPhoto) {
+        // Tampilan normal jika foto masih berupa Base64 (belum terkirim)
         if (preview) preview.innerHTML = `<img src="${univCurrentPhoto}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
         if (badge) {
-            badge.textContent = '✓ ADA';
+            badge.textContent = '✓ ADA (DRAF)';
             badge.style.backgroundColor = config.themeColor;
             badge.style.color = 'white';
         }
-    } else {
+    } 
+    else {
+        // Tampilan jika belum ada foto
         if (preview) {
             preview.innerHTML = `
                 <div class="photo-placeholder" style="text-align: center; color: #64748b;">
@@ -644,6 +673,7 @@ function loadUnivParamPhotoForCurrentStep() {
             badge.style.color = '#94a3b8';
         }
     }
+    // 👆 =============================== 👆
 }
 
 /**
@@ -669,11 +699,17 @@ async function submitUniversalLogsheet() {
     });
     
     // Kumpulkan foto dari semua area
-    let allPhotos = {};
+    let pendingPhotos = {}; // Khusus foto yang gagal terkirim di latar belakang
+    let totalPhotoCount = 0;
+
     Object.entries(univParamPhotos).forEach(([areaName, areaPhotos]) => {
         Object.entries(areaPhotos).forEach(([paramName, photoData]) => {
             if (photoData) {
-                allPhotos[`${areaName}__${paramName}`] = photoData;
+                totalPhotoCount++;
+                // Kumpulkan HANYA jika gagal background upload (masih Base64)
+                if (photoData !== 'UPLOADED_BACKGROUND') {
+                    pendingPhotos[`${areaName}__${paramName}`] = photoData;
+                }
             }
         });
     });
@@ -683,14 +719,14 @@ async function submitUniversalLogsheet() {
         Operator: currentUser ? currentUser.name : 'Unknown',
         OperatorId: currentUser ? currentUser.username : 'Unknown',
         Group: currentUser ? (currentUser.group || '-') : '-',
-        photoCount: Object.keys(allPhotos).length,
+        photoCount: totalPhotoCount, // Catat total jepretan asli
         ...allParameters
     };
     
-    // 1. Upload Foto Secara Paralel Berurutan
-    if (Object.keys(allPhotos).length > 0) {
-        progress.updateText(`Mengirim ${Object.keys(allPhotos).length} foto...`);
-        for (const [key, photoData] of Object.entries(allPhotos)) {
+    // ===== UBAH BAGIAN PENGIRIMAN FOTO PARALEL =====
+    if (Object.keys(pendingPhotos).length > 0) {
+        progress.updateText(`Menyusulkan ${Object.keys(pendingPhotos).length} foto tertunda...`);
+        for (const [key, photoData] of Object.entries(pendingPhotos)) {
             try {
                 const photoPayload = {
                     type: 'LOGSHEET_PHOTO',
@@ -745,7 +781,7 @@ async function submitUniversalLogsheet() {
 
         queue.push({
             ...finalData,
-            photos: allPhotos 
+            photos: pendingPhotos 
         });
 
         localStorage.setItem(config.offlineKey, JSON.stringify(queue));
@@ -1054,4 +1090,62 @@ function setGroupedError(subArea, label, btnElement) {
  */
 function updateGroupedNote(subArea, label, noteValue) {
     saveGroupedInput(subArea, label, "ERROR\n" + noteValue);
+}
+/**
+ * FUNGSI BARU: Mengirim foto di latar belakang tanpa mengganggu operator
+ */
+async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
+    const config = LOGSHEET_CONFIG[activeLogsheetType];
+    const shortName = paramLabel.split(' (')[0]; // Ambil nama parameter tanpa satuan
+    
+    // 1. Tampilkan Notifikasi Toast (Tidak menghalangi layar)
+    showCustomAlert(`⬆️ Mengirim foto ${shortName}...`, 'info');
+    
+    // 2. Ubah UI Badge (Tulisan di pojok foto) menjadi Proses
+    const badge = document.getElementById('univParamPhotoBadge');
+    if (badge) {
+        badge.textContent = '⏳ MENGIRIM...';
+        badge.style.backgroundColor = '#f59e0b'; // Warna oranye
+    }
+
+    try {
+        const photoPayload = {
+            type: 'LOGSHEET_PHOTO',
+            parentType: config.submitType,
+            Operator: currentUser ? currentUser.name : 'Unknown',
+            photoKey: `${areaName}__${paramLabel}`,
+            photo: base64Data,
+            timestamp: new Date().toISOString()
+        };
+
+        // Kirim ke Server GAS
+        await fetch(GAS_URL, {
+            method: 'POST', 
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(photoPayload)
+        });
+
+        // 3. JIKA SUKSES: Hapus data Base64 yang bikin berat, ganti dengan penanda
+        if (univParamPhotos[areaName] && univParamPhotos[areaName][paramLabel]) {
+            univParamPhotos[areaName][paramLabel] = 'UPLOADED_BACKGROUND';
+            localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos)); // Update memori
+        }
+
+        // Update UI Badge jadi Sukses
+        if (badge) {
+            badge.textContent = '✓ TERKIRIM';
+            badge.style.backgroundColor = '#10b981'; // Warna hijau
+        }
+        showCustomAlert(`✅ Foto ${shortName} berhasil diamankan ke server!`, 'success');
+
+    } catch (error) {
+        console.error('Background upload gagal:', error);
+        if (badge) {
+            badge.textContent = '⚠️ TERTUNDA';
+            badge.style.backgroundColor = '#ef4444'; // Warna merah
+        }
+        showCustomAlert(`📶 Sinyal lemah. Foto ${shortName} masuk antrean.`, 'warning');
+        // Biarkan base64 tetap ada, agar dikirim rombongan saat submit di akhir
+    }
 }
