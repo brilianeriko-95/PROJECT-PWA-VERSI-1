@@ -528,10 +528,12 @@ async function syncOfflineData() {
 // ============================================
 // 7. DOM READY INITIALIZATION
 // ============================================
-
 window.addEventListener('DOMContentLoaded', () => {
     initState();
     //loadTodayJobs();
+    if (typeof loadRoutineChecklist === 'function') {
+        loadRoutineChecklist();
+    }
     checkOfflineData();
     runStorageMaintenance();
 
