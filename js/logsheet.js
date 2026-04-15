@@ -1281,7 +1281,7 @@ async function loadRoutineChecklist() {
         }
 
         // 👇 3. AMBIL UNIT USER (Penerjemah Kata Kunci Anti-Gagal) 👇
-        let currentUnit = 'ALL';
+        let currentUnit = 'UTILITAS';
         if (currentUser && currentUser.department) {
             let dept = String(currentUser.department).toUpperCase();
             
