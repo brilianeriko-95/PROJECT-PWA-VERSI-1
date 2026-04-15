@@ -1281,7 +1281,24 @@ async function loadRoutineChecklist() {
         }
 
         // 👇 3. AMBIL UNIT USER (Menghindari beda operator beda tugas) 👇
-        const currentUnit = (currentUser && currentUser.department) ? currentUser.department : 'ALL';
+        // 👇 3. AMBIL UNIT USER (Penerjemah Kata Kunci Anti-Gagal) 👇
+        let currentUnit = 'ALL';
+        if (currentUser && currentUser.department) {
+            let dept = String(currentUser.department).toUpperCase();
+            
+            // Terjemahkan nama panjang menjadi kata kunci yang ada di Spreadsheet
+            if (dept.includes('UTILITAS') || dept.includes('UTIL')) {
+                currentUnit = 'UTILITAS';
+            } else if (dept.includes('MELTER') || dept.includes('BELERANG')) {
+                currentUnit = 'MELTER';
+            } else if (dept.includes('SULFAT') || dept.includes('SA')) {
+                currentUnit = 'SA';
+            } else {
+                currentUnit = dept; // Default jika tidak ada yang cocok
+            }
+        }
+        
+        console.log(`🔍 [DEBUG PWA] Mengirim Request -> Unit: ${currentUnit} | Shift: ${currentShift}`);
 
         // 👇 4. FETCH KE SERVER DENGAN FILTER LENGKAP (Hari, Unit, Shift) 👇
         const url = `${GAS_URL}?action=getDailyRoutine&day=${hariIni}&unit=${encodeURIComponent(currentUnit)}&shift=${currentShift}`;
