@@ -1251,13 +1251,22 @@ async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
 // ==========================================
 
 async function loadRoutineChecklist() {
+    // 👇 1. PAGAR ANTI-GAGAL (RACE CONDITION FIX) 👇
+    // Jika data user belum selesai dimuat, tunggu 1 detik lalu coba lagi
+    if (typeof currentUser === 'undefined' || !currentUser || !currentUser.department) {
+        console.warn("⏳ Data user belum siap. PWA menunggu 1 detik...");
+        setTimeout(loadRoutineChecklist, 1000); 
+        return; 
+    }
+    // 👆 ========================================== 👆
+
     const container = document.getElementById('jobListContainer');
     const dateEl = document.getElementById('jobDate');
     
     if (!container) return;
     
     const today = new Date();
-    // 1. Set Tanggal Hari Ini di Header Job
+    // Set Tanggal Hari Ini di Header Job
     const hariIni = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(today);
     if (dateEl) {
         dateEl.textContent = new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(today);
@@ -1270,9 +1279,9 @@ async function loadRoutineChecklist() {
         </div>`;
     
     try {
-        // 👇 2. DETEKSI SHIFT BERDASARKAN JAM 👇
-       // const jamSekarang = today.getHours();//
-       const jamSekarang = 21
+        // 👇 2. DETEKSI SHIFT MEMBACA JAM ASLI HP 👇
+        const jamSekarang = today.getHours(); 
+        
         let currentShift = 'malam'; // Default malam (23.00 - 06.59)
         if (jamSekarang >= 7 && jamSekarang < 15) {
             currentShift = 'pagi';
@@ -1281,25 +1290,23 @@ async function loadRoutineChecklist() {
         }
 
         // 👇 3. AMBIL UNIT USER (Penerjemah Kata Kunci Anti-Gagal) 👇
-        let currentUnit = 'UTILITAS';
-        if (currentUser && currentUser.department) {
-            let dept = String(currentUser.department).toUpperCase();
+        let currentUnit = 'ALL';
+        let dept = String(currentUser.department).toUpperCase();
             
-            // Terjemahkan nama panjang menjadi kata kunci yang ada di Spreadsheet
-            if (dept.includes('UTILITAS') || dept.includes('UTIL')) {
-                currentUnit = 'UTILITAS';
-            } else if (dept.includes('MELTER') || dept.includes('BELERANG')) {
-                currentUnit = 'MELTER';
-            } else if (dept.includes('SULFAT') || dept.includes('SA')) {
-                currentUnit = 'SA';
-            } else {
-                currentUnit = dept; // Default jika tidak ada yang cocok
-            }
+        // Terjemahkan nama panjang menjadi kata kunci yang ada di Spreadsheet
+        if (dept.includes('UTILITAS') || dept.includes('UTIL')) {
+            currentUnit = 'UTILITAS';
+        } else if (dept.includes('MELTER') || dept.includes('BELERANG')) {
+            currentUnit = 'MELTER';
+        } else if (dept.includes('SULFAT') || dept.includes('SA')) {
+            currentUnit = 'SA';
+        } else {
+            currentUnit = dept; // Default jika tidak ada yang cocok
         }
         
         console.log(`🔍 [DEBUG PWA] Mengirim Request -> Unit: ${currentUnit} | Shift: ${currentShift}`);
 
-        // 👇 4. FETCH KE SERVER DENGAN FILTER LENGKAP (Hari, Unit, Shift) 👇
+        // 👇 4. FETCH KE SERVER DENGAN FILTER LENGKAP 👇
         const url = `${GAS_URL}?action=getDailyRoutine&day=${hariIni}&unit=${encodeURIComponent(currentUnit)}&shift=${currentShift}`;
         const response = await fetch(url);
         const result = await response.json();
@@ -1313,7 +1320,6 @@ async function loadRoutineChecklist() {
             
             // Saring: Hanya tampilkan yang BELUM ada di memori
             const pendingTasks = result.tasks.filter(t => !completedTasks.includes(t.tugas));
-            // 👆 ================================================================ 👆
 
             if (pendingTasks.length > 0) {
                 const html = pendingTasks.map((t, index) => {
@@ -1344,7 +1350,6 @@ async function loadRoutineChecklist() {
         container.innerHTML = `<div style="text-align:center; color:#ef4444; padding:20px;">Koneksi terputus. Gagal memuat tugas.</div>`;
     }
 }
-
 async function completeTask(element, tugasName, targetArea) {
     if (!currentUser || !currentUser.name) {
         if (typeof showTemporaryToast === 'function') showTemporaryToast('⚠️ Silakan login terlebih dahulu.', 'warning');
