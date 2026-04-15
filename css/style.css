@@ -842,3 +842,58 @@ input, textarea, select {
     font-weight: 600;
     cursor: pointer;
 }
+/* Gaya Kartu Tugas Rutin */
+.routine-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.4s ease-in-out;
+  overflow: hidden;
+}
+
+.routine-card:active {
+  transform: scale(0.98);
+}
+
+.routine-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-text {
+  font-weight: 700;
+  color: #f8fafc;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.task-area {
+  font-size: 0.75rem;
+  color: #3b82f6; /* Warna biru muda */
+  font-weight: 600;
+}
+
+.check-icon {
+  font-size: 1.4rem;
+  opacity: 0.7;
+}
+
+/* KUNCI ANIMASI "NAIK OTOMATIS" */
+.routine-card.completed {
+  transform: translateX(100%); /* Geser jauh ke kanan */
+  opacity: 0;
+  
+  /* Menyusutkan ukuran menjadi 0 secara perlahan */
+  height: 0 !important; 
+  min-height: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: none !important;
+}
