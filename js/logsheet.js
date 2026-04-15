@@ -1246,3 +1246,107 @@ async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
         }
     }
 }
+// ==========================================
+// SYSTEM CHECKLIST RUTINAN (FRONTEND)
+// ==========================================
+
+async function loadRoutineChecklist() {
+    const container = document.getElementById('jobListContainer');
+    const dateEl = document.getElementById('jobDate');
+    
+    if (!container) return;
+    
+    // Set Tanggal Hari Ini di Header Job
+    const today = new Date();
+    const hariIni = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(today);
+    if (dateEl) {
+        dateEl.textContent = new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(today);
+    }
+    
+    // Tampilkan Loading bawaan Anda
+    container.innerHTML = `
+        <div class="job-loading">
+            <div class="spinner"></div>
+            <span>Memuat data rutinan...</span>
+        </div>`;
+    
+    try {
+        const response = await fetch(`${GAS_URL}?action=getDailyRoutine&day=${hariIni}`);
+        const result = await response.json();
+        
+        if (result.success && result.tasks && result.tasks.length > 0) {
+            const html = result.tasks.map((t, index) => {
+                const safeTugas = t.tugas.replace(/'/g, "\\'"); 
+                const safeArea = t.area.replace(/'/g, "\\'");
+                
+                return `
+                    <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}')">
+                        <div class="routine-info">
+                            <span class="task-text">${t.tugas}</span>
+                            <span class="task-area">📍 Area: ${t.area}</span>
+                        </div>
+                        <div class="check-icon">🔘</div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        } else {
+            container.innerHTML = `<div style="text-align:center; color:#94a3b8; font-style:italic; padding:20px;">🎉 Tidak ada jadwal rutinan / Sudah selesai semua.</div>`;
+        }
+    } catch (error) {
+        console.error("Gagal memuat tugas rutin:", error);
+        container.innerHTML = `<div style="text-align:center; color:#ef4444; padding:20px;">Koneksi terputus. Gagal memuat tugas.</div>`;
+    }
+}
+
+async function completeTask(element, tugasName, targetArea) {
+    if (!currentUser || !currentUser.name) {
+        if (typeof showTemporaryToast === 'function') showTemporaryToast('⚠️ Silakan login terlebih dahulu.', 'warning');
+        return;
+    }
+
+    element.onclick = null; 
+    const icon = element.querySelector('.check-icon');
+    if (icon) icon.innerHTML = '✅';
+
+    const payload = {
+        type: 'CHECKLIST_ROUTINE',
+        tugas: tugasName,
+        targetArea: targetArea,
+        Operator: currentUser.name,
+        Jam: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    setTimeout(async () => {
+        element.classList.add('completed');
+        if (typeof showTemporaryToast === 'function') showTemporaryToast(`⬆️ Mengirim: ${tugasName.substring(0, 15)}...`, 'info');
+        
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            const res = await response.json();
+            
+            if (res.success) {
+                setTimeout(() => {
+                    element.remove();
+                    const container = document.getElementById('jobListContainer');
+                    if (container && container.children.length === 0) {
+                        container.innerHTML = '<div style="text-align:center; color:#10b981; padding:20px; font-weight:bold;">🎉 Semua tugas rutin hari ini selesai!</div>';
+                    }
+                }, 400); 
+
+                if (typeof showTemporaryToast === 'function') showTemporaryToast('✅ Tercatat di Laporan', 'success');
+            } else {
+                throw new Error("Gagal");
+            }
+        } catch (error) {
+            element.classList.remove('completed');
+            if (icon) icon.innerHTML = '🔘';
+            element.onclick = function() { completeTask(element, tugasName, targetArea) };
+            if (typeof showTemporaryToast === 'function') showTemporaryToast('📶 Gagal mengirim, periksa sinyal!', 'error');
+        }
+    }, 300);
+}
