@@ -1256,14 +1256,13 @@ async function loadRoutineChecklist() {
     
     if (!container) return;
     
-    // Set Tanggal Hari Ini di Header Job
     const today = new Date();
+    // 1. Set Tanggal Hari Ini di Header Job
     const hariIni = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(today);
     if (dateEl) {
         dateEl.textContent = new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(today);
     }
     
-    // Tampilkan Loading bawaan Anda
     container.innerHTML = `
         <div class="job-loading">
             <div class="spinner"></div>
@@ -1271,28 +1270,57 @@ async function loadRoutineChecklist() {
         </div>`;
     
     try {
-        const response = await fetch(`${GAS_URL}?action=getDailyRoutine&day=${hariIni}`);
+        // 👇 2. DETEKSI SHIFT BERDASARKAN JAM 👇
+        const jamSekarang = today.getHours();
+        let currentShift = 'malam'; // Default malam (23.00 - 06.59)
+        if (jamSekarang >= 7 && jamSekarang < 15) {
+            currentShift = 'pagi';
+        } else if (jamSekarang >= 15 && jamSekarang < 23) {
+            currentShift = 'sore';
+        }
+
+        // 👇 3. AMBIL UNIT USER (Menghindari beda operator beda tugas) 👇
+        const currentUnit = (currentUser && currentUser.department) ? currentUser.department : 'ALL';
+
+        // 👇 4. FETCH KE SERVER DENGAN FILTER LENGKAP (Hari, Unit, Shift) 👇
+        const url = `${GAS_URL}?action=getDailyRoutine&day=${hariIni}&unit=${encodeURIComponent(currentUnit)}&shift=${currentShift}`;
+        const response = await fetch(url);
         const result = await response.json();
         
         if (result.success && result.tasks && result.tasks.length > 0) {
-            const html = result.tasks.map((t, index) => {
-                const safeTugas = t.tugas.replace(/'/g, "\\'"); 
-                const safeArea = t.area.replace(/'/g, "\\'");
-                
-                return `
-                    <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}')">
-                        <div class="routine-info">
-                            <span class="task-text">${t.tugas}</span>
-                            <span class="task-area">📍 Area: ${t.area}</span>
-                        </div>
-                        <div class="check-icon">🔘</div>
-                    </div>
-                `;
-            }).join('');
             
-            container.innerHTML = html;
+            // 👇 5. SISTEM MEMORI (Cek tugas yang sudah diselesaikan hari ini) 👇
+            const todayString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            const memoryKey = 'completed_routines_' + todayString;
+            const completedTasks = JSON.parse(localStorage.getItem(memoryKey) || '[]');
+            
+            // Saring: Hanya tampilkan yang BELUM ada di memori
+            const pendingTasks = result.tasks.filter(t => !completedTasks.includes(t.tugas));
+            // 👆 ================================================================ 👆
+
+            if (pendingTasks.length > 0) {
+                const html = pendingTasks.map((t, index) => {
+                    const safeTugas = t.tugas.replace(/'/g, "\\'"); 
+                    const safeArea = t.area.replace(/'/g, "\\'");
+                    
+                    return `
+                        <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}')">
+                            <div class="routine-info">
+                                <span class="task-text">${t.tugas}</span>
+                                <span class="task-area">📍 Area: ${t.area}</span>
+                            </div>
+                            <div class="check-icon">🔘</div>
+                        </div>
+                    `;
+                }).join('');
+                
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = `<div style="text-align:center; color:#10b981; font-style:italic; padding:20px; font-weight:bold;">🎉 Semua tugas rutin Shift ${currentShift.toUpperCase()} selesai!</div>`;
+            }
+
         } else {
-            container.innerHTML = `<div style="text-align:center; color:#94a3b8; font-style:italic; padding:20px;">🎉 Tidak ada jadwal rutinan / Sudah selesai semua.</div>`;
+            container.innerHTML = `<div style="text-align:center; color:#94a3b8; font-style:italic; padding:20px;">🎉 Tidak ada jadwal rutinan untuk Shift ${currentShift.toUpperCase()}.</div>`;
         }
     } catch (error) {
         console.error("Gagal memuat tugas rutin:", error);
@@ -1330,11 +1358,25 @@ async function completeTask(element, tugasName, targetArea) {
             const res = await response.json();
             
             if (res.success) {
+                
+                // 👇 FITUR ANTI-REFRESH: SIMPAN KE MEMORI HP SAAT BERHASIL 👇
+                const today = new Date();
+                const todayString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+                const memoryKey = 'completed_routines_' + todayString;
+                
+                let completedTasks = JSON.parse(localStorage.getItem(memoryKey) || '[]');
+                if (!completedTasks.includes(tugasName)) {
+                    completedTasks.push(tugasName);
+                    localStorage.setItem(memoryKey, JSON.stringify(completedTasks)); // Catat di HP!
+                }
+                // 👆 ======================================================= 👆
+
                 setTimeout(() => {
                     element.remove();
                     const container = document.getElementById('jobListContainer');
                     if (container && container.children.length === 0) {
-                        container.innerHTML = '<div style="text-align:center; color:#10b981; padding:20px; font-weight:bold;">🎉 Semua tugas rutin hari ini selesai!</div>';
+                        // Perbaikan teks menyesuaikan shift (opsional tapi bagus)
+                        container.innerHTML = '<div style="text-align:center; color:#10b981; padding:20px; font-weight:bold;">🎉 Semua tugas rutin shift ini selesai!</div>';
                     }
                 }, 400); 
 
