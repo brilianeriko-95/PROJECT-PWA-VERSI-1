@@ -1280,7 +1280,6 @@ async function loadRoutineChecklist() {
             currentShift = 'sore';
         }
 
-        // 👇 3. AMBIL UNIT USER (Menghindari beda operator beda tugas) 👇
         // 👇 3. AMBIL UNIT USER (Penerjemah Kata Kunci Anti-Gagal) 👇
         let currentUnit = 'ALL';
         if (currentUser && currentUser.department) {
