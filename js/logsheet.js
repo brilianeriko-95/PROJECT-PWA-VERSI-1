@@ -1271,7 +1271,8 @@ async function loadRoutineChecklist() {
     
     try {
         // 👇 2. DETEKSI SHIFT BERDASARKAN JAM 👇
-        const jamSekarang = today.getHours();
+       // const jamSekarang = today.getHours();//
+       const jamSekarang = 21
         let currentShift = 'malam'; // Default malam (23.00 - 06.59)
         if (jamSekarang >= 7 && jamSekarang < 15) {
             currentShift = 'pagi';
