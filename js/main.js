@@ -189,121 +189,7 @@ function hideLoader() {
 }
 
 // ============================================
-// 3. JOB LIST FROM SPREADSHEET
-// ============================================
-
-const JOB_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzkh6ZViJMh8MJWFnunALO3QIrjqBv1ePXJ8ObW3C_HCGKl4FHX19XGvuUFc9-Fzvwz/exec';
-
-function loadTodayJobs() {
-    const jobDateEl = document.getElementById('jobDate');
-    const jobListContainer = document.getElementById('jobListContainer');
-    
-    const today = new Date();
-    if (jobDateEl) {
-        jobDateEl.textContent = today.toLocaleDateString('id-ID', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
-        });
-    }
-    
-    if (jobListContainer) {
-        jobListContainer.innerHTML = `
-            <div class="job-loading">
-                <div class="spinner"></div>
-                <span>Memuat data...</span>
-            </div>
-        `;
-    }
-    
-    fetchJobsFromSheet();
-}
-
-async function fetchJobsFromSheet() {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    try {
-        const targetSheet = encodeURIComponent("joblist hari ini");
-        const response = await fetch(`${JOB_SHEET_URL}?action=getJobs&date=today&sheetName=${targetSheet}`, {
-            method: 'GET',
-            mode: 'cors',
-            signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) throw new Error('Network error');
-        
-        const data = await response.json();
-        
-        if (data.success && data.jobs && data.jobs.length > 0) {
-            renderJobList(data.jobs);
-        } else {
-            renderEmptyJobList();
-        }
-    } catch (error) {
-        console.log('Fetch jobs error/timeout, memuat sample:', error);
-        clearTimeout(timeoutId);
-        renderSampleJobs();
-    }
-}
-
-function renderJobList(jobs) {
-    const jobListContainer = document.getElementById('jobListContainer');
-    if (!jobListContainer) return;
-    
-    let html = '';
-    jobs.forEach(job => {
-        const statusClass = job.status === 'completed' ? 'completed' : 'pending';
-        html += `
-            <div class="job-item">
-                <div class="job-item-status ${statusClass}"></div>
-                <span class="job-item-text">${job.description || job.name}</span>
-            </div>
-        `;
-    });
-    
-    jobListContainer.innerHTML = html;
-}
-
-function renderEmptyJobList() {
-    const jobListContainer = document.getElementById('jobListContainer');
-    if (!jobListContainer) return;
-    
-    jobListContainer.innerHTML = `
-        <div class="job-empty">
-            <div class="job-empty-icon">📋</div>
-            <p>Tidak ada job untuk hari ini</p>
-        </div>
-    `;
-}
-
-function renderSampleJobs() {
-    const jobListContainer = document.getElementById('jobListContainer');
-    if (!jobListContainer) return;
-    
-    const sampleJobs = [
-        { description: 'Input Logsheet Shift 3', status: 'pending' },
-        { description: 'TPM Area Turbin', status: 'completed' },
-        { description: 'Update Balancing Power', status: 'pending' }
-    ];
-    
-    let html = '';
-    sampleJobs.forEach(job => {
-        const statusClass = job.status === 'completed' ? 'completed' : 'pending';
-        html += `
-            <div class="job-item">
-                <div class="job-item-status ${statusClass}"></div>
-                <span class="job-item-text">${job.description}</span>
-            </div>
-        `;
-    });
-    
-    jobListContainer.innerHTML = html;
-}
-// ============================================
-// 4. UI & NAVIGATION HELPERS
+// 3. UI & NAVIGATION HELPERS
 // ============================================
 
 // State Global untuk menandai posisi operator
@@ -645,7 +531,7 @@ async function syncOfflineData() {
 
 window.addEventListener('DOMContentLoaded', () => {
     initState();
-    loadTodayJobs();
+    //loadTodayJobs();
     checkOfflineData();
     runStorageMaintenance();
 
