@@ -7,7 +7,7 @@
    ============================================ */
 
 // 1. APP CONFIGURATION
-const APP_VERSION = '3.0.2';
+const APP_VERSION = '3.0.3';
 const APP_NAME = 'PROJECT LOGSHEET';
 
 const AUTH_CONFIG = {
@@ -401,22 +401,22 @@ const AREAS_1100 = {
   "BED I": [
     "GAS IN PI-1007-6B (mmHg)",
     "GAS OUT PI-1007-6A (mmHg)",
-    "DELTA P (mmHg)"
+    "∆P BED-I (mmHg)"
   ],
   "BED II": [
     "GAS IN PI-1007-6D (mmHg)",
     "GAS OUT PI-1007-6C (mmHg)",
-    "DELTA P (mmHg)"
+    "∆P BED-II (mmHg)"
   ],
   "BED III": [
     "GAS IN PI-1007-6F (mmHg)",
     "GAS OUT PI-1007-6E (mmHg)",
-    "DELTA P (mmHg)"
+    "∆P BED-III (mmHg)"
   ],
   "BED IV": [
     "GAS IN PI-1007-6H (mmHg)",
     "GAS OUT PI-1007-6G (mmHg)",
-    "DELTA P (mmHg)"
+    "∆P BED-IV (mmHg)"
   ],
   "INTERPASS HEAT EXCHANGER": [
     "30-E-1202 IN TUBE PI-1008-14 (mmH2O)",
