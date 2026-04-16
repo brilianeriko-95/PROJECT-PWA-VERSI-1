@@ -1340,31 +1340,41 @@ async function loadRoutineChecklist() {
 
                 html += `</div><div id="rutinanListWrap">`;
 
-                // 👇 2. RENDER KARTU TUGAS BESERTA ATRIBUT POSISINYA 👇
-                // 👇 2. RENDER KARTU TUGAS BESERTA DROPDOWN OTOMATIS 👇
+            // 👇 2. RENDER KARTU TUGAS BESERTA VALIDASI FOTO 👇
                 html += pendingTasks.map((t, index) => {
                     let namaTugasAsli = t.tugas;
-                    let dropdownHTML = '';
+                    let ekstraHTML = '';
                     let hasDropdown = false;
+                    let hasFoto = false;
                     let dropdownId = `dd_rutin_${index}`;
+                    let fotoId = `foto_rutin_${index}`;
 
-                    // Cek apakah ada teks di dalam kurung siku [...]
-                    const match = namaTugasAsli.match(/\[(.*?)\]/);
-                    if (match) {
+                    // Cek apakah ada teks dropdown dalam kurung siku [...]
+                    const matchDD = namaTugasAsli.match(/\[([^FOTO].*?)\]/);
+                    if (matchDD && !matchDD[1].includes('FOTO')) {
                         hasDropdown = true;
-                        const optionsText = match[1]; // Mengambil teks "A ke B, B ke A"
-                        const optionsArray = optionsText.split(',').map(opt => opt.trim()); // Memecah berdasarkan koma
-                        
-                        // Hapus teks dalam kurung siku dari judul tugas utama
-                        namaTugasAsli = namaTugasAsli.replace(match[0], '').trim(); 
+                        const optionsArray = matchDD[1].split(',').map(opt => opt.trim());
+                        namaTugasAsli = namaTugasAsli.replace(matchDD[0], '').trim(); 
 
-                        // Buat elemen Dropdown HTML
-                        dropdownHTML = `
+                        ekstraHTML += `
                             <div style="margin-top: 10px;" onclick="event.stopPropagation()">
-                                <select id="${dropdownId}" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.8rem; color: #333; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
-                                    <option value="">-- Pilih Status / Aksi --</option>
+                                <select id="${dropdownId}" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.8rem; outline: none;">
+                                    <option value="">-- Pilih Status --</option>
                                     ${optionsArray.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
                                 </select>
+                            </div>
+                        `;
+                    }
+
+                    // Cek apakah wajib foto [FOTO]
+                    if (namaTugasAsli.includes('[FOTO]')) {
+                        hasFoto = true;
+                        namaTugasAsli = namaTugasAsli.replace('[FOTO]', '').trim();
+                        
+                        ekstraHTML += `
+                            <div style="margin-top: 10px; padding: 8px; background: #fff1f2; border: 1px dashed #ef4444; border-radius: 6px;" onclick="event.stopPropagation()">
+                                <label style="font-size: 0.75rem; color: #ef4444; font-weight: bold; display: block; margin-bottom: 4px;">📸 Wajib Upload Bukti Foto!</label>
+                                <input type="file" id="${fotoId}" accept="image/*" capture="environment" style="width: 100%; font-size: 0.75rem;">
                             </div>
                         `;
                     }
@@ -1373,15 +1383,16 @@ async function loadRoutineChecklist() {
                     const safeArea = t.area.replace(/'/g, "\\'");
                     const safePosisi = (t.posisi || 'ALL').replace(/'/g, "\\'");
                     
-                    // Tambahkan ID dropdown ke dalam parameter completeTask jika ada
                     const paramDropdown = hasDropdown ? `'${dropdownId}'` : `null`;
+                    const paramFoto = hasFoto ? `'${fotoId}'` : `null`;
                     
                     return `
-                        <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}', ${paramDropdown})" data-posisi="${safePosisi}">
+                        <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}', ${paramDropdown}, ${paramFoto})" data-posisi="${safePosisi}">
                             <div class="routine-info" style="width: 100%;">
                                 <span class="task-text">${namaTugasAsli}</span>
                                 <span class="task-area">📍 Area: ${t.area} </span>
-                                ${dropdownHTML} </div>
+                                ${ekstraHTML}
+                            </div>
                             <div class="check-icon">🔘</div>
                         </div>
                     `;
@@ -1401,30 +1412,72 @@ async function loadRoutineChecklist() {
         container.innerHTML = `<div style="text-align:center; color:#ef4444; padding:20px;">Koneksi terputus. Gagal memuat tugas.</div>`;
     }
 }
-async function completeTask(element, tugasName, targetArea, dropdownId) {
+// 👇 TAMBAHKAN PARAMETER fotoId DI SINI 👇
+async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) {
     if (!currentUser || !currentUser.name) {
         if (typeof showTemporaryToast === 'function') showTemporaryToast('⚠️ Silakan login terlebih dahulu.', 'warning');
         return;
     }
 
     let finalTugasName = tugasName;
+    let fotoBase64 = null; // ✅ Hanya dideklarasikan SATU KALI di sini
+    let mimeType = '';
+    let fileName = '';
 
-    // 👇 VALIDASI DROPDOWN (CEGAT JIKA BELUM DIPILIH) 👇
+    // 1. VALIDASI DROPDOWN
     if (dropdownId) {
         const ddElement = document.getElementById(dropdownId);
         if (ddElement && ddElement.value === "") {
-            // Beri peringatan visual (berkedip merah)
             ddElement.style.border = '2px solid #ef4444';
             setTimeout(() => { ddElement.style.border = '1px solid #cbd5e1'; }, 1000);
-            
             if (typeof showTemporaryToast === 'function') showTemporaryToast('⚠️ Wajib pilih status dari dropdown!', 'error');
-            return; // Batalkan proses centang!
+            return; 
+        }
+        if (ddElement && ddElement.value !== "") finalTugasName = `${tugasName} (${ddElement.value})`;
+    }
+
+    // 👇 2. VALIDASI WAJIB FOTO 👇
+    if (fotoId) {
+        const fileInput = document.getElementById(fotoId);
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            fileInput.parentElement.style.background = '#fecaca';
+            setTimeout(() => { fileInput.parentElement.style.background = '#fff1f2'; }, 1000);
+            if (typeof showTemporaryToast === 'function') showTemporaryToast('📸 Bukti foto wajib dilampirkan!', 'error');
+            return; 
         }
         
-        if (ddElement && ddElement.value !== "") {
-            // Gabungkan nama tugas dengan hasil pilihan (Contoh: "Switch 30-P-6201 (A ke B)")
-            finalTugasName = `${tugasName} (${ddElement.value})`;
+        // JIKA ADA FOTO, GUNAKAN COMPRESS IMAGE DARI UTILS.JS
+        const file = fileInput.files[0];
+        if (typeof showTemporaryToast === 'function') showTemporaryToast('⏳ Mengompres foto...', 'info');
+        
+        // 1. Buat URL memori sementara (Mencegah RAM HP Penuh)
+        const tempImageUrl = URL.createObjectURL(file);
+        
+        try {
+            // 2. Panggil fungsi sakti Anda dari utils.js
+            const result = await compressImage(tempImageUrl, {
+                maxWidth: 800,
+                maxHeight: 800,
+                quality: 0.7, // 70% sudah sangat cukup
+                type: 'image/jpeg'
+            });
+            
+            // 3. Hapus memori URL agar HP tidak lemot
+            URL.revokeObjectURL(tempImageUrl);
+            
+            // 4. Ambil teks Base64-nya saja (Membuang "data:image/jpeg;base64,")
+            fotoBase64 = result.dataUrl.split(',')[1];
+            mimeType = 'image/jpeg';
+            fileName = file.name;
+            
+        } catch (err) {
+            URL.revokeObjectURL(tempImageUrl);
+            if (typeof showTemporaryToast === 'function') showTemporaryToast('❌ Gagal memproses foto!', 'error');
+            console.error("Error Kompresi:", err);
+            return; // Batalkan centang jika foto gagal diproses
         }
+        
+        finalTugasName = `📸 ${finalTugasName}`; 
     }
     // 👆 ========================================== 👆
 
@@ -1432,12 +1485,15 @@ async function completeTask(element, tugasName, targetArea, dropdownId) {
     const icon = element.querySelector('.check-icon');
     if (icon) icon.innerHTML = '✅';
 
-    // Pastikan payload mengirim finalTugasName
+    // ✅ PAYLOAD SUDAH DILENGKAPI DATA FOTO
     const payload = {
         type: 'CHECKLIST_ROUTINE',
-        tugas: finalTugasName, // <--- KUNCI PENTING DI SINI
+        tugas: finalTugasName, 
         targetArea: targetArea,
         Operator: currentUser.name,
+        photoBase64: fotoBase64,     // Foto yang sudah dikompres
+        photoMimeType: mimeType,     // Tipe file (image/jpeg)
+        photoName: fileName,         // Nama file asli
         Jam: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     };
 
@@ -1496,7 +1552,10 @@ async function completeTask(element, tugasName, targetArea, dropdownId) {
         } catch (error) {
             element.classList.remove('completed');
             if (icon) icon.innerHTML = '🔘';
-            element.onclick = function() { completeTask(element, tugasName, targetArea) };
+            
+            // ✅ PARAMETER ONCLICK DIKEMBALIKAN DENGAN LENGKAP
+            element.onclick = function() { completeTask(element, tugasName, targetArea, dropdownId, fotoId) };
+            
             if (typeof showTemporaryToast === 'function') showTemporaryToast('📶 Gagal mengirim, periksa sinyal!', 'error');
         }
     }, 300);
