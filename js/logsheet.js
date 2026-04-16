@@ -1341,17 +1341,47 @@ async function loadRoutineChecklist() {
                 html += `</div><div id="rutinanListWrap">`;
 
                 // 👇 2. RENDER KARTU TUGAS BESERTA ATRIBUT POSISINYA 👇
+                // 👇 2. RENDER KARTU TUGAS BESERTA DROPDOWN OTOMATIS 👇
                 html += pendingTasks.map((t, index) => {
-                    const safeTugas = t.tugas.replace(/'/g, "\\'"); 
+                    let namaTugasAsli = t.tugas;
+                    let dropdownHTML = '';
+                    let hasDropdown = false;
+                    let dropdownId = `dd_rutin_${index}`;
+
+                    // Cek apakah ada teks di dalam kurung siku [...]
+                    const match = namaTugasAsli.match(/\[(.*?)\]/);
+                    if (match) {
+                        hasDropdown = true;
+                        const optionsText = match[1]; // Mengambil teks "A ke B, B ke A"
+                        const optionsArray = optionsText.split(',').map(opt => opt.trim()); // Memecah berdasarkan koma
+                        
+                        // Hapus teks dalam kurung siku dari judul tugas utama
+                        namaTugasAsli = namaTugasAsli.replace(match[0], '').trim(); 
+
+                        // Buat elemen Dropdown HTML
+                        dropdownHTML = `
+                            <div style="margin-top: 10px;" onclick="event.stopPropagation()">
+                                <select id="${dropdownId}" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.8rem; color: #333; outline: none; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                    <option value="">-- Pilih Status / Aksi --</option>
+                                    ${optionsArray.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                                </select>
+                            </div>
+                        `;
+                    }
+
+                    const safeTugas = namaTugasAsli.replace(/'/g, "\\'"); 
                     const safeArea = t.area.replace(/'/g, "\\'");
                     const safePosisi = (t.posisi || 'ALL').replace(/'/g, "\\'");
                     
+                    // Tambahkan ID dropdown ke dalam parameter completeTask jika ada
+                    const paramDropdown = hasDropdown ? `'${dropdownId}'` : `null`;
+                    
                     return `
-                        <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}')" data-posisi="${safePosisi}">
-                            <div class="routine-info">
-                                <span class="task-text">${t.tugas}</span>
+                        <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}', ${paramDropdown})" data-posisi="${safePosisi}">
+                            <div class="routine-info" style="width: 100%;">
+                                <span class="task-text">${namaTugasAsli}</span>
                                 <span class="task-area">📍 Area: ${t.area} </span>
-                            </div>
+                                ${dropdownHTML} </div>
                             <div class="check-icon">🔘</div>
                         </div>
                     `;
@@ -1371,19 +1401,41 @@ async function loadRoutineChecklist() {
         container.innerHTML = `<div style="text-align:center; color:#ef4444; padding:20px;">Koneksi terputus. Gagal memuat tugas.</div>`;
     }
 }
-async function completeTask(element, tugasName, targetArea) {
+async function completeTask(element, tugasName, targetArea, dropdownId) {
     if (!currentUser || !currentUser.name) {
         if (typeof showTemporaryToast === 'function') showTemporaryToast('⚠️ Silakan login terlebih dahulu.', 'warning');
         return;
     }
 
+    let finalTugasName = tugasName;
+
+    // 👇 VALIDASI DROPDOWN (CEGAT JIKA BELUM DIPILIH) 👇
+    if (dropdownId) {
+        const ddElement = document.getElementById(dropdownId);
+        if (ddElement && ddElement.value === "") {
+            // Beri peringatan visual (berkedip merah)
+            ddElement.style.border = '2px solid #ef4444';
+            setTimeout(() => { ddElement.style.border = '1px solid #cbd5e1'; }, 1000);
+            
+            if (typeof showTemporaryToast === 'function') showTemporaryToast('⚠️ Wajib pilih status dari dropdown!', 'error');
+            return; // Batalkan proses centang!
+        }
+        
+        if (ddElement && ddElement.value !== "") {
+            // Gabungkan nama tugas dengan hasil pilihan (Contoh: "Switch 30-P-6201 (A ke B)")
+            finalTugasName = `${tugasName} (${ddElement.value})`;
+        }
+    }
+    // 👆 ========================================== 👆
+
     element.onclick = null; 
     const icon = element.querySelector('.check-icon');
     if (icon) icon.innerHTML = '✅';
 
+    // Pastikan payload mengirim finalTugasName
     const payload = {
         type: 'CHECKLIST_ROUTINE',
-        tugas: tugasName,
+        tugas: finalTugasName, // <--- KUNCI PENTING DI SINI
         targetArea: targetArea,
         Operator: currentUser.name,
         Jam: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
