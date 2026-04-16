@@ -1322,21 +1322,42 @@ async function loadRoutineChecklist() {
             const pendingTasks = result.tasks.filter(t => !completedTasks.includes(t.tugas));
 
             if (pendingTasks.length > 0) {
-                const html = pendingTasks.map((t, index) => {
+                // 👇 1. SISTEM TOMBOL FILTER DINAMIS 👇
+                // Ambil daftar posisi unik dari tugas yang dikirim server
+                const uniquePositions = [...new Set(pendingTasks.map(t => t.posisi))].filter(p => p !== 'ALL' && p !== '');
+
+                let html = `
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px; justify-content: center; overflow-x: auto; padding-bottom: 5px;">
+                        <button onclick="filterRutinan('ALL', this)" class="btn-filter-rutin active" style="padding: 6px 16px; border-radius: 20px; border: none; background: #3b82f6; color: white; cursor: pointer; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">Semua Tugas</button>
+                `;
+
+                // Ciptakan tombol secara otomatis sesuai data posisi di Spreadsheet
+                const warnaTombol = ['#8b5cf6', '#10b981', '#f59e0b', '#ec4899']; // Variasi warna
+                uniquePositions.forEach((pos, idx) => {
+                    let color = warnaTombol[idx % warnaTombol.length];
+                    html += `<button onclick="filterRutinan('${pos}', this)" class="btn-filter-rutin" style="padding: 6px 16px; border-radius: 20px; border: 1px solid ${color}; background: white; color: ${color}; cursor: pointer; font-size: 0.8rem; font-weight: bold; white-space: nowrap;" data-color="${color}">${pos}</button>`;
+                });
+
+                html += `</div><div id="rutinanListWrap">`;
+
+                // 👇 2. RENDER KARTU TUGAS BESERTA ATRIBUT POSISINYA 👇
+                html += pendingTasks.map((t, index) => {
                     const safeTugas = t.tugas.replace(/'/g, "\\'"); 
                     const safeArea = t.area.replace(/'/g, "\\'");
+                    const safePosisi = (t.posisi || 'ALL').replace(/'/g, "\\'");
                     
                     return `
-                        <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}')">
+                        <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}')" data-posisi="${safePosisi}">
                             <div class="routine-info">
                                 <span class="task-text">${t.tugas}</span>
-                                <span class="task-area">📍 Area: ${t.area}</span>
+                                <span class="task-area">📍 Area: ${t.area} </span>
                             </div>
                             <div class="check-icon">🔘</div>
                         </div>
                     `;
                 }).join('');
                 
+                html += `</div>`;
                 container.innerHTML = html;
             } else {
                 container.innerHTML = `<div style="text-align:center; color:#10b981; font-style:italic; padding:20px; font-weight:bold;">🎉 Semua tugas rutin Shift ${currentShift.toUpperCase()} selesai!</div>`;
@@ -1414,3 +1435,40 @@ async function completeTask(element, tugasName, targetArea) {
         }
     }, 300);
 }
+// ==========================================
+// FUNGSI FILTER RUTINAN (DINAMIS)
+// ==========================================
+window.filterRutinan = function(kategori, btnElement) {
+    // 1. Reset warna semua tombol
+    document.querySelectorAll('.btn-filter-rutin').forEach(btn => {
+        btn.style.background = 'white';
+        btn.style.color = btn.getAttribute('data-color') || '#3b82f6';
+        if (btn.textContent === 'Semua Tugas') {
+            btn.style.border = '1px solid #3b82f6';
+            btn.style.color = '#3b82f6';
+        }
+        btn.classList.remove('active');
+    });
+    
+    // 2. Warnai tombol yang sedang diklik
+    btnElement.style.background = btnElement.getAttribute('data-color') || '#3b82f6';
+    btnElement.style.color = 'white';
+    btnElement.classList.add('active');
+
+    // 3. Tampilkan/Sembunyikan Kartu Tugas sesuai posisi
+    const semuaKartu = document.querySelectorAll('.routine-card');
+
+    semuaKartu.forEach(kartu => {
+        const pos = kartu.getAttribute('data-posisi');
+        if (kategori === 'ALL') {
+            kartu.style.display = 'flex';
+        } else {
+            // Tampilkan jika posisinya sama, atau jika tugas itu milik ALL (umum)
+            if (pos === kategori || pos === 'ALL') {
+                kartu.style.display = 'flex';
+            } else {
+                kartu.style.display = 'none';
+            }
+        }
+    });
+};
