@@ -1415,12 +1415,26 @@ async function completeTask(element, tugasName, targetArea) {
                 // 👆 ======================================================= 👆
 
                 setTimeout(() => {
-                    element.remove();
-                    const container = document.getElementById('jobListContainer');
-                    if (container && container.children.length === 0) {
-                        // Perbaikan teks menyesuaikan shift (opsional tapi bagus)
-                        container.innerHTML = '<div style="text-align:center; color:#10b981; padding:20px; font-weight:bold;">🎉 Semua tugas rutin shift ini selesai!</div>';
+                    element.remove(); // Hapus kartu yang barusan di-klik dari layar
+                    
+                    // 👇 PERBAIKAN LOGIKA: CEK SISA KARTU TUGAS 👇
+                    const sisaTugas = document.querySelectorAll('.routine-card').length;
+                    
+                    if (sisaTugas === 0) {
+                        // Deteksi Shift berdasarkan jam HP saat ini
+                        const jamSekarang = new Date().getHours();
+                        let currentShift = 'MALAM';
+                        if (jamSekarang >= 7 && jamSekarang < 15) currentShift = 'PAGI';
+                        else if (jamSekarang >= 15 && jamSekarang < 23) currentShift = 'SORE';
+
+                        const container = document.getElementById('jobListContainer');
+                        if (container) {
+                            // Hancurkan tombol filter & ganti dengan pesan sukses!
+                            container.innerHTML = `<div style="text-align:center; color:#10b981; font-style:italic; padding:20px; font-weight:bold; animation: fadeIn 0.5s ease-in-out;">🎉 Semua tugas rutin Shift ${currentShift} selesai!</div>`;
+                        }
                     }
+                    // 👆 ========================================== 👆
+
                 }, 400); 
 
                 if (typeof showTemporaryToast === 'function') showTemporaryToast('✅ Tercatat di Laporan', 'success');
