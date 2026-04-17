@@ -289,7 +289,7 @@ function openLogsheetMenu(menuKey) {
         // 👇 2. PINDAH LAYAR DULU (INI YANG BIKIN TAMPILAN BERUBAH!) 👇
         // Pastikan nama screen-nya sesuai dengan ID di index.html Anda
         // Biasanya namanya 'universalLogsheetScreen' atau 'logsheetScreen'
-        navigateTo('universalLogsheetScreen'); 
+        navigateTo('universalAreaListScreen'); 
         // 👆 ======================================================== 👆
 
         // 👇 3. BARU LEMPAR STATUS KE PEMBUAT FORM
