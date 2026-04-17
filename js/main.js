@@ -286,7 +286,13 @@ function openLogsheetMenu(menuKey) {
         const isOperasi = confirm("KONDISI PABRIK SAAT INI:\n\n[ OK ] = PABRIK OPERASI (Normal)\n[ CANCEL ] = PABRIK STOP");
         const statusPabrik = isOperasi ? 'OPERASI' : 'STOP';
 
-        // 👇 2. LEMPAR STATUS KE PEMBUAT FORM
+        // 👇 2. PINDAH LAYAR DULU (INI YANG BIKIN TAMPILAN BERUBAH!) 👇
+        // Pastikan nama screen-nya sesuai dengan ID di index.html Anda
+        // Biasanya namanya 'universalLogsheetScreen' atau 'logsheetScreen'
+        navigateTo('universalLogsheetScreen'); 
+        // 👆 ======================================================== 👆
+
+        // 👇 3. BARU LEMPAR STATUS KE PEMBUAT FORM
         if (typeof openUniversalLogsheet === 'function') {
             openUniversalLogsheet(menuKey, statusPabrik); 
         }
@@ -296,7 +302,6 @@ function openLogsheetMenu(menuKey) {
         }
     }
 }
-   
 // ============================================
 // 5. UI SETUP & LISTENERS
 // ============================================
