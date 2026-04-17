@@ -260,27 +260,26 @@ function closeBranchMenuPopup() {
  * Digunakan untuk berpindah antar layar (screen)
  */
 function navigateTo(screenId) {
-    console.log('🚀 Navigating to screen:', screenId);
-    
-    // 1. Amankan posisi scroll ke atas
-    window.scrollTo(0, 0);
-
-    // 2. Sembunyikan semua layar & CABUT GEMBOK
+    // 1. SAPU BERSIH: Sembunyikan semua screen dan matikan inline style
     document.querySelectorAll('.screen').forEach(screen => {
         screen.classList.remove('active');
-        screen.style.display = ''; // 👈 CABUT GEMBOK (Biarkan kosong)
+        screen.style.display = 'none'; // 👈 INI OBATNYA (Mencegah layar bertumpuk)
     });
 
-    // 3. TAMPILKAN TARGET
+    // 2. TAMPILKAN TARGET: Nyalakan hanya layar yang dituju
     const targetScreen = document.getElementById(screenId);
     if (targetScreen) {
+        // Gunakan flex untuk login, sisanya block
+        if (screenId === 'loginScreen') {
+            targetScreen.style.display = 'flex';
+        } else {
+            targetScreen.style.display = 'block';
+        }
         
-        // Jeda sangat tipis (10ms) agar browser siap menjalankan animasi CSS
-        setTimeout(() => {
-            targetScreen.classList.add('active');
-        }, 10);
+        targetScreen.classList.add('active');
         
-        // --- LOGIKA UPDATE DATA OTOMATIS SAAT PINDAH LAYAR ---
+        // Scroll ke atas secara otomatis
+        window.scrollTo(0, 0);
         
         // Logika khusus jika ke layar Logsheet (Update nama user)
         if (screenId === 'logsheetSelectScreen' && typeof currentUser !== 'undefined' && currentUser) {
@@ -288,28 +287,15 @@ function navigateTo(screenId) {
             if (userEl) userEl.textContent = currentUser.name || currentUser.username;
         }
 
-        // Pemanggilan Checklist Rutin saat ke Home
+        // 👇 PEMANGGILAN CHECKLIST RUTIN 👇
         if (screenId === 'homeScreen') {
             if (typeof loadRoutineChecklist === 'function') {
                 loadRoutineChecklist();
             }
-            if (typeof checkOfflineData === 'function') {
-                checkOfflineData();
-            }
-        }
-
-        // Pemanggilan data Area saat ke layar TPM
-        if (screenId === 'tpmScreen' && typeof renderTPMAreas === 'function') {
-            renderTPMAreas();
-        }
-
-        // Pemanggilan data Dashboard Supervisor
-        if (screenId === 'dashboardSupervisor' && typeof loadSupervisorDashboard === 'function') {
-            loadSupervisorDashboard();
         }
         
-    } else {
-        console.error(`❌ Layar dengan ID "${screenId}" tidak ditemukan!`);
+    } else { // <--- Pastikan else langsung menyambung dengan penutup blok if(targetScreen)
+        console.error(`Layar dengan ID "${screenId}" tidak ditemukan!`);
     }
 }
 // ============================================
