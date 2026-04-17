@@ -6,8 +6,11 @@ let univLastData = {};
 let silentFetchAbortController = null;
 
 function fetchLastDataUniversal(type) {
+    // 1. TAMPILKAN INSTAN DARI MEMORI HP
     const cachedLastData = localStorage.getItem('last_data_' + type);
     univLastData = cachedLastData ? JSON.parse(cachedLastData) : {};
+    
+    // 2. DIAM-DIAM CARI DATA BARU DI BELAKANG LAYAR
     silentFetchLastData(type);
 }
 
@@ -34,8 +37,17 @@ function silentFetchLastData(type) {
         }
 
         if (data.success) {
+            // 👇 1. UPDATE MEMORI HP
             localStorage.setItem('last_data_' + type, JSON.stringify(data.data));
+            
+            // 👇 2. UPDATE VARIABEL YANG SEDANG DIPAKAI SAAT INI
+            univLastData = data.data; 
             console.log(`[Background Sync] Data riwayat ${type} berhasil diperbarui.`);
+
+            // 👇 3. BERITAHU LAYAR AGAR BERUBAH AJAIB (LIVE UPDATE) 👇
+            if (typeof updateLiveLastDataUI === 'function') {
+                updateLiveLastDataUI();
+            }
         }
         cleanupJSONP(callbackName);
         silentFetchAbortController = null;
@@ -66,6 +78,40 @@ function silentFetchLastData(type) {
     document.body.appendChild(script);
 }
 
+// =========================================================
+// 👇 FUNGSI SAKTI BARU: MENGUBAH TULISAN DI LAYAR SECARA LIVE
+// =========================================================
+function updateLiveLastDataUI() {
+    const lastDataEl = document.getElementById('univLastDataDisplay');
+    
+    // Pastikan operator sedang melihat form (bukan di menu depan)
+    if (!lastDataEl || !activeUnivArea || typeof activeUnivFilteredParams === 'undefined') return;
+
+    const config = LOGSHEET_CONFIG[activeLogsheetType];
+    const fullLabel = activeUnivFilteredParams[activeUnivIdx];
+    if (!fullLabel) return;
+
+    // Bersihkan nama alat
+    const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+    const nameOnly = fullLabelBersih.split(' (')[0];
+
+    // Ambil nilai terbaru yang barusan ditarik
+    const newValue = univLastData[fullLabel] || univLastData[nameOnly];
+    const newTime = univLastData._lastTime || '--:--';
+
+    // Jika ada datanya, bikin efek berkilau hijau!
+    if (newValue && newValue !== '') {
+        // Cek apakah nilainya berubah dari yang ditampilin sekarang
+        const currentText = lastDataEl.innerText;
+        if (!currentText.includes(newValue) || !currentText.includes(newTime)) {
+            lastDataEl.innerHTML = `🕒 Tersinkron (${newTime}): <span style="color: #10b981; font-weight: 900; text-shadow: 0 0 10px rgba(16,185,129,0.8); transition: all 0.5s;">${newValue}</span> <span style="font-size: 0.75rem; color: #10b981; margin-left: 6px;">✨ Baru ditarik</span>`;
+            
+            // Efek detak jantung sebentar biar operator sadar datanya berubah
+            lastDataEl.style.transform = 'scale(1.05)';
+            setTimeout(() => { lastDataEl.style.transform = 'scale(1)'; }, 300);
+        }
+    }
+}
 
 function updateStatusIndicator(isOnline) {
     console.log('System Status:', isOnline ? 'Online' : 'Offline');
