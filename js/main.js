@@ -262,7 +262,8 @@ function navigateTo(screenId) {
 /**
  * PINTU MASUK UNIVERSAL (Gatekeeper Unit)
  */
-function openLogsheetMenu(menuKey) {
+// 👇 WAJIB tambahkan kata "async" di depan function
+async function openLogsheetMenu(menuKey) { 
     const config = LOGSHEET_CONFIG[menuKey];
     
     // 1. Validasi Konfigurasi
@@ -282,17 +283,16 @@ function openLogsheetMenu(menuKey) {
             initBalancingScreen();
         }
     } else {
-        // 👇 1. TANYA OPERATOR
-        const isOperasi = confirm("KONDISI PABRIK SAAT INI:\n\n[ OK ] = PABRIK OPERASI (Normal)\n[ CANCEL ] = PABRIK STOP");
-        const statusPabrik = isOperasi ? 'OPERASI' : 'STOP';
+        // 👇 1. PANGGIL MODAL CUSTOM & TUNGGU JAWABAN (DULU PAKAI confirm) 👇
+        // Fungsi askPabrikStatus() akan memunculkan Pop-up yang kita buat di index.html
+        const statusPabrik = await askPabrikStatus(); 
+        // Program akan "berhenti" di sini sampai operator klik OPERASI atau STOP
+        // 👆 ============================================================= 👆
 
-        // 👇 2. PINDAH LAYAR DULU (INI YANG BIKIN TAMPILAN BERUBAH!) 👇
-        // Pastikan nama screen-nya sesuai dengan ID di index.html Anda
-        // Biasanya namanya 'universalLogsheetScreen' atau 'logsheetScreen'
+        // 2. PINDAH LAYAR (Setelah status dipilih)
         navigateTo('universalAreaListScreen'); 
-        // 👆 ======================================================== 👆
 
-        // 👇 3. BARU LEMPAR STATUS KE PEMBUAT FORM
+        // 3. BARU LEMPAR STATUS KE PEMBUAT FORM
         if (typeof openUniversalLogsheet === 'function') {
             openUniversalLogsheet(menuKey, statusPabrik); 
         }
@@ -659,5 +659,25 @@ function checkStorageQuota() {
         } else {
             alert(`⚠️ Memori HP Penuh (${mbUsed}MB)! Segera SINKRONISASI data offline Anda.`);
         }
+    }
+}
+// --- LOGIKA MODAL CUSTOM STATUS PABRIK ---
+let modalStatusResolve = null; // Variabel penyimpan jawaban
+
+function askPabrikStatus() {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('modalStatusPabrik');
+        if (modal) modal.style.display = 'flex'; // Tampilkan Modal
+        modalStatusResolve = resolve; // Simpan fungsi "tunggu"
+    });
+}
+
+function resolveModalStatus(status) {
+    const modal = document.getElementById('modalStatusPabrik');
+    if (modal) modal.style.display = 'none'; // Sembunyikan Modal
+    
+    if (modalStatusResolve) {
+        modalStatusResolve(status); // Kirim jawaban (OPERASI / STOP)
+        modalStatusResolve = null;
     }
 }
