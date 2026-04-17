@@ -282,13 +282,15 @@ function openLogsheetMenu(menuKey) {
             initBalancingScreen();
         }
     } else {
-        // PENTING: Panggil openUniversalLogsheet agar logsheet.js bisa mengecek 
-        // apakah config unit ini memiliki properti 'groups' (Panel) atau tidak (Wizard).
+        // 👇 1. TANYA OPERATOR
+        const isOperasi = confirm("KONDISI PABRIK SAAT INI:\n\n[ OK ] = PABRIK OPERASI (Normal)\n[ CANCEL ] = PABRIK STOP");
+        const statusPabrik = isOperasi ? 'OPERASI' : 'STOP';
+
+        // 👇 2. LEMPAR STATUS KE PEMBUAT FORM
         if (typeof openUniversalLogsheet === 'function') {
-            openUniversalLogsheet(menuKey);
+            openUniversalLogsheet(menuKey, statusPabrik); 
         }
         
-        // Tarik data background secara diam-diam
         if (typeof fetchLastDataUniversal === 'function') {
             fetchLastDataUniversal(menuKey);
         }
