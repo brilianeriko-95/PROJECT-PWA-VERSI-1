@@ -560,7 +560,7 @@ function nextUnivStep() {
             }
             
             // Efek kedip merah pada kotak foto biar operator sadar
-            const photoContainer = document.getElementById('univPhotoContainer');
+            const photoContainer = document.getElementById('univParamPhotoSection');
             if (photoContainer) {
                 photoContainer.style.border = '2px solid #ef4444';
                 setTimeout(() => { photoContainer.style.border = ''; }, 1000);
@@ -637,7 +637,7 @@ function handleUnivStatusChange(checkbox) {
     const valInput = document.getElementById('univValInput');
     
     // 👇 Panggil kotak foto (Pastikan ID-nya sesuai dengan di HTML Anda)
-    const photoContainer = document.getElementById('univPhotoContainer'); 
+    const photoContainer = document.getElementById('univParamPhotoSection'); 
 
     // Matikan checkbox lain (radio-like behavior)
     document.querySelectorAll('input[name="univParamStatus"]').forEach(cb => {
@@ -679,7 +679,7 @@ function loadUnivAbnormalStatus(fullLabel) {
     const valInput = document.getElementById('univValInput');
     
     // 👇 Panggil kotak foto
-    const photoContainer = document.getElementById('univPhotoContainer'); 
+    const photoContainer = document.getElementById('univParamPhotoSection'); 
 
     let foundStatus = false;
     checkboxes.forEach(cb => {
