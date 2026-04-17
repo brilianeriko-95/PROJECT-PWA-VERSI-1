@@ -152,13 +152,14 @@ function openUniversalLogsheet(type, statusPabrik) {
  * ⚠️ DITAMBAHKAN PARAMETER statusPabrik UNTUK LOGIKA FILTER [ALL]/[OPERASI]/[STOP]
  */
 function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') { 
+    // 👇 1. SIMPAN KE MEMORI GLOBAL AGAR TIDAK LUPA 👇
+    window.currentStatusPabrik = statusPabrik;
+
     const config = LOGSHEET_CONFIG[menuKey];
     const listContainer = document.getElementById('univAreaList');
     if (!listContainer || !config || !config.areas) return;
     
     activeLogsheetType = menuKey; 
-
-    // AMBIL DATA DARI STATE GLOBAL window.activeDrafts
     const currentDraft = window.activeDrafts[menuKey] || {};
     
     let html = '';
@@ -167,39 +168,33 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
 
     Object.entries(config.areas).forEach(([areaNameLengkap, paramsList]) => {
         
-        // 👇 1. SATPAM LAPIS 1: CEK KTP HEADER AREA 👇
         const isAreaOperasi = areaNameLengkap.includes('[OPERASI]');
         const isAreaStop = areaNameLengkap.includes('[STOP]');
 
-        if (statusPabrik === 'STOP' && isAreaOperasi) return; // Area mati total, JANGAN DIGAMBAR!
-        if (statusPabrik === 'OPERASI' && isAreaStop) return;  // Area khusus stop, JANGAN DIGAMBAR!
+        if (statusPabrik === 'STOP' && isAreaOperasi) return; 
+        if (statusPabrik === 'OPERASI' && isAreaStop) return;  
 
-        // 👇 2. SATPAM LAPIS 2: SARING PARAMETER DI DALAM AREA 👇
         const parameterLolosFilter = paramsList.filter(fullLabel => {
             const isParamAll = fullLabel.includes('[ALL]');
             const isParamStop = fullLabel.includes('[STOP]');
             
             if (statusPabrik === 'OPERASI' && isParamStop) return false; 
-            if (statusPabrik === 'STOP' && (!isParamAll && !isParamStop)) return false; 
+            
+            // 👇 LOGIKA BARU: Kalau Areanya bukan khusus STOP, baru alat normal dimatikan
+            if (statusPabrik === 'STOP' && !isAreaStop && !isParamAll && !isParamStop) return false; 
             
             return true;
         });
 
-        // 👇 3. CEK KARTU KOSONG 👇
-        if (parameterLolosFilter.length === 0) return; // Kalau isinya habis, Area JANGAN DIGAMBAR!
+        if (parameterLolosFilter.length === 0) return; 
 
-        // 👇 4. BERSIHKAN NAMA AREA UNTUK DITAMPILKAN DI KARTU 👇
         const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
 
-        // -------------------------------------------------------------
-        // LANJUTKAN LOGIKA MENGHITUNG PROGRESS UNTUK KARTU YANG LOLOS
-        // -------------------------------------------------------------
         let areaFilled = 0;
-        const areaTotal = parameterLolosFilter.length; // 👈 Hitung HANYA parameter yang lolos filter
+        const areaTotal = parameterLolosFilter.length; 
         totalParams += areaTotal;
 
         parameterLolosFilter.forEach(fullLabel => {
-            // Cek di currentDraft menggunakan nama asli yang belum dibersihkan
             if (currentDraft[areaNameLengkap] && currentDraft[areaNameLengkap][fullLabel]) {
                 areaFilled++;
                 filledParams++;
@@ -209,14 +204,12 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
         const isComplete = areaFilled === areaTotal && areaTotal > 0;
         const progressPercent = areaTotal === 0 ? 0 : Math.round((areaFilled / areaTotal) * 100);
         
-        // Cek apakah ada status abnormal
         const hasAbnormal = parameterLolosFilter.some(fullLabel => {
             const val = (univCurrentInput[areaNameLengkap] && univCurrentInput[areaNameLengkap][fullLabel]) || '';
             const firstLine = val.split('\n')[0];
             return ['ERROR', 'MAINTENANCE', 'NOT_INSTALLED', 'OFF'].includes(firstLine);
         });
 
-        // Atur status visual (Ikon & Warna Premium)
         let statusIcon = '📝';
         let iconBg = `${config.themeColor}25`; 
         let iconColor = config.themeColor;
@@ -240,7 +233,6 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
             themeColor = '#ef4444';
         }
 
-        // HTML KARTU PREMIUM BAWAAN ANDA
         html += `
             <div class="premium-area-card" onclick="openUnivAreaInput('${areaNameLengkap}')" style="--theme-color: ${themeColor};">
                 ${hasAbnormal ? '<div class="abnormal-pulse" style="position:absolute; top:16px; right:16px; width:12px; height:12px; background:#ef4444; border-radius:50%;"></div>' : ''}
@@ -272,7 +264,6 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
 
     listContainer.innerHTML = html;
 
-    // Update Bar Progress Keseluruhan (HANYA DARI PARAMETER YANG LOLOS FILTER)
     const overallPercent = totalParams === 0 ? 0 : Math.round((filledParams / totalParams) * 100);
     const overallPercentEl = document.getElementById('univOverallPercent');
     const overallProgressBarEl = document.getElementById('univOverallProgressBar');
@@ -286,7 +277,6 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
     }
     if (progressTextEl) progressTextEl.textContent = `${overallPercent}% Selesai`;
 
-    // Tombol Submit
     const submitBtn = document.getElementById('univSubmitBtn');
     if (submitBtn) {
         if (overallPercent > 0) {
@@ -298,13 +288,11 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
         }
     }
 }
+
 let activeUnivArea = null;
 let activeUnivIdx = 0;
-let activeUnivFilteredParams = []; // 👈 INI WADAH BARU UNTUK ALAT YANG LOLOS FILTER
+let activeUnivFilteredParams = []; 
 
-/**
- * Memulai pengisian parameter untuk area yang dipilih (Dengan Satpam Lapis 2)
- */
 function openUnivAreaInput(areaNameLengkap) { 
     activeUnivArea = areaNameLengkap; 
     activeUnivIdx = 0;
@@ -312,24 +300,20 @@ function openUnivAreaInput(areaNameLengkap) {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     const paramsListRaw = config.areas[areaNameLengkap];
 
-    // Cek Status Pabrik dari Modal kita tadi
-    const statusPabrik = document.getElementById('sticky-status-header') 
-                         ? document.getElementById('sticky-status-header').innerText.includes('OPERASI') ? 'OPERASI' : 'STOP'
-                         : 'OPERASI';
+    // 👇 2. AMBIL STATUS DARI MEMORI GLOBAL (Anti-Gagal!) 👇
+    const statusPabrik = window.currentStatusPabrik || 'OPERASI';
+    const isAreaStop = areaNameLengkap.includes('[STOP]');
 
-    // 👇 SATPAM LAPIS 2: SARING ALAT SEBELUM MASUK RUANGAN 👇
     activeUnivFilteredParams = paramsListRaw.filter(fullLabel => {
         const isParamAll = fullLabel.includes('[ALL]');
         const isParamStop = fullLabel.includes('[STOP]');
         
         if (statusPabrik === 'OPERASI' && isParamStop) return false; 
-        if (statusPabrik === 'STOP' && (!isParamAll && !isParamStop)) return false; 
+        if (statusPabrik === 'STOP' && !isAreaStop && !isParamAll && !isParamStop) return false; 
         
         return true;
     });
-    // 👆 ================================================= 👆
     
-    // Sinkronisasi warna tema ke elemen UI
     const stepBadge = document.getElementById('univStepBadge');
     if (stepBadge) {
         stepBadge.style.color = config.themeColor;
@@ -489,17 +473,17 @@ function saveUnivStep() {
 }
 
 /**
- * Navigasi ke parameter selanjutnya
+ * Navigasi ke parameter selanjutnya (DENGAN PERBAIKAN NAVIGASI STATUS PABRIK)
  */
 function nextUnivStep() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
-    saveUnivStep();
+    saveUnivStep(); // Simpan data step saat ini dulu
     
-    // 👇 GANTI SUMBER DATA KE WADAH FILTER 👇
+    // 👇 AMBIL LABEL DARI WADAH FILTER (Agar sinkron dengan jumlah alat saat ini)
     const fullLabel = activeUnivFilteredParams[activeUnivIdx];
     const currentPhoto = univParamPhotos[activeUnivArea]?.[fullLabel];
     
-    // Jika ada foto baru (ukurannya besar / format Base64)
+    // 1. LOGIKA BACKGROUND UPLOAD FOTO (Bawaan Anda yang sudah oke)
     if (currentPhoto && currentPhoto.length > 100 && currentPhoto !== 'UPLOADED_BACKGROUND') {
         if (navigator.onLine) {
             uploadPhotoInBackground(activeUnivArea, fullLabel, currentPhoto);
@@ -507,7 +491,7 @@ function nextUnivStep() {
             try {
                 localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
             } catch(e) {
-                console.warn('Gagal menyimpan status UPLOADED_BACKGROUND ke lokal karena memori penuh. Abaikan.');
+                console.warn('Gagal menyimpan status UPLOADED_BACKGROUND ke lokal karena memori penuh.');
             }
         } else {
             if (typeof showTemporaryToast === 'function') {
@@ -515,27 +499,32 @@ function nextUnivStep() {
             }
         }
     }
-    
-    // 👇 CEK BATAS MAKSIMAL DARI JUMLAH ALAT YANG LOLOS FILTER 👇
+
+    // 2. CEK NAVIGASI: LANJUT ATAU SELESAI?
+    // Gunakan activeUnivFilteredParams.length agar jumlah step akurat
     if (activeUnivIdx < activeUnivFilteredParams.length - 1) {
+        // Masih ada alat berikutnya
         activeUnivIdx++;
         showUnivStep();
     } else {
-        // Tampilkan notifikasi Area Selesai tanpa tulisan [ALL] / [OPERASI]
+        // SUDAH DI ALAT TERAKHIR -> KEMBALI KE MENU AREA
         const areaNameBersih = activeUnivArea.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
-        showCustomAlert(`Area ${areaNameBersih} selesai!`, 'success');
+        
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert(`Area ${areaNameBersih} Selesai!`, 'success');
+        }
         
         setTimeout(() => {
-            // Lempar kembali status pabrik agar menu di depan tidak berantakan
-            const statusPabrik = document.getElementById('sticky-status-header') 
-                                 ? (document.getElementById('sticky-status-header').innerText.includes('OPERASI') ? 'OPERASI' : 'STOP') 
-                                 : 'OPERASI';
+            // 👇 SANGAT PENTING: Bawa kembali status pabrik dari memori global 👇
+            const statusPabrik = window.currentStatusPabrik || 'OPERASI';
+            
+            // Render ulang menu depan agar kartu areanya tetap akurat
             renderMenuUniversal(activeLogsheetType, statusPabrik); 
+            
             navigateTo('universalAreaListScreen');
         }, 1200);
     }
 }
-
 /**
  * Navigasi kembali
  */
@@ -545,10 +534,8 @@ function prevUnivStep(forceBack = false) {
         activeUnivIdx--;
         showUnivStep();
     } else {
-        // Lempar kembali status pabrik saat kembali ke depan
-        const statusPabrik = document.getElementById('sticky-status-header') 
-                             ? (document.getElementById('sticky-status-header').innerText.includes('OPERASI') ? 'OPERASI' : 'STOP') 
-                             : 'OPERASI';
+        // 👇 GANTI BAGIAN INI 👇
+        const statusPabrik = window.currentStatusPabrik || 'OPERASI';
         renderMenuUniversal(activeLogsheetType, statusPabrik); 
         navigateTo('universalAreaListScreen');
     }
