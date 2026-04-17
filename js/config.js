@@ -55,18 +55,18 @@ const AREAS = {
         "MPS Inlet 30-TP-6101 TI-6153 (°C)", 
         "MPS Inlet 30-TP-6101 PI-6116 (kg/cm2)", 
         "LPS Extrac 30-TP-6101 PI-6123 (kg/cm2)", 
-        "Gland Steam TI-6156 (°C)", 
+        "Gland Steam TI-6156 (°C) [ALL]", 
         "MPS Inlet 30-TP-6101 PI-6108 (Kg/cm2)", 
         "Exhaust Steam PI-6111 (kg/cm2)", 
-        "Gland Steam PI-6118 (Kg/cm2)"
+        "Gland Steam PI-6118 (Kg/cm2) [ALL]"
     ],
     "Low Pressure Steam": [
         "LPS from U-6101 PI-6104 (kg/cm2)", 
         "LPS from U-6101 TI-6102 (°C)", 
-        "LPS Header PI-6106 (Kg/cm2)", 
-        "LPS Header TI-6107 (°C)"
+        "LPS Header PI-6106 (Kg/cm2) [ALL]", 
+        "LPS Header TI-6107 (°C) [ALL]"
     ],
-    "Lube Oil": [
+    "Lube Oil [ALL]": [
         "Lube Oil 30-TK-6102 LI-6104 (%)", 
         "Lube Oil 30-TK-6102 TI-6125 (°C)", 
         "Lube Oil 30-C-6101 (On/Off)", 
@@ -90,38 +90,38 @@ const AREAS = {
         "Lube Oil FG-6121 (%)", 
         "Lube Oil FG-6116 (%)"
     ],
-    "Control Oil": [
-        "Control Oil 30-TK-6103 LI-6106 (%)", 
-        "Control Oil 30-TK-6103 TI-6128 (°C)", 
+    "Control Oil ": [
+        "Control Oil 30-TK-6103 LI-6106 (%) [ALL]", 
+        "Control Oil 30-TK-6103 TI-6128 (°C) [ALL]", 
         "Control Oil P-6106 (A/B)", 
-        "Control Oil FIL-6103 (A/B)", 
+        "Control Oil FIL-6103 (A/B", 
         "Control Oil PI-6152 (Bar)"
     ],
-    "Shaft Line": [
+    "Shaft Line [STOP]": [
         "Jacking Oil 30-P-6105 PI-6158 (Bar)", 
         "Jacking Oil 30-P-6105 PI-6161 (Bar)", 
         "Electrical Turning Gear U-6103 (Remote/Running/Stop)", 
         "EH-6101 (ON/OFF)"
     ],
     "Condenser 30-E-6102": [
-        "LG-6102 (%)", 
-        "30-P-6101 (A/B)", 
-        "30-P-6101 Suction (kg/cm2)", 
-        "30-P-6101 Discharge (kg/cm2)", 
-        "30-P-6101 Load (Ampere)"
+        "LG-6102 (%) [ALL]", 
+        "30-P-6101 (A/B) [ALL]", 
+        "30-P-6101 Suction (kg/cm2) [ALL]", 
+        "30-P-6101 Discharge (kg/cm2) [ALL]", 
+        "30-P-6101 Load (Ampere) [ALL]"
     ],
-    "Ejector": [
-        "J-6101 PI-6126 A (Kg/cm2)", 
-        "J-6101 PI-6127 B (Kg/cm2)", 
-        "J-6102 PI-6128 A (Kg/cm2)", 
-        "J-6102 PI-6129 B (Kg/cm2)", 
-        "J-6104 PI-6131 (Kg/cm2)", 
-        "J-6104 PI-6138 (Kg/cm2)", 
-        "PI-6172 (kg/cm2)", 
+    "Ejector ": [
+        "J-6101 PI-6126 A (Kg/cm2) [ALL]", 
+        "J-6101 PI-6127 B (Kg/cm2) [ALL]", 
+        "J-6102 PI-6128 A (Kg/cm2) [ALL]", 
+        "J-6102 PI-6129 B (Kg/cm2) [ALL]", 
+        "J-6104 PI-6131 (Kg/cm2) [ALL]", 
+        "J-6104 PI-6138 (Kg/cm2) [ALL]", 
+        "PI-6172 (kg/cm2) [ALL]", 
         "LPS Extrac 30-TP-6101 TI-6155 (°C)", 
         "from U-6102 TI-6104 (°C)"
     ],
-    "Generator Cooling Water": [
+    "Generator Cooling Water [OPERASI]": [
         "Air Cooler PI-6124 A (Kg/cm2)", 
         "Air Cooler PI-6124 B (Kg/cm2)", 
         "Air Cooler TI-6113 A (°C)", 
@@ -131,7 +131,7 @@ const AREAS = {
         "Air Cooler TI-6114 A (°C)", 
         "Air Cooler TI-6114 B (°C)"
     ],
-    "Condenser Cooling Water": [
+    "Condenser Cooling Water [OPERASI]": [
         "Condenser PI-6135 A (Kg/cm2)", 
         "Condenser PI-6135 B (Kg/cm2)", 
         "Condenser TI-6118 A (°C)", 
@@ -141,7 +141,7 @@ const AREAS = {
         "Condenser TI-6119 A (°C)", 
         "Condenser TI-6119 B (°C)"
     ],
-    "BFW System": [
+    "BFW System [ALL]": [
         "Condensate Tank TK-6201 (%)", 
         "Condensate Tank TI-6216 (°C)", 
         "P-6202 (A/B)", 
@@ -165,15 +165,15 @@ const AREAS = {
         "Condensate Drum 30-D-6201 TI-6215 (°C)"
     ],
     "Chemical Dosing": [
-        "30-TK-6205 LI-6204 (%)", 
+        "30-TK-6205 LI-6204 (%) [ALL]", 
         "30-TK-6205 30-P-6205 (A/B)", 
         "30-TK-6205 Disch (kg/cm2)", 
         "30-TK-6205 Stroke (%)", 
-        "30-TK-6206 LI-6206 (%)", 
+        "30-TK-6206 LI-6206 (%) [ALL]", 
         "30-TK-6206 30-P-6206 (A/B)", 
         "30-TK-6206 Disch (kg/cm2)", 
         "30-TK-6206 Stroke (%)", 
-        "30-TK-6207 LI-6208 (%)", 
+        "30-TK-6207 LI-6208 (%) [ALL]", 
         "30-TK-6207 30-P-6207 (A/B)", 
         "30-TK-6207 Disch (kg/cm2)", 
         "30-TK-6207 Stroke (%)"
