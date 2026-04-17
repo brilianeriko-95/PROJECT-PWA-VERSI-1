@@ -224,13 +224,7 @@ function updateUIForAuthenticatedUser() {
     }
     // ========================================================
 
-   // 👇 TAMBAHKAN PEMICU TEMA DI SINI 👇
-    if (typeof applyUnitTheme === 'function' && currentUser && currentUser.department) {
-        applyUnitTheme(currentUser.department);
-    }
-    // 👆 =============================== 👆
-
-    // 👇 BARIS BAWAAN ANDA (JANGAN DIHAPUS) 👇
+   // 👇 TAMBAHKAN BARIS INI 👇
     filterMenuByUnit();
 }
 // ============================================
