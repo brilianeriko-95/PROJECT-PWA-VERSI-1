@@ -194,6 +194,71 @@ function hideLoader() {
 
 // State Global untuk menandai posisi operator
 window.currentActiveMenu = ''; 
+
+/**
+ * Mesin Navigasi Utama PWA
+ * Mengatur perpindahan layar dengan transisi halus dan pemicu data otomatis.
+ */
+function navigateTo(screenId) {
+    console.log('🚀 Navigating to screen:', screenId);
+    
+    // 1. Amankan posisi scroll ke atas setiap ganti layar
+    window.scrollTo(0, 0);
+
+    // 2. Sembunyikan semua layar secara paksa
+    const allScreens = document.querySelectorAll('.screen');
+    allScreens.forEach(screen => {
+        screen.classList.remove('active');
+        screen.style.display = 'none';
+    });
+
+    // 3. Tampilkan layar tujuan
+    const targetScreen = document.getElementById(screenId);
+    if (targetScreen) {
+        targetScreen.style.display = 'block';
+        // Delay sedikit agar browser sempat memproses display:block sebelum animasi CSS jalan
+        setTimeout(() => {
+            targetScreen.classList.add('active');
+        }, 10);
+    }
+
+    // --- LOGIKA INTERCEPTOR KHUSUS (Pemicu Otomatis) ---
+
+    // 👇 PERBAIKAN: Update otomatis semua nama user ("-") di setiap layar 👇
+    if (typeof currentUser !== 'undefined' && currentUser) {
+        const userName = currentUser.name || 'Operator';
+        
+        // Update elemen badge di berbagai layar
+        const userBadgeIds = [
+            'logsheetSelectUser', // Layar Pilih Logsheet
+            'tpmHeaderUser',      // Layar Daftar TPM
+            'tpmInputUser',       // Layar Input TPM
+            'balancingUser'       // Layar Balancing
+        ];
+        
+        userBadgeIds.forEach(id => {
+            const badgeEl = document.getElementById(id);
+            if (badgeEl) badgeEl.textContent = userName;
+        });
+    }
+    // 👆 ================================================================ 👆
+    
+    // Sinkronisasi data offline saat kembali ke Home
+    if (screenId === 'homeScreen') {
+        checkOfflineData();
+    }
+
+    // Render ulang area TPM jika masuk ke menu TPM
+    if (screenId === 'tpmScreen' && typeof renderTPMAreas === 'function') {
+        renderTPMAreas();
+    }
+
+    // Update data dashboard jika supervisor masuk
+    if (screenId === 'dashboardSupervisor' && typeof loadSupervisorDashboard === 'function') {
+        loadSupervisorDashboard();
+    }
+}
+
 /**
  * PINTU MASUK UNIVERSAL (Gatekeeper Unit)
  */
@@ -597,68 +662,22 @@ function checkStorageQuota() {
     }
 }
 // --- LOGIKA MODAL CUSTOM STATUS PABRIK ---
-let modalStatusResolver = null; // Gunakan nama Resolver agar standar
+let modalStatusResolve = null; // Variabel penyimpan jawaban
 
 function askPabrikStatus() {
     return new Promise((resolve) => {
         const modal = document.getElementById('modalStatusPabrik');
-        if (modal) {
-            modal.style.display = 'flex'; 
-            modalStatusResolver = resolve; 
-        } else {
-            // 👇 PINTU DARURAT: Jika modal tidak ada, langsung lanjut agar tidak BLANK
-            console.warn("⚠️ Modal status pabrik tidak ditemukan!");
-            resolve('OPERASI'); 
-        }
+        if (modal) modal.style.display = 'flex'; // Tampilkan Modal
+        modalStatusResolve = resolve; // Simpan fungsi "tunggu"
     });
 }
 
 function resolveModalStatus(status) {
     const modal = document.getElementById('modalStatusPabrik');
-    if (modal) modal.style.display = 'none'; 
+    if (modal) modal.style.display = 'none'; // Sembunyikan Modal
     
-    if (typeof modalStatusResolver === 'function') {
-        modalStatusResolver(status); // Kirim jawaban ke fungsi openLogsheetMenu
-        modalStatusResolver = null;
-    }
-}
-// ============================================
-// DYNAMIC THEME ENGINE (MESIN PENGGANTI BAJU)
-// ============================================
-function applyUnitTheme(deptName) {
-    // Pengaman jika lemari tema belum dimuat
-    if (typeof UNIT_THEMES === 'undefined') return; 
-
-    let unitKey = 'DEFAULT';
-    let dept = String(deptName).toUpperCase();
-
-    // 1. Deteksi Unit dari Data User
-    if (dept.includes('UTILITAS') || dept.includes('UTIL')) unitKey = 'UTILITAS';
-    else if (dept.includes('BATU BARA') || dept.includes('UBB')) unitKey = 'UBB';
-    else if (dept.includes('MELTER') || dept.includes('BELERANG')) unitKey = 'MELTER';
-    else if (dept.includes('SULFAT') || dept.includes('SA')) unitKey = 'SA';
-
-    // 2. Ambil Baju dari Lemari (di config.js)
-    const theme = UNIT_THEMES[unitKey];
-    if (!theme) return;
-
-    console.log(`🎨 [THEME ENGINE] Mengubah tema menjadi: ${unitKey}`);
-
-    // 3. Suntik Warna Dasar CSS (Otomatis se-aplikasi berubah!)
-    document.documentElement.style.setProperty('--primary-color', theme.color);
-    document.documentElement.style.setProperty('--header-bg', theme.bgGradient);
-    
-    // 4. Ganti Logo di Layar Home
-    const homeLogo = document.getElementById('mainLogo'); 
-    if (homeLogo) {
-        homeLogo.src = theme.logo;
-        homeLogo.style.display = 'block';
-    }
-
-    // 5. Ganti Logo di Layar Login
-    const loginLogo = document.getElementById('loginLogo');
-    if (loginLogo) {
-        loginLogo.src = theme.logo;
-        loginLogo.style.display = 'block';
+    if (modalStatusResolve) {
+        modalStatusResolve(status); // Kirim jawaban (OPERASI / STOP)
+        modalStatusResolve = null;
     }
 }
