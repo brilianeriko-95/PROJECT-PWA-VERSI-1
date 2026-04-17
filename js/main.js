@@ -681,3 +681,43 @@ function resolveModalStatus(status) {
         modalStatusResolve = null;
     }
 }
+// ============================================
+// DYNAMIC THEME ENGINE (MESIN PENGGANTI BAJU)
+// ============================================
+function applyUnitTheme(deptName) {
+    // Pengaman jika lemari tema belum dimuat
+    if (typeof UNIT_THEMES === 'undefined') return; 
+
+    let unitKey = 'DEFAULT';
+    let dept = String(deptName).toUpperCase();
+
+    // 1. Deteksi Unit dari Data User
+    if (dept.includes('UTILITAS') || dept.includes('UTIL')) unitKey = 'UTILITAS';
+    else if (dept.includes('BATU BARA') || dept.includes('UBB')) unitKey = 'UBB';
+    else if (dept.includes('MELTER') || dept.includes('BELERANG')) unitKey = 'MELTER';
+    else if (dept.includes('SULFAT') || dept.includes('SA')) unitKey = 'SA';
+
+    // 2. Ambil Baju dari Lemari (di config.js)
+    const theme = UNIT_THEMES[unitKey];
+    if (!theme) return;
+
+    console.log(`🎨 [THEME ENGINE] Mengubah tema menjadi: ${unitKey}`);
+
+    // 3. Suntik Warna Dasar CSS (Otomatis se-aplikasi berubah!)
+    document.documentElement.style.setProperty('--primary-color', theme.color);
+    document.documentElement.style.setProperty('--header-bg', theme.bgGradient);
+    
+    // 4. Ganti Logo di Layar Home
+    const homeLogo = document.getElementById('mainLogo'); 
+    if (homeLogo) {
+        homeLogo.src = theme.logo;
+        homeLogo.style.display = 'block';
+    }
+
+    // 5. Ganti Logo di Layar Login
+    const loginLogo = document.getElementById('loginLogo');
+    if (loginLogo) {
+        loginLogo.src = theme.logo;
+        loginLogo.style.display = 'block';
+    }
+}
