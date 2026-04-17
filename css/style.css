@@ -3,12 +3,21 @@
    Version: 2.0.0 (Modern & Elegant)
    ============================================ */
 
+/* ========================================== */
+/* VARIABEL TEMA DINAMIS (PWA BUNGLON)        */
+/* ========================================== */
+:root {
+    /* Warna bawaan (Default) kalau belum login */
+    --primary-color: #3b82f6; 
+    --header-bg: linear-gradient(135deg, #1e3a8a, #0f172a);
+}
+
 /* ============================================
    1. VARIABLES & THEME
    ============================================ */
 :root {
     /* Primary Colors - Modern Blue Gradient */
-    --primary: #3b82f6;
+    --primary: var(--primary-color); /* 👈 INI KUNCINYA! NYAMBUNG KE JS! */
     --primary-light: #60a5fa;
     --primary-dark: #2563eb;
     --primary-glow: rgba(59, 130, 246, 0.3);
@@ -179,7 +188,7 @@ input, textarea, select {
 }
 
 .glass-header {
-    background: linear-gradient(180deg, rgba(17, 24, 39, 0.95) 0%, rgba(17, 24, 39, 0.8) 100%);
+    background: var(--header-bg); /* 👈 Warna ngikutin unit */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
@@ -549,7 +558,7 @@ input, textarea, select {
 }
 .btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.5; pointer-events: none; }
-.btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; box-shadow: 0 4px 16px var(--primary-glow); }
+.btn-primary { background: var(--primary-color); color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .btn-primary:hover { box-shadow: 0 6px 24px var(--primary-glow); transform: translateY(-2px); }
 .btn-secondary { background: rgba(30, 41, 59, 0.8); color: var(--text-secondary); border: 1px solid var(--border); }
 .btn-secondary:hover { background: var(--surface-hover); border-color: var(--border-hover); }
@@ -583,7 +592,7 @@ input, textarea, select {
 .logo-container::before { content: ''; position: absolute; inset: -8px; border-radius: 28px; background: linear-gradient(135deg, var(--primary), var(--info), var(--success)); opacity: 0.3; filter: blur(15px); animation: pulse 3s ease-in-out infinite; }
 .logo-container.small { width: 80px; height: 80px; }
 .logo-container img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3)); }
-.logo-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: var(--radius-xl); color: white; position: relative; z-index: 1; box-shadow: var(--shadow-glow); }
+.logo-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: var(--header-bg); border-radius: var(--radius-xl); color: white; position: relative; z-index: 1; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .logo-container.animated { animation: float 4s ease-in-out infinite; }
 .app-title { font-size: 1.75rem; font-weight: 800; margin-bottom: var(--xs); background: linear-gradient(135deg, var(--text) 0%, var(--primary-light) 50%, var(--info-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 .app-subtitle { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
