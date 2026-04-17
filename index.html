@@ -285,12 +285,12 @@
         <div class="login-container">
             <div class="login-header">
                 <div class="logo-container animated">
-                    <img src="icons/Produksi 3B.png" alt="Produksi 3B" class="loader-img"> onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                    <div class="logo-fallback" style="display:none;">⚡</div>
+                    <img src="icons/Produksi 3B.png" alt="Logo" id="loginLogo" class="loader-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                        <div class="logo-fallback" style="display:none;">⚡</div>
+                        </div>
+                        <h1 class="app-title" id="loginTitle">PRODUKSI 3B</h1>
+                    <p class="app-subtitle">PT Petrokimia Gresik</p>
                 </div>
-                <h1 class="app-title"></h1>
-                <p class="app-subtitle">PT Petrokimia Gresik</p>
-            </div>
                             
             <div class="login-form glass">
                 <h2 class="login-title">🔐 Login Operator</h2>
@@ -386,15 +386,15 @@
             </div>
             
             <div class="home-hero-content">
-                <div class="logo-container small animated">
-                    <img src="logo.png" alt="Logo" id="mainLogo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                    <div class="logo-fallback" style="display:none;">⚡</div>
-                </div>
-                <h1 class="home-title">LOGSHEET DIGITAL</h1>
-                <p class="home-subtitle">Pilih Menu Untuk Memulai</p>
-            </div>
-        </div>
-
+    <div class="logo-container small animated">
+        <img src="icons/Produksi 3B.png" alt="Logo" id="mainLogo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+        <div class="logo-fallback" style="display:none;">⚡</div>
+    </div>
+    
+    <h1 class="home-title" id="mainTitle">LOGSHEET DIGITAL</h1>
+    
+    <p class="home-subtitle">Pilih Menu Untuk Memulai</p>
+</div>
         <div id="branchMenuPopupOverlay" class="modern-menu-overlay hidden" onclick="closeBranchMenuPopup()">
             <div class="modern-menu-popup" onclick="event.stopPropagation()">
                 <div class="modern-menu-header">
