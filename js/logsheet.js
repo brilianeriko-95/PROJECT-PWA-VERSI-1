@@ -1323,13 +1323,11 @@ async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
 
 async function loadRoutineChecklist() {
     // 👇 1. PAGAR ANTI-GAGAL (RACE CONDITION FIX) 👇
-    // Jika data user belum selesai dimuat, tunggu 1 detik lalu coba lagi
     if (typeof currentUser === 'undefined' || !currentUser || !currentUser.department) {
         console.warn("⏳ Data user belum siap. PWA menunggu 1 detik...");
         setTimeout(loadRoutineChecklist, 1000); 
         return; 
     }
-    // 👆 ========================================== 👆
 
     const container = document.getElementById('jobListContainer');
     const dateEl = document.getElementById('jobDate');
@@ -1337,7 +1335,6 @@ async function loadRoutineChecklist() {
     if (!container) return;
     
     const today = new Date();
-    // Set Tanggal Hari Ini di Header Job
     const hariIni = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(today);
     if (dateEl) {
         dateEl.textContent = new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(today);
@@ -1350,7 +1347,6 @@ async function loadRoutineChecklist() {
         </div>`;
     
     try {
-        // 👇 2. DETEKSI SHIFT MEMBACA JAM ASLI HP 👇
         const jamSekarang = today.getHours(); 
         
         let currentShift = 'malam'; // Default malam (23.00 - 06.59)
@@ -1360,11 +1356,9 @@ async function loadRoutineChecklist() {
             currentShift = 'sore';
         }
 
-        // 👇 3. AMBIL UNIT USER (Penerjemah Kata Kunci Anti-Gagal) 👇
         let currentUnit = 'ALL';
         let dept = String(currentUser.department).toUpperCase();
             
-        // Terjemahkan nama panjang menjadi kata kunci yang ada di Spreadsheet
         if (dept.includes('UTILITAS') || dept.includes('UTIL')) {
             currentUnit = 'UTILITAS';
         } else if (dept.includes('MELTER') || dept.includes('BELERANG')) {
@@ -1372,29 +1366,24 @@ async function loadRoutineChecklist() {
         } else if (dept.includes('SULFAT') || dept.includes('SA')) {
             currentUnit = 'SA';
         } else {
-            currentUnit = dept; // Default jika tidak ada yang cocok
+            currentUnit = dept; 
         }
         
         console.log(`🔍 [DEBUG PWA] Mengirim Request -> Unit: ${currentUnit} | Shift: ${currentShift}`);
 
-        // 👇 4. FETCH KE SERVER DENGAN FILTER LENGKAP 👇
         const url = `${GAS_URL}?action=getDailyRoutine&day=${hariIni}&unit=${encodeURIComponent(currentUnit)}&shift=${currentShift}`;
         const response = await fetch(url);
         const result = await response.json();
         
         if (result.success && result.tasks && result.tasks.length > 0) {
             
-            // 👇 5. SISTEM MEMORI (Cek tugas yang sudah diselesaikan hari ini) 👇
             const todayString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
             const memoryKey = 'completed_routines_' + todayString;
             const completedTasks = JSON.parse(localStorage.getItem(memoryKey) || '[]');
             
-            // Saring: Hanya tampilkan yang BELUM ada di memori
             const pendingTasks = result.tasks.filter(t => !completedTasks.includes(t.tugas));
 
             if (pendingTasks.length > 0) {
-                // 👇 1. SISTEM TOMBOL FILTER DINAMIS 👇
-                // Ambil daftar posisi unik dari tugas yang dikirim server
                 const uniquePositions = [...new Set(pendingTasks.map(t => t.posisi))].filter(p => p !== 'ALL' && p !== '');
 
                 let html = `
@@ -1402,8 +1391,7 @@ async function loadRoutineChecklist() {
                         <button onclick="filterRutinan('ALL', this)" class="btn-filter-rutin active" style="padding: 6px 16px; border-radius: 20px; border: none; background: #3b82f6; color: white; cursor: pointer; font-size: 0.8rem; font-weight: bold; white-space: nowrap;">Semua Tugas</button>
                 `;
 
-                // Ciptakan tombol secara otomatis sesuai data posisi di Spreadsheet
-                const warnaTombol = ['#8b5cf6', '#10b981', '#f59e0b', '#ec4899']; // Variasi warna
+                const warnaTombol = ['#8b5cf6', '#10b981', '#f59e0b', '#ec4899']; 
                 uniquePositions.forEach((pos, idx) => {
                     let color = warnaTombol[idx % warnaTombol.length];
                     html += `<button onclick="filterRutinan('${pos}', this)" class="btn-filter-rutin" style="padding: 6px 16px; border-radius: 20px; border: 1px solid ${color}; background: white; color: ${color}; cursor: pointer; font-size: 0.8rem; font-weight: bold; white-space: nowrap;" data-color="${color}">${pos}</button>`;
@@ -1411,7 +1399,7 @@ async function loadRoutineChecklist() {
 
                 html += `</div><div id="rutinanListWrap">`;
 
-            // 👇 2. RENDER KARTU TUGAS BESERTA VALIDASI FOTO 👇
+                // 👇 2. RENDER KARTU TUGAS PREMIUM 👇
                 html += pendingTasks.map((t, index) => {
                     let namaTugasAsli = t.tugas;
                     let ekstraHTML = '';
@@ -1420,7 +1408,7 @@ async function loadRoutineChecklist() {
                     let dropdownId = `dd_rutin_${index}`;
                     let fotoId = `foto_rutin_${index}`;
 
-                    // Cek apakah ada teks dropdown dalam kurung siku [...]
+                    // EKSTRAK DROPDOWN
                     const matchDD = namaTugasAsli.match(/\[([^FOTO].*?)\]/);
                     if (matchDD && !matchDD[1].includes('FOTO')) {
                         hasDropdown = true;
@@ -1428,27 +1416,33 @@ async function loadRoutineChecklist() {
                         namaTugasAsli = namaTugasAsli.replace(matchDD[0], '').trim(); 
 
                         ekstraHTML += `
-                            <div style="margin-top: 10px;" onclick="event.stopPropagation()">
-                                <select id="${dropdownId}" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 0.8rem; outline: none;">
-                                    <option value="">-- Pilih Status --</option>
-                                    ${optionsArray.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                            <div style="margin-top: 12px;" onclick="event.stopPropagation()">
+                                <select id="${dropdownId}" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(15, 23, 42, 0.6); color: white; font-size: 0.85rem; outline: none; appearance: none;">
+                                    <option value="" disabled selected style="color: #94a3b8;">-- Pilih Status --</option>
+                                    ${optionsArray.map(opt => `<option value="${opt}" style="background: #1e293b; color: white;">${opt}</option>`).join('')}
                                 </select>
                             </div>
                         `;
                     }
 
-                    // Cek apakah wajib foto [FOTO]
+                    // 👇 UBAH KOTAK FOTO MENJADI PREMIUM 👇
                     if (namaTugasAsli.includes('[FOTO]')) {
                         hasFoto = true;
                         namaTugasAsli = namaTugasAsli.replace('[FOTO]', '').trim();
                         
                         ekstraHTML += `
-                            <div style="margin-top: 10px; padding: 8px; background: #fff1f2; border: 1px dashed #ef4444; border-radius: 6px;" onclick="event.stopPropagation()">
-                                <label style="font-size: 0.75rem; color: #ef4444; font-weight: bold; display: block; margin-bottom: 4px;">📸 Wajib Upload Bukti Foto!</label>
-                                <input type="file" id="${fotoId}" accept="image/*" capture="environment" style="width: 100%; font-size: 0.75rem;">
+                            <div class="job-upload-box" onclick="event.stopPropagation()">
+                                <div class="job-upload-warning">
+                                    <span>📸</span> Wajib Upload Bukti Foto!
+                                </div>
+                                <label class="btn-custom-upload" for="${fotoId}">
+                                    Pilih File
+                                </label>
+                                <input type="file" id="${fotoId}" class="hidden-file-input" accept="image/*" capture="environment">
                             </div>
                         `;
                     }
+                    // 👆 ========================================== 👆
 
                     const safeTugas = namaTugasAsli.replace(/'/g, "\\'"); 
                     const safeArea = t.area.replace(/'/g, "\\'");
@@ -1457,14 +1451,17 @@ async function loadRoutineChecklist() {
                     const paramDropdown = hasDropdown ? `'${dropdownId}'` : `null`;
                     const paramFoto = hasFoto ? `'${fotoId}'` : `null`;
                     
+                    // KARTU UTAMA PREMIUM
                     return `
-                        <div class="routine-card" id="routine_card_${index}" onclick="completeTask(this, '${safeTugas}', '${safeArea}', ${paramDropdown}, ${paramFoto})" data-posisi="${safePosisi}">
-                            <div class="routine-info" style="width: 100%;">
-                                <span class="task-text">${namaTugasAsli}</span>
-                                <span class="task-area">📍 Area: ${t.area} </span>
-                                ${ekstraHTML}
+                        <div class="premium-job-card" id="routine_card_${index}" data-posisi="${safePosisi}" onclick="completeTask(this, '${safeTugas}', '${safeArea}', ${paramDropdown}, ${paramFoto})">
+                            <div class="job-header-flex">
+                                <div class="job-title-group">
+                                    <h3>${namaTugasAsli}</h3>
+                                    <span class="job-area-badge">📍 Area: ${t.area}</span>
+                                </div>
+                                <div class="check-icon" style="font-size: 1.5rem; opacity: 0.5;">🔘</div>
                             </div>
-                            <div class="check-icon">🔘</div>
+                            ${ekstraHTML}
                         </div>
                     `;
                 }).join('');
@@ -1483,7 +1480,9 @@ async function loadRoutineChecklist() {
         container.innerHTML = `<div style="text-align:center; color:#ef4444; padding:20px;">Koneksi terputus. Gagal memuat tugas.</div>`;
     }
 }
+
 // 👇 TAMBAHKAN PARAMETER fotoId DI SINI 👇
+//===================================================//
 async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) {
     if (!currentUser || !currentUser.name) {
         if (typeof showTemporaryToast === 'function') showTemporaryToast('⚠️ Silakan login terlebih dahulu.', 'warning');
