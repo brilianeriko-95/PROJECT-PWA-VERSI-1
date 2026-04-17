@@ -101,97 +101,62 @@ let univParamPhotos = {};      // Foto sementara
  * Fungsi untuk membuka Logsheet apa saja (Turbin, CT, 1300, 1100)
  * @param {string} type - Sesuai dengan key di LOGSHEET_CONFIG (misal: '1300')
  */
-function openUniversalLogsheet(menuKey, statusPabrik) {
-    console.log("🚀 Menjalankan openUniversalLogsheet. Status:", statusPabrik);
+function openUniversalLogsheet(type, statusPabrik) {
+    const config = LOGSHEET_CONFIG[type];
+    if (!config) return;
 
-    // --- TERSANGKA 1: ID WADAH HTML ---
-    const container = document.getElementById('univAreaList'); 
-    if(!container) {
-        // ALARM NYALA: Beritahu operator kalau ID HTML-nya salah!
-        alert("❌ ERROR TERSANGKA 1: ID 'logsheet-content' tidak ditemukan di index.html!");
-        console.error("Wadah HTML tidak ketemu!");
+    activeLogsheetType = type;
+    
+    // Cek Grouped Logsheet
+    if (config.groups) {
+        if (typeof openGroupedLogsheet === 'function') openGroupedLogsheet();
         return; 
     }
-    container.innerHTML = ''; 
 
-    // --- 1. GAMBAR STICKY HEADER ---
+    // Header & User (Bawaan Asli Anda)
+    const titleEl = document.getElementById('univHeaderTitle');
+    const userEl = document.getElementById('univAreaListUser');
+    if (titleEl) titleEl.textContent = config.title;
+    if (userEl) userEl.textContent = (currentUser && currentUser.name) ? currentUser.name : 'Operator';
+
+    // AMBIL DATA LANGSUNG DARI WINDOW (Hasil load main.js)
+    univCurrentInput = window.activeDrafts[type] || {};
+    univParamPhotos = window.activePhotos[type] || {};
+
+    // 👇 1. INJEKSI STICKY HEADER SAJA (Aman untuk UI) 👇
+    const oldHeader = document.getElementById('sticky-status-header');
+    if (oldHeader) oldHeader.remove(); // Bersihkan header lama kalau ada
+
+    const warnaBg = statusPabrik === 'OPERASI' ? '#27ae60' : '#e74c3c';
     const headerHtml = `
-        <div class="sticky-status-bar ${statusPabrik.toLowerCase()}">
-            ⚠️ STATUS: PABRIK ${statusPabrik}
+        <div id="sticky-status-header" style="background: ${warnaBg}; color: white; padding: 12px; text-align: center; font-weight: bold; position: sticky; top: 80px; z-index: 99; margin: 0 16px 16px 16px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            ⚠️ KONDISI PABRIK: ${statusPabrik}
         </div>
     `;
-    container.insertAdjacentHTML('beforeend', headerHtml);
+    
+    const areaListContainer = document.getElementById('univAreaList');
+    if (areaListContainer) {
+        areaListContainer.insertAdjacentHTML('beforebegin', headerHtml);
+    }
+    // 👆 ================================================= 👆
 
-    // --- TERSANGKA 2: STRUKTUR CONFIG ---
-    const config = LOGSHEET_CONFIG[menuKey];
-    if (!config || !config.areas) {
-        // ALARM NYALA: Beritahu kalau struktur config.js nya beda!
-        alert(`❌ ERROR TERSANGKA 2: config.areas tidak ditemukan untuk menu ${menuKey}!`);
-        console.error("Data Areas tidak ada di config!");
-        return;
+    // 👇 2. PANGGIL PENGGAMBAR UI PREMIUM (Yang sudah dipasang Satpam Filter tadi) 👇
+    if (typeof renderMenuUniversal === 'function') {
+        renderMenuUniversal(type, statusPabrik); 
     }
     
-    const areas = config.areas;
-    
-    // --- 2. MULAI LOOPING AREA ---
-    Object.keys(areas).forEach(namaAreaLengkap => {
-        
-        // SATPAM LAPIS 1: Cek KTP Area
-        const isAreaOperasi = namaAreaLengkap.includes('[OPERASI]');
-        const isAreaStop = namaAreaLengkap.includes('[STOP]');
-
-        if (statusPabrik === 'STOP' && isAreaOperasi) return; // Area mati, buang!
-        if (statusPabrik === 'OPERASI' && isAreaStop) return; // Area khusus stop, buang!
-
-        // SATPAM LAPIS 2: Cek KTP Parameter
-        const parameterLolosFilter = areas[namaAreaLengkap].filter(namaParamLengkap => {
-            const isParamAll = namaParamLengkap.includes('[ALL]');
-            const isParamStop = namaParamLengkap.includes('[STOP]');
-            
-            // Aturan 1: Pabrik Jalan -> Alat Khusus Stop disembunyikan
-            if (statusPabrik === 'OPERASI' && isParamStop) return false; 
-            
-            // Aturan 2: Pabrik Stop -> Alat Biasa (tanpa tag) disembunyikan
-            if (statusPabrik === 'STOP' && (!isParamAll && !isParamStop)) return false; 
-            
-            return true;
-        });
-
-        // ANTI KARTU KOSONG
-        if (parameterLolosFilter.length === 0) return; 
-
-        // BERSIHKAN NAMA AREA UNTUK JUDUL
-        const namaAreaBersih = namaAreaLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
-        let cardHtml = `<div class="card"><h3>${namaAreaBersih}</h3>`;
-
-        // --- 3. GAMBAR INPUT PARAMETER ---
-        parameterLolosFilter.forEach(namaParamLengkap => {
-            
-            // PENTING: Bersihkan nama parameter agar di layar tidak ada tag-nya
-            const namaParamBersih = namaParamLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
-
-            cardHtml += `
-                <div class="input-group">
-                    <label>${namaParamBersih}</label>
-                    <input type="text" id="${namaParamBersih}" placeholder="Isi data...">
-                </div>
-            `;
-        });
-
-        cardHtml += `</div>`; 
-        container.insertAdjacentHTML('beforeend', cardHtml);
-    });
+    navigateTo('universalAreaListScreen');
 }
 /**
  * Fungsi untuk merender daftar kotak Area secara otomatis (DIUBAH NAMANYA AGAR SINKRON)
+ * ⚠️ DITAMBAHKAN PARAMETER statusPabrik UNTUK LOGIKA FILTER [ALL]/[OPERASI]/[STOP]
  */
-function renderMenuUniversal(menuKey) {
+function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') { 
     const config = LOGSHEET_CONFIG[menuKey];
     const listContainer = document.getElementById('univAreaList');
-   // 👇 TAMBAHKAN PENGAMAN INI agar Balancing tidak crash 👇
     if (!listContainer || !config || !config.areas) return;
     
-    activeLogsheetType = menuKey; // Pastikan state lokal sinkron
+    activeLogsheetType = menuKey; 
 
     // AMBIL DATA DARI STATE GLOBAL window.activeDrafts
     const currentDraft = window.activeDrafts[menuKey] || {};
@@ -200,14 +165,42 @@ function renderMenuUniversal(menuKey) {
     let totalParams = 0;
     let filledParams = 0;
 
-    Object.entries(config.areas).forEach(([areaName, paramsList]) => {
+    Object.entries(config.areas).forEach(([areaNameLengkap, paramsList]) => {
+        
+        // 👇 1. SATPAM LAPIS 1: CEK KTP HEADER AREA 👇
+        const isAreaOperasi = areaNameLengkap.includes('[OPERASI]');
+        const isAreaStop = areaNameLengkap.includes('[STOP]');
+
+        if (statusPabrik === 'STOP' && isAreaOperasi) return; // Area mati total, JANGAN DIGAMBAR!
+        if (statusPabrik === 'OPERASI' && isAreaStop) return;  // Area khusus stop, JANGAN DIGAMBAR!
+
+        // 👇 2. SATPAM LAPIS 2: SARING PARAMETER DI DALAM AREA 👇
+        const parameterLolosFilter = paramsList.filter(fullLabel => {
+            const isParamAll = fullLabel.includes('[ALL]');
+            const isParamStop = fullLabel.includes('[STOP]');
+            
+            if (statusPabrik === 'OPERASI' && isParamStop) return false; 
+            if (statusPabrik === 'STOP' && (!isParamAll && !isParamStop)) return false; 
+            
+            return true;
+        });
+
+        // 👇 3. CEK KARTU KOSONG 👇
+        if (parameterLolosFilter.length === 0) return; // Kalau isinya habis, Area JANGAN DIGAMBAR!
+
+        // 👇 4. BERSIHKAN NAMA AREA UNTUK DITAMPILKAN DI KARTU 👇
+        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+
+        // -------------------------------------------------------------
+        // LANJUTKAN LOGIKA MENGHITUNG PROGRESS UNTUK KARTU YANG LOLOS
+        // -------------------------------------------------------------
         let areaFilled = 0;
-        const areaTotal = paramsList.length;
+        const areaTotal = parameterLolosFilter.length; // 👈 Hitung HANYA parameter yang lolos filter
         totalParams += areaTotal;
 
-        paramsList.forEach(fullLabel => {
-            // Cek di currentDraft (State Global)
-            if (currentDraft[areaName] && currentDraft[areaName][fullLabel]) {
+        parameterLolosFilter.forEach(fullLabel => {
+            // Cek di currentDraft menggunakan nama asli yang belum dibersihkan
+            if (currentDraft[areaNameLengkap] && currentDraft[areaNameLengkap][fullLabel]) {
                 areaFilled++;
                 filledParams++;
             }
@@ -216,23 +209,23 @@ function renderMenuUniversal(menuKey) {
         const isComplete = areaFilled === areaTotal && areaTotal > 0;
         const progressPercent = areaTotal === 0 ? 0 : Math.round((areaFilled / areaTotal) * 100);
         
-        // Cek apakah ada status abnormal (Alat Rusak / Belum Ada)
-        const hasAbnormal = paramsList.some(fullLabel => {
-            const val = (univCurrentInput[areaName] && univCurrentInput[areaName][fullLabel]) || '';
+        // Cek apakah ada status abnormal
+        const hasAbnormal = parameterLolosFilter.some(fullLabel => {
+            const val = (univCurrentInput[areaNameLengkap] && univCurrentInput[areaNameLengkap][fullLabel]) || '';
             const firstLine = val.split('\n')[0];
             return ['ERROR', 'MAINTENANCE', 'NOT_INSTALLED', 'OFF'].includes(firstLine);
         });
 
         // Atur status visual (Ikon & Warna Premium)
         let statusIcon = '📝';
-        let iconBg = `${config.themeColor}25`; // Transparansi 25%
+        let iconBg = `${config.themeColor}25`; 
         let iconColor = config.themeColor;
         let ringColor = `${config.themeColor}40`;
         let themeColor = config.themeColor;
 
         if (isComplete) {
             statusIcon = '✅';
-            iconBg = 'rgba(16, 185, 129, 0.15)'; // Hijau Emerald
+            iconBg = 'rgba(16, 185, 129, 0.15)'; 
             iconColor = '#10b981';
             ringColor = 'rgba(16, 185, 129, 0.3)';
             themeColor = '#10b981';
@@ -241,15 +234,15 @@ function renderMenuUniversal(menuKey) {
         }
 
         if (hasAbnormal) {
-            iconBg = 'rgba(239, 68, 68, 0.15)'; // Merah
+            iconBg = 'rgba(239, 68, 68, 0.15)'; 
             iconColor = '#ef4444';
             ringColor = 'rgba(239, 68, 68, 0.3)';
             themeColor = '#ef4444';
         }
 
-        // HTML KARTU PREMIUM
+        // HTML KARTU PREMIUM BAWAAN ANDA
         html += `
-            <div class="premium-area-card" onclick="openUnivAreaInput('${areaName}')" style="--theme-color: ${themeColor};">
+            <div class="premium-area-card" onclick="openUnivAreaInput('${areaNameLengkap}')" style="--theme-color: ${themeColor};">
                 ${hasAbnormal ? '<div class="abnormal-pulse" style="position:absolute; top:16px; right:16px; width:12px; height:12px; background:#ef4444; border-radius:50%;"></div>' : ''}
                 
                 <div class="premium-area-header">
@@ -258,7 +251,7 @@ function renderMenuUniversal(menuKey) {
                             ${statusIcon}
                         </div>
                         <div class="premium-area-info">
-                            <h3 class="premium-area-title">${areaName}</h3>
+                            <h3 class="premium-area-title">${areaNameBersih}</h3>
                             <p class="premium-area-subtitle">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
                                 ${areaFilled} / ${areaTotal} Diisi
@@ -279,7 +272,7 @@ function renderMenuUniversal(menuKey) {
 
     listContainer.innerHTML = html;
 
-    // Update Bar Progress Keseluruhan
+    // Update Bar Progress Keseluruhan (HANYA DARI PARAMETER YANG LOLOS FILTER)
     const overallPercent = totalParams === 0 ? 0 : Math.round((filledParams / totalParams) * 100);
     const overallPercentEl = document.getElementById('univOverallPercent');
     const overallProgressBarEl = document.getElementById('univOverallProgressBar');
@@ -289,7 +282,7 @@ function renderMenuUniversal(menuKey) {
     if (overallProgressBarEl) {
         overallProgressBarEl.style.width = `${overallPercent}%`;
         overallProgressBarEl.style.backgroundColor = config.themeColor;
-        overallProgressBarEl.style.boxShadow = `0 0 12px ${config.themeColor}80`; // Tambahan glow pada bar utama
+        overallProgressBarEl.style.boxShadow = `0 0 12px ${config.themeColor}80`; 
     }
     if (progressTextEl) progressTextEl.textContent = `${overallPercent}% Selesai`;
 
