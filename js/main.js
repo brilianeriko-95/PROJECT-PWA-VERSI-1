@@ -223,7 +223,6 @@ function navigateTo(screenId) {
             targetScreen.classList.add('active');
         }, 10);
     }
-}
     // --- LOGIKA INTERCEPTOR KHUSUS (Pemicu Otomatis) ---
 
     // 👇 PERBAIKAN: Update otomatis semua nama user ("-") di setiap layar 👇
