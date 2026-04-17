@@ -536,18 +536,50 @@ function saveUnivStep() {
 /**
  * Navigasi ke parameter selanjutnya (DENGAN PERBAIKAN NAVIGASI STATUS PABRIK)
  */
+/**
+ * LANGKAH 3: Navigasi Lanjut (Dengan Portal Validasi Wajib Foto)
+ */
 function nextUnivStep() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
+    
+    // AMBIL LABEL DARI WADAH FILTER
+    const fullLabel = activeUnivFilteredParams[activeUnivIdx];
+    
+    // 👇 PORTAL VALIDASI WAJIB FOTO UNTUK ERROR 👇
+    const checkedStatus = document.querySelector('input[name="univParamStatus"]:checked');
+    if (checkedStatus) {
+        // Cek apakah ada foto di memori HP untuk alat ini
+        const currentPhoto = univParamPhotos[activeUnivArea]?.[fullLabel];
+        
+        if (!currentPhoto || currentPhoto.trim() === '') {
+            // Jika kosong, blokir dan marahi operator!
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert('📸 Bukti foto WAJIB dilampirkan untuk status Abnormal!', 'error');
+            } else if (typeof showTemporaryToast === 'function') {
+                showTemporaryToast('📸 Bukti foto WAJIB dilampirkan!', 'error');
+            }
+            
+            // Efek kedip merah pada kotak foto biar operator sadar
+            const photoContainer = document.getElementById('univPhotoContainer');
+            if (photoContainer) {
+                photoContainer.style.border = '2px solid #ef4444';
+                setTimeout(() => { photoContainer.style.border = ''; }, 1000);
+            }
+            
+            return; // 🛑 PROGRAM BERHENTI DI SINI! Tidak bisa lanjut step.
+        }
+    }
+    // 👆 ================================================== 👆
+
     saveUnivStep(); // Simpan data step saat ini dulu
     
-    // 👇 AMBIL LABEL DARI WADAH FILTER (Agar sinkron dengan jumlah alat saat ini)
-    const fullLabel = activeUnivFilteredParams[activeUnivIdx];
-    const currentPhoto = univParamPhotos[activeUnivArea]?.[fullLabel];
+    // Ambil ulang foto setelah di-save (buat jaga-jaga)
+    const currentPhotoAfterSave = univParamPhotos[activeUnivArea]?.[fullLabel];
     
-    // 1. LOGIKA BACKGROUND UPLOAD FOTO (Bawaan Anda yang sudah oke)
-    if (currentPhoto && currentPhoto.length > 100 && currentPhoto !== 'UPLOADED_BACKGROUND') {
+    // 1. LOGIKA BACKGROUND UPLOAD FOTO
+    if (currentPhotoAfterSave && currentPhotoAfterSave.length > 100 && currentPhotoAfterSave !== 'UPLOADED_BACKGROUND') {
         if (navigator.onLine) {
-            uploadPhotoInBackground(activeUnivArea, fullLabel, currentPhoto);
+            uploadPhotoInBackground(activeUnivArea, fullLabel, currentPhotoAfterSave);
             univParamPhotos[activeUnivArea][fullLabel] = 'UPLOADED_BACKGROUND';
             try {
                 localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
@@ -562,7 +594,6 @@ function nextUnivStep() {
     }
 
     // 2. CEK NAVIGASI: LANJUT ATAU SELESAI?
-    // Gunakan activeUnivFilteredParams.length agar jumlah step akurat
     if (activeUnivIdx < activeUnivFilteredParams.length - 1) {
         // Masih ada alat berikutnya
         activeUnivIdx++;
@@ -576,18 +607,15 @@ function nextUnivStep() {
         }
         
         setTimeout(() => {
-            // 👇 SANGAT PENTING: Bawa kembali status pabrik dari memori global 👇
             const statusPabrik = window.currentStatusPabrik || 'OPERASI';
-            
-            // Render ulang menu depan agar kartu areanya tetap akurat
             renderMenuUniversal(activeLogsheetType, statusPabrik); 
-            
             navigateTo('universalAreaListScreen');
         }, 1200);
     }
 }
+
 /**
- * Navigasi kembali
+ * Navigasi kembali (Tetap aman)
  */
 function prevUnivStep(forceBack = false) {
     saveUnivStep();
@@ -595,7 +623,6 @@ function prevUnivStep(forceBack = false) {
         activeUnivIdx--;
         showUnivStep();
     } else {
-        // 👇 GANTI BAGIAN INI 👇
         const statusPabrik = window.currentStatusPabrik || 'OPERASI';
         renderMenuUniversal(activeLogsheetType, statusPabrik); 
         navigateTo('universalAreaListScreen');
@@ -603,12 +630,15 @@ function prevUnivStep(forceBack = false) {
 }
 
 /**
- * Logika Checkbox Status Abnormal (Universal)
+ * LANGKAH 1: Logika Checkbox Status Abnormal (Universal) - Efek Siluman
  */
 function handleUnivStatusChange(checkbox) {
     const noteContainer = document.getElementById('univStatusNoteContainer');
     const valInput = document.getElementById('univValInput');
     
+    // 👇 Panggil kotak foto (Pastikan ID-nya sesuai dengan di HTML Anda)
+    const photoContainer = document.getElementById('univPhotoContainer'); 
+
     // Matikan checkbox lain (radio-like behavior)
     document.querySelectorAll('input[name="univParamStatus"]').forEach(cb => {
         if (cb !== checkbox) cb.checked = false;
@@ -618,13 +648,15 @@ function handleUnivStatusChange(checkbox) {
     checkbox.closest('.status-chip').classList.toggle('active', checkbox.checked);
 
     if (checkbox.checked) {
-        noteContainer.style.display = 'block';
+        if (noteContainer) noteContainer.style.display = 'block';
+        if (photoContainer) photoContainer.style.display = 'block'; // 📸 Munculkan form foto!
         if (valInput) {
             valInput.disabled = true;
             valInput.style.opacity = '0.3';
         }
     } else {
-        noteContainer.style.display = 'none';
+        if (noteContainer) noteContainer.style.display = 'none';
+        if (photoContainer) photoContainer.style.display = 'none'; // 👻 Sembunyikan form foto!
         if (valInput) {
             valInput.disabled = false;
             valInput.style.opacity = '1';
@@ -632,6 +664,9 @@ function handleUnivStatusChange(checkbox) {
     }
 }
 
+/**
+ * LANGKAH 2: Memuat Status Abnormal Saat Pindah Step
+ */
 function loadUnivAbnormalStatus(fullLabel) {
     const savedValue = (univCurrentInput[activeUnivArea] && univCurrentInput[activeUnivArea][fullLabel]) || '';
     const lines = savedValue.split('\n');
@@ -642,6 +677,9 @@ function loadUnivAbnormalStatus(fullLabel) {
     const noteContainer = document.getElementById('univStatusNoteContainer');
     const noteInput = document.getElementById('univStatusNote');
     const valInput = document.getElementById('univValInput');
+    
+    // 👇 Panggil kotak foto
+    const photoContainer = document.getElementById('univPhotoContainer'); 
 
     let foundStatus = false;
     checkboxes.forEach(cb => {
@@ -651,15 +689,17 @@ function loadUnivAbnormalStatus(fullLabel) {
     });
 
     if (foundStatus) {
-        noteContainer.style.display = 'block';
-        noteInput.value = notePart;
+        if (noteContainer) noteContainer.style.display = 'block';
+        if (photoContainer) photoContainer.style.display = 'block'; // 📸 Munculkan!
+        if (noteInput) noteInput.value = notePart;
         if (valInput) {
             valInput.disabled = true;
             valInput.style.opacity = '0.3';
         }
     } else {
-        noteContainer.style.display = 'none';
-        noteInput.value = '';
+        if (noteContainer) noteContainer.style.display = 'none';
+        if (photoContainer) photoContainer.style.display = 'none'; // 👻 Sembunyikan!
+        if (noteInput) noteInput.value = '';
         if (valInput) {
             valInput.disabled = false;
             valInput.style.opacity = '1';
@@ -795,9 +835,15 @@ function handleUnivParamPhoto(event) {
 }
 
 // Menampilkan foto saat pindah parameter (ditambahkan ke dalam showUnivStep nanti)
+/**
+ * LANGKAH 4: Menampilkan foto saat pindah parameter (Sinkron dengan Satpam & Validasi)
+ */
 function loadUnivParamPhotoForCurrentStep() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
-    const fullLabel = config.areas[activeUnivArea][activeUnivIdx];
+    
+    // 👇 PERBAIKAN 1: Gunakan wadah alat yang sudah difilter (SATPAM) 👇
+    const fullLabel = activeUnivFilteredParams[activeUnivIdx];
+    if (!fullLabel) return; // Pengaman anti-crash
     
     // Coba load dari LocalStorage dulu jika univParamPhotos kosong
     if (Object.keys(univParamPhotos).length === 0) {
@@ -810,7 +856,10 @@ function loadUnivParamPhotoForCurrentStep() {
     const preview = document.getElementById('univParamPhotoPreview');
     const badge = document.getElementById('univParamPhotoBadge');
     
-    // 👇 PERBAIKAN LOGIKA TAMPILAN FOTO 👇
+    // 👇 PERBAIKAN 2: Cek apakah saat ini alat sedang diset ERROR/Abnormal 👇
+    const savedValue = (univCurrentInput[activeUnivArea] && univCurrentInput[activeUnivArea][fullLabel]) || '';
+    const isErrorState = ['ERROR', 'MAINTENANCE', 'NOT_INSTALLED', 'OFF'].includes(savedValue.split('\n')[0]);
+
     if (univCurrentPhoto === 'UPLOADED_BACKGROUND') {
         // Tampilan khusus jika foto sudah aman di server
         if (preview) {
@@ -825,6 +874,7 @@ function loadUnivParamPhotoForCurrentStep() {
             badge.textContent = '✓ TERKIRIM';
             badge.style.backgroundColor = '#10b981';
             badge.style.color = 'white';
+            badge.style.border = 'none';
         }
     } 
     else if (univCurrentPhoto) {
@@ -834,6 +884,7 @@ function loadUnivParamPhotoForCurrentStep() {
             badge.textContent = '✓ ADA (DRAF)';
             badge.style.backgroundColor = config.themeColor;
             badge.style.color = 'white';
+            badge.style.border = 'none';
         }
     } 
     else {
@@ -849,12 +900,20 @@ function loadUnivParamPhotoForCurrentStep() {
                 </div>`;
         }
         if (badge) {
-            badge.textContent = 'OPSIONAL';
-            badge.style.backgroundColor = 'rgba(148, 163, 184, 0.15)';
-            badge.style.color = '#94a3b8';
+            // 👇 LOGIKA BADGE PINTAR (Wajib vs Opsional) 👇
+            if (isErrorState) {
+                badge.textContent = '⚠️ WAJIB BUKTI';
+                badge.style.backgroundColor = 'rgba(239, 68, 68, 0.15)'; 
+                badge.style.color = '#ef4444'; 
+                badge.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+            } else {
+                badge.textContent = 'OPSIONAL';
+                badge.style.backgroundColor = 'rgba(148, 163, 184, 0.15)';
+                badge.style.color = '#94a3b8';
+                badge.style.border = 'none';
+            }
         }
     }
-    // 👆 =============================== 👆
 }
 
 /**
