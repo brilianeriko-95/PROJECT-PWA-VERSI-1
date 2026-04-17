@@ -597,23 +597,29 @@ function checkStorageQuota() {
     }
 }
 // --- LOGIKA MODAL CUSTOM STATUS PABRIK ---
-let modalStatusResolve = null; // Variabel penyimpan jawaban
+let modalStatusResolver = null; // Gunakan nama Resolver agar standar
 
 function askPabrikStatus() {
     return new Promise((resolve) => {
         const modal = document.getElementById('modalStatusPabrik');
-        if (modal) modal.style.display = 'flex'; // Tampilkan Modal
-        modalStatusResolve = resolve; // Simpan fungsi "tunggu"
+        if (modal) {
+            modal.style.display = 'flex'; 
+            modalStatusResolver = resolve; 
+        } else {
+            // 👇 PINTU DARURAT: Jika modal tidak ada, langsung lanjut agar tidak BLANK
+            console.warn("⚠️ Modal status pabrik tidak ditemukan!");
+            resolve('OPERASI'); 
+        }
     });
 }
 
 function resolveModalStatus(status) {
     const modal = document.getElementById('modalStatusPabrik');
-    if (modal) modal.style.display = 'none'; // Sembunyikan Modal
+    if (modal) modal.style.display = 'none'; 
     
-    if (modalStatusResolve) {
-        modalStatusResolve(status); // Kirim jawaban (OPERASI / STOP)
-        modalStatusResolve = null;
+    if (typeof modalStatusResolver === 'function') {
+        modalStatusResolver(status); // Kirim jawaban ke fungsi openLogsheetMenu
+        modalStatusResolver = null;
     }
 }
 // ============================================
