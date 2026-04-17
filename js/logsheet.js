@@ -105,7 +105,7 @@ function openUniversalLogsheet(menuKey, statusPabrik) {
     console.log("🚀 Menjalankan openUniversalLogsheet. Status:", statusPabrik);
 
     // --- TERSANGKA 1: ID WADAH HTML ---
-    const container = document.getElementById('logsheet-content'); 
+    const container = document.getElementById('univAreaList'); 
     if(!container) {
         // ALARM NYALA: Beritahu operator kalau ID HTML-nya salah!
         alert("❌ ERROR TERSANGKA 1: ID 'logsheet-content' tidak ditemukan di index.html!");
