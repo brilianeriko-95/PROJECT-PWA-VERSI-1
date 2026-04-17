@@ -101,28 +101,69 @@ let univParamPhotos = {};      // Foto sementara
  * Fungsi untuk membuka Logsheet apa saja (Turbin, CT, 1300, 1100)
  * @param {string} type - Sesuai dengan key di LOGSHEET_CONFIG (misal: '1300')
  */
-function openUniversalLogsheet(type) {
-    const config = LOGSHEET_CONFIG[type];
-    if (!config) return;
+function openUniversalLogsheet(menuKey, statusPabrik) {
+    const container = document.getElementById('logsheet-content'); 
+    if(!container) return;
+    container.innerHTML = ''; 
 
-    activeLogsheetType = type;
+    // --- 1. GAMBAR STICKY HEADER ---
+    const headerHtml = `
+        <div class="sticky-status-bar ${statusPabrik.toLowerCase()}">
+            ⚠️ STATUS: PABRIK ${statusPabrik}
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', headerHtml);
+
+    const areas = LOGSHEET_CONFIG[menuKey].areas;
     
-    // Cek Grouped Logsheet
-    if (config.groups) {
-        openGroupedLogsheet();
-        return; 
-    }
+    // --- 2. MULAI LOOPING AREA ---
+    Object.keys(areas).forEach(namaAreaLengkap => {
+        
+        // SATPAM LAPIS 1: Cek KTP Area
+        const isAreaOperasi = namaAreaLengkap.includes('[OPERASI]');
+        const isAreaStop = namaAreaLengkap.includes('[STOP]');
 
-    // Header & User
-    document.getElementById('univHeaderTitle').textContent = config.title;
-    document.getElementById('univAreaListUser').textContent = (currentUser && currentUser.name) ? currentUser.name : 'Operator';
+        if (statusPabrik === 'STOP' && isAreaOperasi) return; // Area mati, buang!
+        if (statusPabrik === 'OPERASI' && isAreaStop) return; // Area khusus stop, buang!
 
-    // AMBIL DATA LANGSUNG DARI WINDOW (Hasil load main.js)
-    univCurrentInput = window.activeDrafts[type] || {};
-    univParamPhotos = window.activePhotos[type] || {};
+        // SATPAM LAPIS 2: Cek KTP Parameter
+        const parameterLolosFilter = areas[namaAreaLengkap].filter(namaParamLengkap => {
+            const isParamAll = namaParamLengkap.includes('[ALL]');
+            const isParamStop = namaParamLengkap.includes('[STOP]');
+            
+            // Aturan 1: Pabrik Jalan -> Alat Khusus Stop disembunyikan
+            if (statusPabrik === 'OPERASI' && isParamStop) return false; 
+            
+            // Aturan 2: Pabrik Stop -> Alat Biasa (tanpa tag) disembunyikan
+            if (statusPabrik === 'STOP' && (!isParamAll && !isParamStop)) return false; 
+            
+            return true;
+        });
 
-    renderMenuUniversal(type);
-    navigateTo('universalAreaListScreen');
+        // ANTI KARTU KOSONG
+        if (parameterLolosFilter.length === 0) return; 
+
+        // BERSIHKAN NAMA AREA UNTUK JUDUL
+        const namaAreaBersih = namaAreaLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+        let cardHtml = `<div class="card"><h3>${namaAreaBersih}</h3>`;
+
+        // --- 3. GAMBAR INPUT PARAMETER ---
+        parameterLolosFilter.forEach(namaParamLengkap => {
+            
+            // PENTING: Bersihkan nama parameter agar di layar tidak ada tag-nya
+            const namaParamBersih = namaParamLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+
+            cardHtml += `
+                <div class="input-group">
+                    <label>${namaParamBersih}</label>
+                    <input type="text" id="${namaParamBersih}" placeholder="Isi data...">
+                </div>
+            `;
+        });
+
+        cardHtml += `</div>`; 
+        container.insertAdjacentHTML('beforeend', cardHtml);
+    });
 }
 /**
  * Fungsi untuk merender daftar kotak Area secara otomatis (DIUBAH NAMANYA AGAR SINKRON)
@@ -748,25 +789,34 @@ async function submitUniversalLogsheet() {
     progress.updateText('Mengumpulkan data...');
     currentUploadController = new AbortController();
     
-    // Gabungkan parameter dari semua area
+    // Gabungkan parameter dari semua area (DENGAN MESIN CUCI KTP)
     let allParameters = {};
-    Object.entries(univCurrentInput).forEach(([areaName, params]) => {
-        Object.entries(params).forEach(([paramName, value]) => {
-            allParameters[paramName] = value;
+    Object.entries(univCurrentInput).forEach(([areaNameLengkap, params]) => {
+        Object.entries(params).forEach(([paramNameLengkap, value]) => {
+            // 👇 MESIN CUCI REGEX BERKERJA DI SINI 👇
+            const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+            
+            // Masukkan nilai dengan menggunakan nama kunci yang sudah bersih
+            allParameters[paramNameBersih] = value;
         });
     });
     
-    // Kumpulkan foto dari semua area
-    let pendingPhotos = {}; // Khusus foto yang gagal terkirim di latar belakang
+    // Kumpulkan foto dari semua area (DENGAN MESIN CUCI KTP)
+    let pendingPhotos = {}; 
     let totalPhotoCount = 0;
 
-    Object.entries(univParamPhotos).forEach(([areaName, areaPhotos]) => {
-        Object.entries(areaPhotos).forEach(([paramName, photoData]) => {
+    Object.entries(univParamPhotos).forEach(([areaNameLengkap, areaPhotos]) => {
+        Object.entries(areaPhotos).forEach(([paramNameLengkap, photoData]) => {
             if (photoData) {
                 totalPhotoCount++;
-                // Kumpulkan HANYA jika gagal background upload (masih Base64)
+                
+                // 👇 MESIN CUCI REGEX UNTUK FOTO 👇
+                const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+                const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+
                 if (photoData !== 'UPLOADED_BACKGROUND') {
-                    pendingPhotos[`${areaName}__${paramName}`] = photoData;
+                    // Gunakan nama bersih untuk ID fotonya
+                    pendingPhotos[`${areaNameBersih}__${paramNameBersih}`] = photoData;
                 }
             }
         });
