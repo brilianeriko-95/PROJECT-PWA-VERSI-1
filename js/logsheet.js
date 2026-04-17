@@ -298,27 +298,42 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
         }
     }
 }
-// ==========================================
-// 6. UNIVERSAL INPUT ENGINE (CORE LOGIC)
-// ==========================================
-
 let activeUnivArea = null;
 let activeUnivIdx = 0;
+let activeUnivFilteredParams = []; // 👈 INI WADAH BARU UNTUK ALAT YANG LOLOS FILTER
 
 /**
- * Memulai pengisian parameter untuk area yang dipilih
+ * Memulai pengisian parameter untuk area yang dipilih (Dengan Satpam Lapis 2)
  */
-function openUnivAreaInput(areaName) {
-    activeUnivArea = areaName;
+function openUnivAreaInput(areaNameLengkap) { 
+    activeUnivArea = areaNameLengkap; 
     activeUnivIdx = 0;
     
     const config = LOGSHEET_CONFIG[activeLogsheetType];
+    const paramsListRaw = config.areas[areaNameLengkap];
+
+    // Cek Status Pabrik dari Modal kita tadi
+    const statusPabrik = document.getElementById('sticky-status-header') 
+                         ? document.getElementById('sticky-status-header').innerText.includes('OPERASI') ? 'OPERASI' : 'STOP'
+                         : 'OPERASI';
+
+    // 👇 SATPAM LAPIS 2: SARING ALAT SEBELUM MASUK RUANGAN 👇
+    activeUnivFilteredParams = paramsListRaw.filter(fullLabel => {
+        const isParamAll = fullLabel.includes('[ALL]');
+        const isParamStop = fullLabel.includes('[STOP]');
+        
+        if (statusPabrik === 'OPERASI' && isParamStop) return false; 
+        if (statusPabrik === 'STOP' && (!isParamAll && !isParamStop)) return false; 
+        
+        return true;
+    });
+    // 👆 ================================================= 👆
     
     // Sinkronisasi warna tema ke elemen UI
     const stepBadge = document.getElementById('univStepBadge');
     if (stepBadge) {
         stepBadge.style.color = config.themeColor;
-        stepBadge.style.backgroundColor = `${config.themeColor}15`; // Transparansi 15%
+        stepBadge.style.backgroundColor = `${config.themeColor}15`; 
         stepBadge.style.borderColor = `${config.themeColor}40`;
     }
     
@@ -330,20 +345,23 @@ function openUnivAreaInput(areaName) {
 
     const currentAreaNameEl = document.getElementById('univCurrentAreaName');
     if (currentAreaNameEl) {
-        currentAreaNameEl.textContent = areaName;
+        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+        currentAreaNameEl.textContent = areaNameBersih; 
         currentAreaNameEl.style.color = config.themeColor;
     }
 
     navigateTo('univParamScreen');
-    showUnivStep();
+    showUnivStep(); 
 }
 
 /**
- * Menampilkan parameter aktif berdasarkan index
+ * Menampilkan parameter aktif berdasarkan index (Menggunakan Alat Lolos Filter)
  */
 function showUnivStep() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
-    const paramsList = config.areas[activeUnivArea];
+    
+    // 👇 GANTI SUMBER DATANYA KE WADAH YANG SUDAH DIFILTER 👇
+    const paramsList = activeUnivFilteredParams; 
     const fullLabel = paramsList[activeUnivIdx];
     const total = paramsList.length;
     
@@ -351,17 +369,18 @@ function showUnivStep() {
     document.getElementById('univStepInfo').textContent = `Step ${activeUnivIdx + 1}/${total}`;
     document.getElementById('univAreaProgress').textContent = `${activeUnivIdx + 1}/${total}`;
     
-    // Parsing Nama Parameter dan Satuan
-    const nameOnly = fullLabel.split(' (')[0];
-    const unitMatch = fullLabel.match(/\(([^)]+)\)/);
+    // 👇 MESIN PENCUCI NAMA ALAT AGAR [ALL]/[STOP] TIDAK MUNCUL DI LAYAR 👇
+    const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+    const nameOnly = fullLabelBersih.split(' (')[0];
+    const unitMatch = fullLabelBersih.match(/\(([^)]+)\)/);
+    // 👆 =============================================================== 👆
     
     document.getElementById('univLabelInput').textContent = nameOnly;
-    // --- TAMBAHAN UNTUK MENAMPILKAN LAST DATA ---
-    // Cari data sebelumnya untuk parameter ini
-    const lastValue = univLastData[fullLabel] || univLastData[nameOnly]; 
-    const lastTime = univLastData._lastTime || '--:--'; // Ambil jam update terakhir
     
-    // Kita buat/update elemen teks kecil di bawah nama parameter
+    // --- TAMBAHAN UNTUK MENAMPILKAN LAST DATA (Gunakan nama asli untuk fetch) ---
+    const lastValue = univLastData[fullLabel] || univLastData[nameOnly]; 
+    const lastTime = univLastData._lastTime || '--:--'; 
+    
     let lastDataEl = document.getElementById('univLastDataDisplay');
     if (!lastDataEl) {
         lastDataEl = document.createElement('div');
@@ -373,30 +392,28 @@ function showUnivStep() {
         document.getElementById('univLabelInput').after(lastDataEl);
     }
     
-    // Tampilkan nilainya beserta jam ditarik
     if (lastValue && lastValue !== '') {
         lastDataEl.innerHTML = `🕒 Data sebelumnya (${lastTime}): <span style="color: ${config.themeColor}; font-weight: bold;">${lastValue}</span>`;
     } else {
         lastDataEl.innerHTML = `🕒 Data sebelumnya: -`;
     }
-   
    // -----------------------------------------------------------//
+   
     const unitDisplay = document.getElementById('univUnitDisplay');
     if (unitDisplay) {
         unitDisplay.textContent = unitMatch ? unitMatch[1] : "--";
         unitDisplay.style.color = config.themeColor;
     }
 
-    // Ambil data dari draft (univCurrentInput)
+    // Ambil data dari draft (Gunakan nama ASLI agar nyambung ke database)
     let savedValue = (univCurrentInput[activeUnivArea] && univCurrentInput[activeUnivArea][fullLabel]) || '';
     
-    // Jika data berupa status abnormal (ERROR/NOT_INSTALLED), jangan tampilkan di text input
     let displayValue = savedValue;
     if (['ERROR', 'NOT_INSTALLED'].includes(savedValue.split('\n')[0])) {
         displayValue = ''; 
     }
 
-    // Render Input Field (Otomatis deteksi Select atau Text)
+    // Render Input Field (Gunakan nama asli untuk deteksi)
     const inputContainer = document.getElementById('univInputFieldContainer');
     const inputType = detectInputType(fullLabel); 
 
@@ -407,20 +424,24 @@ function showUnivStep() {
         });
         inputContainer.innerHTML = `<select id="univValInput" class="status-select" style="width:100%; border:none; background:transparent; color:white; font-size:1.4rem; font-weight:700;">${optionsHtml}</select>`;
     } else {
-        // 👇 PERBAIKAN LOGIKA KEYBOARD DI SINI UNTUK MODE WIZARD 👇
         let isTextNeeded = fullLabel.includes('A/B/C/D/E') || fullLabel.includes('A/B/C');
         let keyboardMode = isTextNeeded ? "text" : "decimal";
         
         inputContainer.innerHTML = `<input type="text" id="univValInput" inputmode="${keyboardMode}" placeholder="${isTextNeeded ? 'Contoh: CE20' : '0.00'}" value="${displayValue}" autocomplete="off" style="width:100%; border:none; background:transparent; color:white; font-size:1.6rem; font-weight:700; outline:none;">`;
-        // 👆 ====================================================== 👆
     }
 
-    // Load Status Abnormal (Checkbox)
+    // Load Status Abnormal (Checkbox) - Gunakan nama asli
     loadUnivAbnormalStatus(fullLabel);
-    renderUnivProgressDots();
-   // (Masukkan ke dalam fungsi showUnivStep() yang ada di JS Anda)
-    loadUnivParamPhotoForCurrentStep();
-   
+    
+    // Perbaikan Titik Progress (Biar jumlah titiknya sama dengan alat yang difilter)
+    if (typeof renderUnivProgressDots === 'function') {
+        renderUnivProgressDots();
+    }
+    
+    if (typeof loadUnivParamPhotoForCurrentStep === 'function') {
+        loadUnivParamPhotoForCurrentStep();
+    }
+    
     // Auto focus ke input
     setTimeout(() => {
         const inputEl = document.getElementById('univValInput');
