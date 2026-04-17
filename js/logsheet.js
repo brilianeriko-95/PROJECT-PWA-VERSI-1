@@ -457,7 +457,8 @@ function showUnivStep() {
  */
 function saveUnivStep() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
-    const paramsList = config.areas[activeUnivArea];
+    // 👇 GANTI SUMBER DATA KE WADAH FILTER 👇
+    const paramsList = activeUnivFilteredParams; 
     const fullLabel = paramsList[activeUnivIdx];
     const input = document.getElementById('univValInput');
     
@@ -484,7 +485,6 @@ function saveUnivStep() {
     
     // UPDATE STATE GLOBAL JUGA
     window.activeDrafts[activeLogsheetType] = univCurrentInput;
-    
     localStorage.setItem(config.draftKey, JSON.stringify(univCurrentInput));
 }
 
@@ -495,45 +495,42 @@ function nextUnivStep() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     saveUnivStep();
     
-    // 👇 PERBAIKAN: Logika Background Upload yang Benar 👇
-    const fullLabel = config.areas[activeUnivArea][activeUnivIdx];
+    // 👇 GANTI SUMBER DATA KE WADAH FILTER 👇
+    const fullLabel = activeUnivFilteredParams[activeUnivIdx];
     const currentPhoto = univParamPhotos[activeUnivArea]?.[fullLabel];
     
     // Jika ada foto baru (ukurannya besar / format Base64)
     if (currentPhoto && currentPhoto.length > 100 && currentPhoto !== 'UPLOADED_BACKGROUND') {
-        
         if (navigator.onLine) {
-            // Panggil fungsi kirim di latar belakang
             uploadPhotoInBackground(activeUnivArea, fullLabel, currentPhoto);
-            
-            // Ubah Base64 raksasa jadi teks kecil
             univParamPhotos[activeUnivArea][fullLabel] = 'UPLOADED_BACKGROUND';
-            
-            // 👇 INI YANG WAJIB ADA (Pengaman Anti-Crash) 👇
             try {
                 localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
             } catch(e) {
-                // JIKA MEMORI FULL, BIARKAN SAJA! Jangan hentikan aplikasi.
-                // Toh foto aslinya sudah dilempar ke uploadPhotoInBackground
                 console.warn('Gagal menyimpan status UPLOADED_BACKGROUND ke lokal karena memori penuh. Abaikan.');
             }
-            // 👆 ========================================= 👆
-            
         } else {
             if (typeof showTemporaryToast === 'function') {
                 showTemporaryToast('Sinyal hilang. Foto disimpan di memori HP.', 'warning');
             }
         }
     }
-    // 👆 ============================================== 👆
     
-    if (activeUnivIdx < config.areas[activeUnivArea].length - 1) {
+    // 👇 CEK BATAS MAKSIMAL DARI JUMLAH ALAT YANG LOLOS FILTER 👇
+    if (activeUnivIdx < activeUnivFilteredParams.length - 1) {
         activeUnivIdx++;
         showUnivStep();
     } else {
-        showCustomAlert(`Area ${activeUnivArea} selesai!`, 'success');
+        // Tampilkan notifikasi Area Selesai tanpa tulisan [ALL] / [OPERASI]
+        const areaNameBersih = activeUnivArea.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+        showCustomAlert(`Area ${areaNameBersih} selesai!`, 'success');
+        
         setTimeout(() => {
-            renderMenuUniversal(activeLogsheetType); 
+            // Lempar kembali status pabrik agar menu di depan tidak berantakan
+            const statusPabrik = document.getElementById('sticky-status-header') 
+                                 ? (document.getElementById('sticky-status-header').innerText.includes('OPERASI') ? 'OPERASI' : 'STOP') 
+                                 : 'OPERASI';
+            renderMenuUniversal(activeLogsheetType, statusPabrik); 
             navigateTo('universalAreaListScreen');
         }, 1200);
     }
@@ -548,7 +545,11 @@ function prevUnivStep(forceBack = false) {
         activeUnivIdx--;
         showUnivStep();
     } else {
-        renderMenuUniversal(activeLogsheetType); // <--- GANTI JUGA DI SINI
+        // Lempar kembali status pabrik saat kembali ke depan
+        const statusPabrik = document.getElementById('sticky-status-header') 
+                             ? (document.getElementById('sticky-status-header').innerText.includes('OPERASI') ? 'OPERASI' : 'STOP') 
+                             : 'OPERASI';
+        renderMenuUniversal(activeLogsheetType, statusPabrik); 
         navigateTo('universalAreaListScreen');
     }
 }
@@ -624,7 +625,9 @@ function loadUnivAbnormalStatus(fullLabel) {
 function renderUnivProgressDots() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     const container = document.getElementById('univProgressDots');
-    const params = config.areas[activeUnivArea];
+    
+    // 👇 GANTI SUMBER DATA TITIK KE WADAH FILTER 👇
+    const params = activeUnivFilteredParams; 
     let html = '';
     
     params.forEach((label, i) => {
