@@ -979,3 +979,96 @@ input, textarea, select {
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
 }
 .btn-stop:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5); }
+/* =========================================
+   UI KARTU JOB / CHECKLIST RUTINAN PREMIUM
+   ========================================= */
+
+.premium-job-card {
+    background: rgba(30, 41, 59, 0.7); /* Biru gelap transparan */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.premium-job-card:active {
+    transform: scale(0.98);
+}
+
+.job-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.job-title-group h3 {
+    margin: 0 0 6px 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #f8fafc;
+    letter-spacing: 0.5px;
+}
+
+/* Badge untuk nama Area */
+.job-area-badge {
+    display: inline-block;
+    background: rgba(56, 189, 248, 0.15); /* Biru muda transparan */
+    color: #38bdf8;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* KOTAK UPLOAD FOTO PREMIUM */
+.job-upload-box {
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px dashed rgba(239, 68, 68, 0.4);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.job-upload-warning {
+    color: #ef4444;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Tombol Upload Custom (Menutupi input file asli) */
+.btn-custom-upload {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    transition: all 0.2s;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-custom-upload:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+/* Sembunyikan input file bawaan browser yang jelek */
+.hidden-file-input {
+    display: none;
+}
