@@ -1556,9 +1556,13 @@ async function loadRoutineChecklist() {
                     // 👆 ========================================== 👆
 
                     const safeTugas = namaTugasAsli.replace(/'/g, "\\'"); 
-                    const safeArea = t.area.replace(/'/g, "\\'");
+                    const safeArea = t.area.replace(/'/g, "\\'"); // 👈 Data ASLI tetap disimpan untuk dikirim!
                     const safePosisi = (t.posisi || 'ALL').replace(/'/g, "\\'");
                     
+                    // 👇 MESIN PENCUCI NAMA AREA (Hanya Untuk Tampilan) 👇
+                    let areaBersih = t.area.replace(/LOGSHEET_/gi, '').replace(/_/g, ' ').trim();
+                    // 👆 ============================================== 👆
+
                     const paramDropdown = hasDropdown ? `'${dropdownId}'` : `null`;
                     const paramFoto = hasFoto ? `'${fotoId}'` : `null`;
                     
@@ -1568,7 +1572,7 @@ async function loadRoutineChecklist() {
                             <div class="job-header-flex">
                                 <div class="job-title-group">
                                     <h3>${namaTugasAsli}</h3>
-                                    <span class="job-area-badge">📍 Area: ${t.area}</span>
+                                    <span class="job-area-badge">📍 Area: ${areaBersih}</span>
                                 </div>
                                 <div class="check-icon" style="font-size: 1.5rem; opacity: 0.5;">🔘</div>
                             </div>
