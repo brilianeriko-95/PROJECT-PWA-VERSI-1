@@ -79,37 +79,52 @@ function silentFetchLastData(type) {
 }
 
 // =========================================================
-// 👇 FUNGSI SAKTI BARU: MENGUBAH TULISAN DI LAYAR SECARA LIVE
+// 👇 FUNGSI SAKTI: MENGUBAH TULISAN DI LAYAR (WIZARD & PANEL)
 // =========================================================
 function updateLiveLastDataUI() {
-    const lastDataEl = document.getElementById('univLastDataDisplay');
     
-    // Pastikan operator sedang melihat form (bukan di menu depan)
-    if (!lastDataEl || !activeUnivArea || typeof activeUnivFilteredParams === 'undefined') return;
+    // --- 1. JALANKAN UNTUK MODE WIZARD (LAPANGAN) ---
+    const lastDataElWizard = document.getElementById('univLastDataDisplay');
+    if (lastDataElWizard && typeof activeUnivArea !== 'undefined' && typeof activeUnivFilteredParams !== 'undefined') {
+        const fullLabel = activeUnivFilteredParams[activeUnivIdx];
+        if (fullLabel) {
+            const nameOnly = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim().split(' (')[0];
+            const newValue = univLastData[fullLabel] || univLastData[nameOnly];
+            const newTime = univLastData._lastTime || '--:--';
 
-    const config = LOGSHEET_CONFIG[activeLogsheetType];
-    const fullLabel = activeUnivFilteredParams[activeUnivIdx];
-    if (!fullLabel) return;
-
-    // Bersihkan nama alat
-    const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
-    const nameOnly = fullLabelBersih.split(' (')[0];
-
-    // Ambil nilai terbaru yang barusan ditarik
-    const newValue = univLastData[fullLabel] || univLastData[nameOnly];
-    const newTime = univLastData._lastTime || '--:--';
-
-    // Jika ada datanya, bikin efek berkilau hijau!
-    if (newValue && newValue !== '') {
-        // Cek apakah nilainya berubah dari yang ditampilin sekarang
-        const currentText = lastDataEl.innerText;
-        if (!currentText.includes(newValue) || !currentText.includes(newTime)) {
-            lastDataEl.innerHTML = `🕒 Tersinkron (${newTime}): <span style="color: #10b981; font-weight: 900; text-shadow: 0 0 10px rgba(16,185,129,0.8); transition: all 0.5s;">${newValue}</span> <span style="font-size: 0.75rem; color: #10b981; margin-left: 6px;">✨ Baru ditarik</span>`;
-            
-            // Efek detak jantung sebentar biar operator sadar datanya berubah
-            lastDataEl.style.transform = 'scale(1.05)';
-            setTimeout(() => { lastDataEl.style.transform = 'scale(1)'; }, 300);
+            if (newValue && newValue !== '') {
+                const currentText = lastDataElWizard.innerText;
+                if (!currentText.includes(newValue) || !currentText.includes(newTime)) {
+                    lastDataElWizard.innerHTML = `🕒 Tersinkron (${newTime}): <span style="color: #10b981; font-weight: 900; text-shadow: 0 0 10px rgba(16,185,129,0.8); transition: all 0.5s;">${newValue}</span> <span style="font-size: 0.75rem; color: #10b981; margin-left: 6px;">✨ Baru</span>`;
+                    lastDataElWizard.style.transform = 'scale(1.05)';
+                    setTimeout(() => { lastDataElWizard.style.transform = 'scale(1)'; }, 300);
+                }
+            }
         }
+    }
+
+    // --- 2. JALANKAN UNTUK MODE PANEL (DROPDOWN) ---
+    // Cari semua elemen yang dipasangi sensor alarm
+    const panelElements = document.querySelectorAll('.live-update-panel');
+    if (panelElements.length > 0) {
+        panelElements.forEach(el => {
+            // Baca data yang disimpan di sensor
+            const fullLabel = el.getAttribute('data-label');
+            const nameOnly = el.getAttribute('data-name');
+            
+            const newValue = univLastData[fullLabel] || univLastData[nameOnly];
+            let newTime = univLastData._lastTime || '--:--';
+
+            if (newValue && newValue !== '') {
+                const currentText = el.innerText;
+                // Kalau angkanya beda sama yang di layar, tembakkan efek hijau!
+                if (!currentText.includes(newValue) || !currentText.includes(newTime)) {
+                    el.innerHTML = `🕒 Tersinkron (${newTime}): <strong style="color: #10b981; text-shadow: 0 0 8px rgba(16,185,129,0.6);">${newValue}</strong> ✨`;
+                    el.style.transform = 'scale(1.03)';
+                    setTimeout(() => { el.style.transform = 'scale(1)'; }, 400);
+                }
+            }
+        });
     }
 }
 
@@ -1099,29 +1114,53 @@ function openGroupedSubAreas(groupName) {
     const container = document.getElementById('panelSTGContent');
     let html = '';
 
-    subAreas.forEach(subAreaName => {
-        const paramsList = config.areas[subAreaName] || [];
+    // 👇 AMBIL STATUS PABRIK DARI MEMORI GLOBAL 👇
+    const statusPabrik = window.currentStatusPabrik || 'OPERASI';
+
+    subAreas.forEach(subAreaNameLengkap => {
+        // SATPAM LAPIS 1: Cek Area
+        const isAreaOperasi = subAreaNameLengkap.includes('[OPERASI]');
+        const isAreaStop = subAreaNameLengkap.includes('[STOP]');
         
+        if (statusPabrik === 'STOP' && isAreaOperasi) return;
+        if (statusPabrik === 'OPERASI' && isAreaStop) return;
+
+        const paramsListRaw = config.areas[subAreaNameLengkap] || [];
+        
+        // 👇 SATPAM LAPIS 2: Cek Alat 👇
+        const paramsList = paramsListRaw.filter(fullLabel => {
+            const isParamAll = fullLabel.includes('[ALL]');
+            const isParamStop = fullLabel.includes('[STOP]');
+            if (statusPabrik === 'OPERASI' && isParamStop) return false;
+            if (statusPabrik === 'STOP' && !isAreaStop && !isParamAll && !isParamStop) return false;
+            return true;
+        });
+
+        if (paramsList.length === 0) return; // Area kosong, jangan digambar
+
+        // Bersihkan Nama Area untuk Layar
+        const subAreaNameBersih = subAreaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+
         html += `
-        <details data-area="${subAreaName}" class="form-card glass" style="margin-bottom: 16px; padding: 16px; background: rgba(30, 41, 59, 0.7); border: 1px solid ${config.themeColor}40;">
+        <details data-area="${subAreaNameLengkap}" class="form-card glass" style="margin-bottom: 16px; padding: 16px; background: rgba(30, 41, 59, 0.7); border: 1px solid ${config.themeColor}40;">
             <summary style="font-size: 1rem; font-weight: 700; color: ${config.themeColor}; cursor: pointer; outline: none; list-style-position: inside;">
-                ${subAreaName}
+                ${subAreaNameBersih}
             </summary>
             <div style="margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
         `;
         
         paramsList.forEach(fullLabel => {
-            const nameOnly = fullLabel.split(' (')[0];
-            const unitMatch = fullLabel.match(/\(([^)]+)\)/);
+            // Bersihkan Nama Alat untuk Layar
+            const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+            const nameOnly = fullLabelBersih.split(' (')[0];
+            const unitMatch = fullLabelBersih.match(/\(([^)]+)\)/);
             const unit = unitMatch ? unitMatch[1] : '';
             
-            // Logika Parsing Data ERROR & Note
-            const savedValue = (univCurrentInput[subAreaName] && univCurrentInput[subAreaName][fullLabel]) || '';
+            const savedValue = (univCurrentInput[subAreaNameLengkap] && univCurrentInput[subAreaNameLengkap][fullLabel]) || '';
             const isErrorState = savedValue.toString().startsWith("ERROR");
             const noteText = isErrorState ? savedValue.split('\n')[1] || '' : '';
 
             let lastDataVal = univLastData[fullLabel] || univLastData[nameOnly] || '';
-            // FIX: Pengaman agar tidak [object Object]
             if (typeof lastDataVal === 'object' && lastDataVal !== null) {
                 lastDataVal = lastDataVal.value || '-'; 
             }
@@ -1133,9 +1172,12 @@ function openGroupedSubAreas(groupName) {
                         ${nameOnly}
                     </label>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <small style="color: #94a3b8;">🕒 Sblm (${lastTime}): <strong style="color: ${config.themeColor};">${lastDataVal || '-'}</strong></small>
+                        
+                        <small class="live-update-panel" data-label="${fullLabel}" data-name="${nameOnly}" style="color: #94a3b8; transition: all 0.3s ease-in-out; display: inline-block;">
+                            🕒 Sblm (${lastTime}): <strong style="color: ${config.themeColor};">${lastDataVal || '-'}</strong>
+                        </small>
                         <button type="button" 
-                                onclick="setGroupedError('${subAreaName}', '${fullLabel}', this)" 
+                                onclick="setGroupedError('${subAreaNameLengkap}', '${fullLabel}', this)" 
                                 data-active="${isErrorState}"
                                 style="padding: 4px 10px; font-size: 0.7rem; background: ${isErrorState ? '#ef4444' : 'rgba(239, 68, 68, 0.1)'}; border: 1px solid rgba(239, 68, 68, 0.4); color: ${isErrorState ? 'white' : '#f87171'}; border-radius: 6px; cursor: pointer; font-weight: 700;">
                             ⚠️ ERROR
@@ -1154,31 +1196,28 @@ function openGroupedSubAreas(groupName) {
                 });
             }
 
-            // Wrapper Input Utama (Disable jika ERROR)
             html += `<div style="display: flex; align-items: center; background: rgba(15, 23, 42, 0.6); border: 2px solid rgba(148, 163, 184, 0.2); border-radius: 12px; overflow: hidden; opacity: ${isErrorState ? '0.3' : '1'};">`;
 
             if (isDropdown) {
-                html += `<select ${isErrorState ? 'disabled' : ''} onchange="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1rem; outline: none;">
+                html += `<select ${isErrorState ? 'disabled' : ''} onchange="saveGroupedInput('${subAreaNameLengkap}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1rem; outline: none;">
                             <option value="">Pilih...</option>`;
                 dropdownOptions.forEach(opt => {
                     html += `<option value="${opt}" ${savedValue === opt ? 'selected' : ''}>${opt}</option>`;
                 });
                 html += `</select>`;
             } else {
-                html += `<input type="text" inputmode="decimal" ${isErrorState ? 'disabled' : ''} placeholder="0.00" value="${isErrorState ? '' : savedValue}" oninput="saveGroupedInput('${subAreaName}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1.1rem; font-weight: 700; outline: none;">`;
+                html += `<input type="text" inputmode="decimal" ${isErrorState ? 'disabled' : ''} placeholder="0.00" value="${isErrorState ? '' : savedValue}" oninput="saveGroupedInput('${subAreaNameLengkap}', '${fullLabel}', this.value)" style="flex: 1; padding: 14px; background: transparent; border: none; color: white; font-size: 1.1rem; font-weight: 700; outline: none;">`;
             }
 
-            html += `<div style="padding: 0 12px; background: rgba(255,255,255,0.05); color: ${config.themeColor}; font-weight: 700; font-size: 0.85rem; border-left: 2px solid rgba(148, 163, 184, 0.2); min-height: 48px; display: flex; align-items: center; justify-content: center; min-width: 60px;">${unit || '--'}</div>`;
-            html += `</div>`;
+            html += `<div style="padding: 0 12px; background: rgba(255,255,255,0.05); color: ${config.themeColor}; font-weight: 700; font-size: 0.85rem; border-left: 2px solid rgba(148, 163, 184, 0.2); min-height: 48px; display: flex; align-items: center; justify-content: center; min-width: 60px;">${unit || '--'}</div></div>`;
 
-            // TAMBAHAN: Input Keterangan ERROR (Muncul jika tombol aktif)
             html += `
                 <div class="grouped-note-container" style="display: ${isErrorState ? 'block' : 'none'}; margin-top: 10px;">
                     <input type="text" 
                            class="grouped-note-input" 
                            placeholder="Keterangan masalah/kerusakan..." 
                            value="${noteText}"
-                           oninput="updateGroupedNote('${subAreaName}', '${fullLabel}', this.value)"
+                           oninput="updateGroupedNote('${subAreaNameLengkap}', '${fullLabel}', this.value)"
                            style="width: 100%; padding: 12px; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; color: #fca5a5; font-size: 0.9rem; outline: none;">
                 </div>
             `;
