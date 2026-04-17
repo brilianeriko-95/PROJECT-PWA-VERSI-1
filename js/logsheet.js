@@ -998,11 +998,14 @@ async function submitUniversalLogsheet() {
 function openGroupedLogsheet() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     
+    // 👇 AMBIL STATUS PABRIK DARI MEMORI GLOBAL 👇
+    const statusPabrik = window.currentStatusPabrik || 'OPERASI';
+
     document.getElementById('panelGroupTitle').textContent = config.title;
     document.getElementById('panelGroupUser').textContent = (currentUser && currentUser.name) ? currentUser.name : 'Operator';
 
-    const savedDraft = localStorage.getItem(config.draftKey);
-    univCurrentInput = savedDraft ? JSON.parse(savedDraft) : {};
+    // Gunakan state global agar konsisten dengan Universal
+    univCurrentInput = window.activeDrafts[activeLogsheetType] || {};
 
     const listContainer = document.getElementById('panelGroupList');
     let html = '';
@@ -1013,16 +1016,40 @@ function openGroupedLogsheet() {
         let groupTotalParams = 0;
         let groupFilledParams = 0;
 
-        subAreas.forEach(subArea => {
-            const params = config.areas[subArea] || [];
-            groupTotalParams += params.length;
+        subAreas.forEach(subAreaLengkap => {
+            // 👇 SATPAM LAPIS 1: Cek KTP Area 👇
+            const isAreaOperasi = subAreaLengkap.includes('[OPERASI]');
+            const isAreaStop = subAreaLengkap.includes('[STOP]');
+
+            if (statusPabrik === 'STOP' && isAreaOperasi) return; // Area mati, lewati!
+            if (statusPabrik === 'OPERASI' && isAreaStop) return; // Area khusus stop, lewati!
+
+            const paramsListRaw = config.areas[subAreaLengkap] || [];
             
-            params.forEach(param => {
-                if (univCurrentInput[subArea] && univCurrentInput[subArea][param] && univCurrentInput[subArea][param].toString().trim() !== '') {
+            // 👇 SATPAM LAPIS 2: Cek KTP Parameter 👇
+            const parameterLolosFilter = paramsListRaw.filter(fullLabel => {
+                const isParamAll = fullLabel.includes('[ALL]');
+                const isParamStop = fullLabel.includes('[STOP]');
+
+                if (statusPabrik === 'OPERASI' && isParamStop) return false;
+                if (statusPabrik === 'STOP' && !isAreaStop && !isParamAll && !isParamStop) return false;
+
+                return true;
+            });
+
+            // HITUNG PROGRESS BERDASARKAN ALAT YANG LOLOS FILTER SAJA!
+            groupTotalParams += parameterLolosFilter.length;
+            
+            parameterLolosFilter.forEach(param => {
+                // Cek di currentDraft menggunakan nama asli
+                if (univCurrentInput[subAreaLengkap] && univCurrentInput[subAreaLengkap][param] && univCurrentInput[subAreaLengkap][param].toString().trim() !== '') {
                     groupFilledParams++;
                 }
             });
         });
+
+        // Anti Kartu Kosong: Jika setelah difilter alatnya 0, jangan gambar grupnya
+        if (groupTotalParams === 0 && subAreas.length > 0) return;
 
         globalTotalParams += groupTotalParams;
         globalFilledParams += groupFilledParams;
@@ -1058,7 +1085,6 @@ function openGroupedLogsheet() {
     const submitBtn = document.getElementById('panelSubmitBtn');
     if (submitBtn) {
         submitBtn.style.display = globalFilledParams > 0 ? 'block' : 'none';
-        // Warna tombol menyesuaikan config theme
         submitBtn.style.background = `linear-gradient(135deg, ${config.themeColor}, color-mix(in srgb, ${config.themeColor} 70%, black))`;
     }
 
