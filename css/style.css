@@ -897,3 +897,21 @@ input, textarea, select {
   padding-bottom: 0 !important;
   border: none !important;
 }
+/* --- UI STICKY STATUS BAR --- */
+.sticky-status-bar {
+    position: sticky;
+    top: 0;           
+    z-index: 1000;    
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    font-size: 16px;
+    border-radius: 0 0 10px 10px; 
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: background-color 0.3s ease;
+}
+
+.sticky-status-bar.operasi { background-color: #27ae60; } /* Hijau */
+.sticky-status-bar.stop { background-color: #e74c3c; }    /* Merah */
