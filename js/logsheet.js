@@ -102,8 +102,16 @@ let univParamPhotos = {};      // Foto sementara
  * @param {string} type - Sesuai dengan key di LOGSHEET_CONFIG (misal: '1300')
  */
 function openUniversalLogsheet(menuKey, statusPabrik) {
+    console.log("🚀 Menjalankan openUniversalLogsheet. Status:", statusPabrik);
+
+    // --- TERSANGKA 1: ID WADAH HTML ---
     const container = document.getElementById('logsheet-content'); 
-    if(!container) return;
+    if(!container) {
+        // ALARM NYALA: Beritahu operator kalau ID HTML-nya salah!
+        alert("❌ ERROR TERSANGKA 1: ID 'logsheet-content' tidak ditemukan di index.html!");
+        console.error("Wadah HTML tidak ketemu!");
+        return; 
+    }
     container.innerHTML = ''; 
 
     // --- 1. GAMBAR STICKY HEADER ---
@@ -114,7 +122,16 @@ function openUniversalLogsheet(menuKey, statusPabrik) {
     `;
     container.insertAdjacentHTML('beforeend', headerHtml);
 
-    const areas = LOGSHEET_CONFIG[menuKey].areas;
+    // --- TERSANGKA 2: STRUKTUR CONFIG ---
+    const config = LOGSHEET_CONFIG[menuKey];
+    if (!config || !config.areas) {
+        // ALARM NYALA: Beritahu kalau struktur config.js nya beda!
+        alert(`❌ ERROR TERSANGKA 2: config.areas tidak ditemukan untuk menu ${menuKey}!`);
+        console.error("Data Areas tidak ada di config!");
+        return;
+    }
+    
+    const areas = config.areas;
     
     // --- 2. MULAI LOOPING AREA ---
     Object.keys(areas).forEach(namaAreaLengkap => {
