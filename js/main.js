@@ -209,19 +209,21 @@ function navigateTo(screenId) {
     const allScreens = document.querySelectorAll('.screen');
     allScreens.forEach(screen => {
         screen.classList.remove('active');
-        screen.style.display = 'none';
+        screen.style.display = 'none'; // Pasang gembok inline
     });
 
     // 3. Tampilkan layar tujuan
     const targetScreen = document.getElementById(screenId);
     if (targetScreen) {
-        targetScreen.style.display = 'block';
-        // Delay sedikit agar browser sempat memproses display:block sebelum animasi CSS jalan
+        // 👇 HAPUS GEMBOKNYA (Jangan dipaksa 'block', biarkan kosong agar CSS yang jalan) 👇
+        targetScreen.style.display = ''; 
+        
+        // Delay sedikit agar browser sempat merender DOM sebelum animasi CSS jalan
         setTimeout(() => {
             targetScreen.classList.add('active');
         }, 10);
     }
-
+}
     // --- LOGIKA INTERCEPTOR KHUSUS (Pemicu Otomatis) ---
 
     // 👇 PERBAIKAN: Update otomatis semua nama user ("-") di setiap layar 👇
