@@ -1592,7 +1592,6 @@ async function loadRoutineChecklist() {
     }
 }
 
-// 👇 TAMBAHKAN PARAMETER fotoId DI SINI 👇
 //===================================================//
 async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) {
     if (!currentUser || !currentUser.name) {
@@ -1601,7 +1600,7 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
     }
 
     let finalTugasName = tugasName;
-    let fotoBase64 = null; // ✅ Hanya dideklarasikan SATU KALI di sini
+    let fotoBase64 = null; 
     let mimeType = '';
     let fileName = '';
 
@@ -1617,7 +1616,7 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
         if (ddElement && ddElement.value !== "") finalTugasName = `${tugasName} (${ddElement.value})`;
     }
 
-    // 👇 2. VALIDASI WAJIB FOTO 👇
+    // 2. VALIDASI WAJIB FOTO
     if (fotoId) {
         const fileInput = document.getElementById(fotoId);
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -1627,26 +1626,21 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
             return; 
         }
         
-        // JIKA ADA FOTO, GUNAKAN COMPRESS IMAGE DARI UTILS.JS
         const file = fileInput.files[0];
         if (typeof showTemporaryToast === 'function') showTemporaryToast('⏳ Mengompres foto...', 'info');
         
-        // 1. Buat URL memori sementara (Mencegah RAM HP Penuh)
         const tempImageUrl = URL.createObjectURL(file);
         
         try {
-            // 2. Panggil fungsi sakti Anda dari utils.js
             const result = await compressImage(tempImageUrl, {
                 maxWidth: 800,
                 maxHeight: 800,
-                quality: 0.7, // 70% sudah sangat cukup
+                quality: 0.7, 
                 type: 'image/jpeg'
             });
             
-            // 3. Hapus memori URL agar HP tidak lemot
             URL.revokeObjectURL(tempImageUrl);
             
-            // 4. Ambil teks Base64-nya saja (Membuang "data:image/jpeg;base64,")
             fotoBase64 = result.dataUrl.split(',')[1];
             mimeType = 'image/jpeg';
             fileName = file.name;
@@ -1655,26 +1649,24 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
             URL.revokeObjectURL(tempImageUrl);
             if (typeof showTemporaryToast === 'function') showTemporaryToast('❌ Gagal memproses foto!', 'error');
             console.error("Error Kompresi:", err);
-            return; // Batalkan centang jika foto gagal diproses
+            return; 
         }
         
         finalTugasName = `📸 ${finalTugasName}`; 
     }
-    // 👆 ========================================== 👆
 
     element.onclick = null; 
     const icon = element.querySelector('.check-icon');
     if (icon) icon.innerHTML = '✅';
 
-    // ✅ PAYLOAD SUDAH DILENGKAPI DATA FOTO
     const payload = {
         type: 'CHECKLIST_ROUTINE',
         tugas: finalTugasName, 
         targetArea: targetArea,
         Operator: currentUser.name,
-        photoBase64: fotoBase64,     // Foto yang sudah dikompres
-        photoMimeType: mimeType,     // Tipe file (image/jpeg)
-        photoName: fileName,         // Nama file asli
+        photoBase64: fotoBase64,     
+        photoMimeType: mimeType,     
+        photoName: fileName,         
         Jam: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     };
 
@@ -1690,8 +1682,6 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
             const res = await response.json();
             
             if (res.success) {
-                
-                // 👇 FITUR ANTI-REFRESH: SIMPAN KE MEMORI HP SAAT BERHASIL 👇
                 const today = new Date();
                 const todayString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
                 const memoryKey = 'completed_routines_' + todayString;
@@ -1699,18 +1689,16 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
                 let completedTasks = JSON.parse(localStorage.getItem(memoryKey) || '[]');
                 if (!completedTasks.includes(tugasName)) {
                     completedTasks.push(tugasName);
-                    localStorage.setItem(memoryKey, JSON.stringify(completedTasks)); // Catat di HP!
+                    localStorage.setItem(memoryKey, JSON.stringify(completedTasks)); 
                 }
-                // 👆 ======================================================= 👆
 
                 setTimeout(() => {
                     element.remove(); // Hapus kartu yang barusan di-klik dari layar
                     
-                    // 👇 PERBAIKAN LOGIKA: CEK SISA KARTU TUGAS 👇
-                    const sisaTugas = document.querySelectorAll('.routine-card').length;
+                    // 👇 PERBAIKAN LOGIKA: CEK SISA KARTU TUGAS MENGGUNAKAN CLASS YANG BARU 👇
+                    const sisaTugas = document.querySelectorAll('.premium-job-card').length;
                     
                     if (sisaTugas === 0) {
-                        // Deteksi Shift berdasarkan jam HP saat ini
                         const jamSekarang = new Date().getHours();
                         let currentShift = 'MALAM';
                         if (jamSekarang >= 7 && jamSekarang < 15) currentShift = 'PAGI';
@@ -1718,7 +1706,6 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
 
                         const container = document.getElementById('jobListContainer');
                         if (container) {
-                            // Hancurkan tombol filter & ganti dengan pesan sukses!
                             container.innerHTML = `<div style="text-align:center; color:#10b981; font-style:italic; padding:20px; font-weight:bold; animation: fadeIn 0.5s ease-in-out;">🎉 Semua tugas rutin Shift ${currentShift} selesai!</div>`;
                         }
                     }
@@ -1734,7 +1721,6 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
             element.classList.remove('completed');
             if (icon) icon.innerHTML = '🔘';
             
-            // ✅ PARAMETER ONCLICK DIKEMBALIKAN DENGAN LENGKAP
             element.onclick = function() { completeTask(element, tugasName, targetArea, dropdownId, fotoId) };
             
             if (typeof showTemporaryToast === 'function') showTemporaryToast('📶 Gagal mengirim, periksa sinyal!', 'error');
