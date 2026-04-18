@@ -985,26 +985,41 @@ async function submitUniversalLogsheet() {
                     photo: photoData,
                     timestamp: new Date().toISOString()
                 };
-                await fetch(GAS_URL, {
-                    method: 'POST', mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                const response = await fetch(GAS_URL, {
+                    method: 'POST',
+                    // Hapus mode: 'no-cors' dan headers Content-Type
                     body: JSON.stringify(photoPayload),
                     signal: currentUploadController.signal
                 });
+                
+                // Baca balasan dari server
+                const res = await response.json(); 
+                if (!res.success) {
+                    throw new Error("Gagal upload foto: " + key);
+                }
+
                 await new Promise(resolve => setTimeout(resolve, 200)); 
-            } catch (error) { console.warn('Error upload foto:', error); }
-        }
-    }
+            } catch (error) { 
+                console.warn('Error upload foto:', error); 
+                // Opsional: Anda bisa menambahkan logika tambahan di sini jika foto gagal
+            }
     
     // 2. Upload Data Teks
     progress.updateText('Mengirim data parameter utama...');
     try {
-        await fetch(GAS_URL, {
-            method: 'POST', mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            // Hapus mode: 'no-cors' dan headers Content-Type
             body: JSON.stringify(finalData),
             signal: currentUploadController.signal
         });
+        
+        // Baca balasan dari server
+        const res = await response.json();
+        
+        if (!res.success) {
+            throw new Error("Server gagal memproses data teks utama");
+        }
         
         progress.complete();
         showCustomAlert('✓ Data Logsheet berhasil dikirim ke server!', 'success');
