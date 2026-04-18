@@ -490,45 +490,68 @@ async function submitBalancingData() {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         progress.updateText('Mengirim ke server...');
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(balancingData),
-            signal: currentUploadController.signal
-        });
         
-        progress.complete();
-        showCustomAlert('✓ Data Balancing berhasil dikirim!', 'success');
-        
-        let balancingHistory = JSON.parse(localStorage.getItem('balancing_history') || '[]');
-        balancingHistory.push({
-            ...balancingData,
-            submittedAt: new Date().toISOString()
-        });
-        localStorage.setItem('balancing_history', JSON.stringify(balancingHistory));
-        
-        setTimeout(() => {
-            const waMessage = encodeURIComponent(formatWhatsAppMessage(balancingData));
-            window.open(`https://wa.me/6281382160345?text=${waMessage}`, '_blank');
-            navigateTo('homeScreen');
-            clearBalancingDraft(); 
-        }, 1000);
-        
-    } catch (error) {
-        console.error('Balancing Submit Error:', error);
-        progress.error();
+        try {
+            // --- PERBAIKAN 1: Hapus mode: 'no-cors' agar bisa membaca respon server ---
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                // Headers Content-Type dihapus agar dikirim sebagai text/plain (CORS bypass)
+                body: JSON.stringify(balancingData),
+                signal: currentUploadController.signal
+            });
+            
+            // --- PERBAIKAN 2: Tangkap dan validasi balasan dari server ---
+            const res = await response.json();
+            if (!res.success) {
+                throw new Error("Server menolak data balancing");
+            }
+            
+            progress.complete();
+            showCustomAlert('✓ Data Balancing berhasil dikirim!', 'success');
+            
+            // Simpan ke riwayat lokal
+            let balancingHistory = JSON.parse(localStorage.getItem('balancing_history') || '[]');
+            balancingHistory.push({
+                ...balancingData,
+                submittedAt: new Date().toISOString()
+            });
+            localStorage.setItem('balancing_history', JSON.stringify(balancingHistory));
+            
+            setTimeout(() => {
+                const waMessage = encodeURIComponent(formatWhatsAppMessage(balancingData));
+                window.open(`https://wa.me/6281382160345?text=${waMessage}`, '_blank');
+                navigateTo('homeScreen');
+                clearBalancingDraft(); 
+            }, 1000);
+            
+        } catch (error) {
+            console.error('Balancing Submit Error:', error);
+            progress.error();
 
-        let queue = JSON.parse(localStorage.getItem(config.offlineKey) || '[]');
+            // --- PERBAIKAN 3: Pastikan struktur data offline sesuai dengan mesin sync di main.js ---
+            const offlineKey = 'offline_balancing'; // Sesuaikan dengan key di config
+            let queue = [];
+            try {
+                queue = JSON.parse(localStorage.getItem(offlineKey) || '[]');
+            } catch(e) { queue = []; }
 
-        queue.push({
-            ...balancingData,
-            photos: {} 
-        });
+            queue.push({
+                ...balancingData,
+                photos: {} // Wajib ada agar tidak error saat dibaca main.js
+            });
 
-        localStorage.setItem(config.offlineKey, JSON.stringify(queue));
-        
-        checkOfflineData(); 
-        showCustomAlert('Data balancing disimpan offline!', 'warning');
-    }
-}
+            // --- PERBAIKAN 4: Proteksi Memori HP Penuh ---
+            try {
+                localStorage.setItem(offlineKey, JSON.stringify(queue));
+                checkOfflineData(); 
+                showCustomAlert('Sinyal lemah! Data balancing disimpan offline.', 'warning');
+                
+                // Pindah ke home agar operator bisa sinkronisasi nanti
+                setTimeout(() => navigateTo('homeScreen'), 1500);
+            } catch (storageError) {
+                console.error("Gagal simpan offline:", storageError);
+                queue.pop();
+                localStorage.setItem(offlineKey, JSON.stringify(queue));
+                showCustomAlert('MEMORI HP PENUH! Segera bersihkan cache atau cari sinyal Wi-Fi!', 'error');
+            }
+        }
