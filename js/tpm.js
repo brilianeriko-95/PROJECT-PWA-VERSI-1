@@ -249,13 +249,15 @@ async function submitTPMData() {
     try {
         const response = await fetch(GAS_URL, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+            // Mode dan headers dihapus
             body: JSON.stringify(tpmData)
         });
         
+        const res = await response.json();
+        if (!res.success) throw new Error("Server menolak data");
+        
         progress.complete();
-        showCustomAlert('✓ Data TPM berhasil disimpan!', 'success');
+        showCustomAlert('✓ Data berhasil dikirim!', 'success');
         
         currentTPMPhoto = null;
         currentTPMStatus = '';
