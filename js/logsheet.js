@@ -231,6 +231,7 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
         
         const isAreaOperasi = areaNameLengkap.includes('[OPERASI]');
         const isAreaStop = areaNameLengkap.includes('[STOP]');
+        const isAreaAll = areaNameLengkap.includes('[ALL]');
 
         if (statusPabrik === 'STOP' && isAreaOperasi) return; 
         if (statusPabrik === 'OPERASI' && isAreaStop) return;  
@@ -241,8 +242,8 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
             
             if (statusPabrik === 'OPERASI' && isParamStop) return false; 
             
-            // 👇 LOGIKA BARU: Kalau Areanya bukan khusus STOP, baru alat normal dimatikan
-            if (statusPabrik === 'STOP' && !isAreaStop && !isParamAll && !isParamStop) return false; 
+            // 👇 2. TAMBAHKAN !isAreaAll DI BARIS INI 👇
+            if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false; 
             
             return true;
         });
