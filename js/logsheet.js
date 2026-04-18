@@ -789,14 +789,15 @@ function handleUnivParamPhoto(event) {
                 univParamPhotos[activeUnivArea][fullLabel] = univCurrentPhoto;
                 localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
             } catch (storageError) {
-                console.warn("[Memori Penuh] Mengosongkan draf yang tidak dikirim...");
-                // Paksa jadikan hanya 1 foto di dalam draf area ini
-                univParamPhotos = { [activeUnivArea]: { [fullLabel]: univCurrentPhoto } };
-                localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
+                console.warn("[Memori Penuh] Kapasitas lokal habis.");
+                // Hapus foto yang baru saja dicoba dimasukkan agar array kembali ke awal
+                delete univParamPhotos[activeUnivArea][fullLabel];
                 
                 if (typeof showTemporaryToast === 'function') {
-                    showTemporaryToast('⚠️ Memori HP penuh. Draf foto lama dihapus.', 'warning');
+                    showTemporaryToast('⚠️ Memori HP penuh! Sinkronisasi (tekan awan merah) atau kirim draf ini sekarang.', 'error', 4000);
                 }
+                return; // Hentikan proses, jangan timpa draf lama
+               }
             }
 
             // 👇 RENDER UI (Tampilkan Thumbnail) 👇
