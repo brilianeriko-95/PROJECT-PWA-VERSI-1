@@ -703,7 +703,6 @@ function applyUnitTheme(deptName) {
     // 1. Deteksi Unit dari Data User
     if (dept.includes('UTILITAS') || dept.includes('UTIL')) unitKey = 'UTILITAS';
     else if (dept.includes('BATU BARA') || dept.includes('UBB')) unitKey = 'UBB';
-    // Gabungkan MELTER ke SA karena di config UNIT_THEMES tidak ada key MELTER
     else if (dept.includes('SULFAT') || dept.includes('SA') || dept.includes('MELTER')) unitKey = 'SA';
 
     // 2. Ambil Baju dari Lemari (Fallback ke DEFAULT jika tidak ketemu)
@@ -715,37 +714,41 @@ function applyUnitTheme(deptName) {
     document.documentElement.style.setProperty('--primary-color', theme.color);
     document.documentElement.style.setProperty('--header-bg', theme.bgGradient);
     
-    // 4. Ganti Logo di Layar Home
+    // 4. Ganti Logo di Berbagai Layar
     const homeLogo = document.getElementById('mainLogo'); 
     if (homeLogo) {
         homeLogo.src = theme.logo;
         homeLogo.style.display = 'block';
     }
 
-    // 5. Ganti Logo di Layar Login
     const loginLogo = document.getElementById('loginLogo');
     if (loginLogo) {
         loginLogo.src = theme.logo;
         loginLogo.style.display = 'block';
     }
 
-    // 6. Ganti Logo di Layar Supervisor Dashboard (FITUR BARU)
-    const spvLogo = document.getElementById('spvLogo');
+    const spvLogo = document.getElementById('spvLogo'); // Pastikan ID ini sudah ditambahkan di HTML layar SPV
     if (spvLogo) {
         spvLogo.src = theme.logo;
         spvLogo.style.display = 'block';
     }
 
-    // 7. Ganti Judul Teks (Title) di Layar (FITUR BARU)
-    // Ubah judul di layar login
+    // 5. Ganti Judul Teks (Title) Menggunakan Konfigurasi Baru
+    // Mengubah tulisan "ASAM SULFAT 3B" di halaman login
     const loginTitle = document.querySelector('.app-title');
-    if (loginTitle) loginTitle.textContent = theme.title;
+    if (loginTitle) {
+        loginTitle.textContent = theme.title;
+    }
 
-    // Ubah judul di layar home
+    // Mengubah tulisan "LOGSHEET DIGITAL" di halaman home
     const homeTitle = document.querySelector('.home-title');
-    if (homeTitle) homeTitle.textContent = theme.title;
+    if (homeTitle) {
+        homeTitle.textContent = theme.title;
+    }
 
-    // Ubah judul di dashboard supervisor
+    // Mengubah tulisan di Dashboard Supervisor (opsional, jika Anda menggunakan elemen ini)
     const spvTitle = document.getElementById('spvDashboardTitle');
-    if (spvTitle) spvTitle.textContent = theme.title;
+    if (spvTitle) {
+        spvTitle.textContent = theme.title;
+    }
 }
