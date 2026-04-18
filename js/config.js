@@ -18,6 +18,35 @@ const AUTH_CONFIG = {
     REMEMBER_ME_DURATION: 30 * 24 * 60 * 60 * 1000
 };
 
+// 👇 TAMBAHKAN LANGKAH 1 DI SINI (LEMARI TEMA GLOBAL) 👇
+const UNIT_THEMES = {
+    'SA': { 
+        color: '#10b981', // Hijau Asam Sulfat
+        bgGradient: 'linear-gradient(135deg, #064e3b, #0f172a)',
+        logo: 'assets/logo-sa.png',
+        title: 'Asam Sulfat Logsheet'
+    },
+    'UBB': { 
+        color: '#f59e0b', // Oranye Batu Bara
+        bgGradient: 'linear-gradient(135deg, #78350f, #0f172a)',
+        logo: 'assets/logo-ubb.png',
+        title: 'Batu Bara Logsheet'
+    },
+    'UTILITAS': { 
+        color: '#3b82f6', // Biru Utilitas
+        bgGradient: 'linear-gradient(135deg, #1e3a8a, #0f172a)',
+        logo: 'assets/logo-utilitas.png',
+        title: 'Utilitas Logsheet'
+    },
+    'DEFAULT': {
+        color: '#64748b', // Abu-abu Netral
+        bgGradient: 'linear-gradient(135deg, #334155, #0f172a)',
+        logo: 'assets/logo-petrokop.png',
+        title: 'Logsheet Digital'
+    }
+};
+// 👆 ================================================== 👆
+
 // 2. BACKEND & USER SETUP
 const GAS_URL = "https://script.google.com/macros/s/AKfycbwnkmoNfftD0W3uIeHVMbebt10CipMJWOMCpcKMAJX7OVINOoYc8ldgepoEBCc5_ZM/exec";
 
