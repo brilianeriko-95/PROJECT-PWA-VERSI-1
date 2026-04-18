@@ -576,8 +576,16 @@ input, textarea, select {
    7. SCREENS & MODULES
    ============================================ */
 
-/* 7.1. Login Screen */
-.login-container { min-height: 100vh; display: flex; flex-direction: column; padding: var(--lg); padding-top: calc(var(--xxl) + var(--safe-top)); position: relative; }
+/* ============================================
+   7.1. Login Screen (Premium Glassmorphism)
+   ============================================ */
+.login-container { min-height: 100vh; display: flex; flex-direction: column; padding: var(--lg); padding-top: calc(var(--xxl) + var(--safe-top)); position: relative; overflow: hidden; }
+
+/* Animasi Masuk (Stacking Fade-Up) */
+#loginScreen .login-header { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+#loginScreen .login-form { opacity: 0; animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards; }
+#loginScreen .login-footer { opacity: 0; animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; }
+
 .login-header { text-align: center; margin-bottom: var(--xxl); position: relative; z-index: 1; }
 .logo-container { width: 120px; height: 120px; margin: 0 auto var(--lg); position: relative; }
 .logo-container::before { content: ''; position: absolute; inset: -8px; border-radius: 28px; background: linear-gradient(135deg, var(--primary), var(--info), var(--success)); opacity: 0.3; filter: blur(15px); animation: pulse 3s ease-in-out infinite; }
@@ -585,19 +593,30 @@ input, textarea, select {
 .logo-container img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3)); }
 .logo-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: var(--header-bg); border-radius: var(--radius-xl); color: white; position: relative; z-index: 1; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .logo-container.animated { animation: float 4s ease-in-out infinite; }
-.app-title { font-size: 1.75rem; font-weight: 800; margin-bottom: var(--xs); background: linear-gradient(135deg, var(--text) 0%, var(--primary-light) 50%, var(--info-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Judul Gradient Premium */
+.app-title { font-size: 1.75rem; font-weight: 900; margin-bottom: 4px; background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3)); }
 .app-subtitle { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
-.login-form { padding: var(--xxl); border-radius: var(--radius-xl); margin-bottom: auto; background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(17, 24, 39, 0.8) 100%); border: 1px solid var(--border); position: relative; z-index: 1; }
+
+/* Form Kaca (Advanced Glassmorphism) */
+.login-form { padding: 32px 24px; border-radius: 28px; margin: 0 16px auto 16px; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1); position: relative; z-index: 1; }
 .login-title { font-size: 1.375rem; font-weight: 700; margin-bottom: var(--xs); text-align: center; color: var(--text); }
 .login-subtitle { font-size: 0.9375rem; color: var(--text-muted); text-align: center; margin-bottom: var(--xl); }
 .input-group { margin-bottom: var(--lg); }
 .login-input-wrapper { position: relative; display: flex; align-items: center; }
 .login-input-icon { position: absolute; left: var(--md); color: var(--text-muted); pointer-events: none; transition: color 0.2s; }
-.login-input { width: 100%; padding: var(--md) var(--lg); padding-left: 48px; background: rgba(15, 23, 42, 0.6); border: 2px solid var(--border); border-radius: var(--radius-md); color: var(--text); font-size: 1rem; outline: none; transition: all 0.2s ease; }
-.login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+
+/* Input Glow Interactive */
+.login-input { width: 100%; padding: 14px 16px; padding-left: 44px; background: rgba(2, 6, 23, 0.4); border: 2px solid rgba(148, 163, 184, 0.15); border-radius: 14px; color: var(--text); font-size: 1rem; outline: none; transition: all 0.3s ease; }
+.login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); background: rgba(2, 6, 23, 0.7); }
 .login-input:focus + .login-input-icon, .login-input-wrapper:focus-within .login-input-icon { color: var(--primary); }
 .login-input.error { border-color: var(--danger); }
 .login-error { color: var(--danger); font-size: 0.875rem; text-align: center; margin-top: var(--sm); display: none; padding: var(--md); background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-md); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+/* Tombol Login Premium (Khusus Layar Login) */
+#loginScreen .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border: none; border-radius: 14px; padding: 16px; font-size: 1.05rem; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255,255,255,0.2); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+#loginScreen .btn-primary:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
+
 .login-footer { text-align: center; padding-top: var(--xl); position: relative; z-index: 1; }
 .login-footer p { font-size: 0.8125rem; color: var(--text-muted); margin-bottom: var(--sm); }
 .version-tag { display: inline-flex; align-items: center; gap: var(--xs); padding: var(--xs) var(--md); background: rgba(59, 130, 246, 0.1); color: var(--primary-light); border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(59, 130, 246, 0.2); }
