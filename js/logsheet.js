@@ -238,10 +238,9 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
         const isAreaAll = areaNameLengkap.includes('[ALL]');
         const isAreaLaporan = areaNameLengkap.toUpperCase().includes('[LAPORAN]');
         
-
         if (statusPabrik === 'STOP' && isAreaOperasi) return; 
-        if (statusPabrik === 'OPERASI' && isAreaStop) return;  
-
+        if (statusPabrik === 'OPERASI' && isAreaStop) return;
+        if (isAreaLaporan && !isWaktuLaporan) return;
         const parameterLolosFilter = paramsList.filter(fullLabel => {
             const isParamAll = fullLabel.includes('[ALL]');
             const isParamStop = fullLabel.includes('[STOP]');
@@ -369,31 +368,37 @@ function openUnivAreaInput(areaNameLengkap) {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     const paramsListRaw = config.areas[areaNameLengkap];
 
-    // 👇 AMBIL STATUS DARI MEMORI GLOBAL (Anti-Gagal!) 👇
     const statusPabrik = window.currentStatusPabrik || 'OPERASI';
     const isAreaStop = areaNameLengkap.includes('[STOP]');
-    const isAreaAll = areaNameLengkap.includes('[ALL]'); // 👈 Pengecekan Area ALL dimasukkan
+    const isAreaAll = areaNameLengkap.includes('[ALL]');
     const isAreaLaporan = areaNameLengkap.toUpperCase().includes('[LAPORAN]');
-    // 👇 LOGIKA WAKTU (Di luar filter agar ringan) 👇
+
     const jamSekarang = new Date().getHours();
     const isWaktuLaporan = (jamSekarang >= 13 && jamSekarang < 15) || 
                            (jamSekarang >= 21 && jamSekarang < 23) || 
-                           (jamSekarang >= 5 && jamSekarang < 7);
+                           (jamSekarang >= 5 && jamSekarang < 7); [cite: 1]
 
+    // 👇 1. SATPAM LEVEL AREA (Wajib di luar filter agar fungsi berhenti total) 👇
+    if (isAreaLaporan && !isWaktuLaporan) {
+        if (typeof showCustomAlert === 'function') {
+            showCustomAlert('⚠️ Bukan waktu pengisian laporan!', 'error');
+        }
+        return; // Keluar dari fungsi, form isian tidak akan pernah terbuka
+    }
+
+    // 👇 2. SATPAM LEVEL PARAMETER (Tetap di dalam filter) 👇
     activeUnivFilteredParams = paramsListRaw.filter(fullLabel => {
         const isParamAll = fullLabel.includes('[ALL]');
         const isParamStop = fullLabel.includes('[STOP]');
-        const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]'); // 👈 Deteksi Laporan
+        const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]');
         
-        // Aturan Status Pabrik
         if (statusPabrik === 'OPERASI' && isParamStop) return false; 
-        if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false; 
+        if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false; [cite: 1]
         
-        // 👇 ATURAN WAKTU LAPORAN 👇
         if (isParamLaporan && !isWaktuLaporan) return false;
         
         return true;
-    });
+    }); [cite: 1]
     
     const stepBadge = document.getElementById('univStepBadge');
     if (stepBadge) {
@@ -1150,7 +1155,7 @@ function openGroupedLogsheet() {
            
             if (statusPabrik === 'STOP' && isAreaOperasi) return; // Area mati, lewati!
             if (statusPabrik === 'OPERASI' && isAreaStop) return; // Area khusus stop, lewati!
-
+            if (isAreaLaporan && !isWaktuLaporan) return;
             const paramsListRaw = config.areas[subAreaLengkap] || [];
             
             // 👇 SATPAM LAPIS 2: Cek KTP Parameter 👇
@@ -1245,6 +1250,7 @@ function openGroupedSubAreas(groupName) {
         const isAreaStop = subAreaNameLengkap.includes('[STOP]');
         const isAreaAll = subAreaNameLengkap.includes('[ALL]'); // 👈 Tambahan Cek Area ALL
         const isAreaLaporan = subAreaNameLengkap.toUpperCase().includes('[LAPORAN]');
+        if (isAreaLaporan && !isWaktuLaporan) return;
         if (statusPabrik === 'STOP' && isAreaOperasi) return;
         if (statusPabrik === 'OPERASI' && isAreaStop) return;
 
