@@ -1000,7 +1000,8 @@ async function submitUniversalLogsheet() {
 
                 await new Promise(resolve => setTimeout(resolve, 200)); 
             } catch (error) { 
-                console.warn('Error upload foto:', error); 
+                console.warn('Error upload foto:', error);
+               throw new Error("Gagal kirim foto. Membatalkan kirim teks untuk mengamankan data ke mode Offline.");
             }
         }
     } 
