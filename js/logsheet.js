@@ -1001,9 +1001,10 @@ async function submitUniversalLogsheet() {
                 await new Promise(resolve => setTimeout(resolve, 200)); 
             } catch (error) { 
                 console.warn('Error upload foto:', error); 
-                // Opsional: Anda bisa menambahkan logika tambahan di sini jika foto gagal
             }
-    
+        }
+    } 
+
     // 2. Upload Data Teks
     progress.updateText('Mengirim data parameter utama...');
     try {
