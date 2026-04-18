@@ -88,7 +88,7 @@ function updateLiveLastDataUI() {
     if (lastDataElWizard && typeof activeUnivArea !== 'undefined' && typeof activeUnivFilteredParams !== 'undefined') {
         const fullLabel = activeUnivFilteredParams[activeUnivIdx];
         if (fullLabel) {
-            const nameOnly = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim().split(' (')[0];
+            const nameOnly = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim().split(' (')[0];
             const newValue = univLastData[fullLabel] || univLastData[nameOnly];
             const newTime = univLastData._lastTime || '--:--';
 
@@ -226,12 +226,17 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
     let html = '';
     let totalParams = 0;
     let filledParams = 0;
-
+    // 👇 TAMBAHKAN LOGIKA WAKTU DI SINI (Di luar loop agar ringan) 👇
+    const jamSekarang = new Date().getHours();
+    const isWaktuLaporan = (jamSekarang >= 13 && jamSekarang < 15) || 
+                           (jamSekarang >= 21 && jamSekarang < 23) || 
+                           (jamSekarang >= 5 && jamSekarang < 7);
     Object.entries(config.areas).forEach(([areaNameLengkap, paramsList]) => {
         
         const isAreaOperasi = areaNameLengkap.includes('[OPERASI]');
         const isAreaStop = areaNameLengkap.includes('[STOP]');
         const isAreaAll = areaNameLengkap.includes('[ALL]');
+        
 
         if (statusPabrik === 'STOP' && isAreaOperasi) return; 
         if (statusPabrik === 'OPERASI' && isAreaStop) return;  
@@ -239,18 +244,19 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
         const parameterLolosFilter = paramsList.filter(fullLabel => {
             const isParamAll = fullLabel.includes('[ALL]');
             const isParamStop = fullLabel.includes('[STOP]');
+            const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]');
             
             if (statusPabrik === 'OPERASI' && isParamStop) return false; 
             
             // 👇 2. TAMBAHKAN !isAreaAll DI BARIS INI 👇
             if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false; 
-            
+            if (isParamLaporan && !isWaktuLaporan) return false;
             return true;
         });
 
         if (parameterLolosFilter.length === 0) return; 
 
-        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
 
         let areaFilled = 0;
         const areaTotal = parameterLolosFilter.length; 
@@ -353,7 +359,7 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
 
 let activeUnivArea = null;
 let activeUnivIdx = 0;
-let activeUnivFilteredParams = []; 
+let activeUnivFilteredParams = [];
 
 function openUnivAreaInput(areaNameLengkap) { 
     activeUnivArea = areaNameLengkap; 
@@ -362,16 +368,28 @@ function openUnivAreaInput(areaNameLengkap) {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     const paramsListRaw = config.areas[areaNameLengkap];
 
-    // 👇 2. AMBIL STATUS DARI MEMORI GLOBAL (Anti-Gagal!) 👇
+    // 👇 AMBIL STATUS DARI MEMORI GLOBAL (Anti-Gagal!) 👇
     const statusPabrik = window.currentStatusPabrik || 'OPERASI';
     const isAreaStop = areaNameLengkap.includes('[STOP]');
+    const isAreaAll = areaNameLengkap.includes('[ALL]'); // 👈 Pengecekan Area ALL dimasukkan
+
+    // 👇 LOGIKA WAKTU (Di luar filter agar ringan) 👇
+    const jamSekarang = new Date().getHours();
+    const isWaktuLaporan = (jamSekarang >= 13 && jamSekarang < 15) || 
+                           (jamSekarang >= 21 && jamSekarang < 23) || 
+                           (jamSekarang >= 5 && jamSekarang < 7);
 
     activeUnivFilteredParams = paramsListRaw.filter(fullLabel => {
         const isParamAll = fullLabel.includes('[ALL]');
         const isParamStop = fullLabel.includes('[STOP]');
+        const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]'); // 👈 Deteksi Laporan
         
+        // Aturan Status Pabrik
         if (statusPabrik === 'OPERASI' && isParamStop) return false; 
-        if (statusPabrik === 'STOP' && !isAreaStop && !isParamAll && !isParamStop) return false; 
+        if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false; 
+        
+        // 👇 ATURAN WAKTU LAPORAN 👇
+        if (isParamLaporan && !isWaktuLaporan) return false;
         
         return true;
     });
@@ -391,7 +409,8 @@ function openUnivAreaInput(areaNameLengkap) {
 
     const currentAreaNameEl = document.getElementById('univCurrentAreaName');
     if (currentAreaNameEl) {
-        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+        // Regex Mesin Cuci Anda sudah benar di sini 👍
+        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
         currentAreaNameEl.textContent = areaNameBersih; 
         currentAreaNameEl.style.color = config.themeColor;
     }
@@ -416,7 +435,7 @@ function showUnivStep() {
     document.getElementById('univAreaProgress').textContent = `${activeUnivIdx + 1}/${total}`;
     
     // 👇 MESIN PENCUCI NAMA ALAT AGAR [ALL]/[STOP] TIDAK MUNCUL DI LAYAR 👇
-    const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+    const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
     const nameOnly = fullLabelBersih.split(' (')[0];
     const unitMatch = fullLabelBersih.match(/\(([^)]+)\)/);
     // 👆 =============================================================== 👆
@@ -607,7 +626,7 @@ function nextUnivStep() {
         showUnivStep();
     } else {
         // SUDAH DI ALAT TERAKHIR -> KEMBALI KE MENU AREA
-        const areaNameBersih = activeUnivArea.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+        const areaNameBersih = activeUnivArea.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
         
         if (typeof showCustomAlert === 'function') {
             showCustomAlert(`Area ${areaNameBersih} Selesai!`, 'success');
@@ -936,7 +955,7 @@ async function submitUniversalLogsheet() {
     Object.entries(univCurrentInput).forEach(([areaNameLengkap, params]) => {
         Object.entries(params).forEach(([paramNameLengkap, value]) => {
             // 👇 MESIN CUCI REGEX BERKERJA DI SINI 👇
-            const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+            const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
             
             // Masukkan nilai dengan menggunakan nama kunci yang sudah bersih
             allParameters[paramNameBersih] = value;
@@ -953,8 +972,8 @@ async function submitUniversalLogsheet() {
                 totalPhotoCount++;
                 
                 // 👇 MESIN CUCI REGEX UNTUK FOTO 👇
-                const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
-                const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+                const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+                const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
 
                 if (photoData !== 'UPLOADED_BACKGROUND') {
                     // Gunakan nama bersih untuk ID fotonya
@@ -1111,6 +1130,12 @@ function openGroupedLogsheet() {
     let globalTotalParams = 0;
     let globalFilledParams = 0;
 
+    // 👇 LOGIKA WAKTU (Taruh di luar loop agar aplikasi tidak lemot) 👇
+    const jamSekarang = new Date().getHours();
+    const isWaktuLaporan = (jamSekarang >= 13 && jamSekarang < 15) || 
+                           (jamSekarang >= 21 && jamSekarang < 23) || 
+                           (jamSekarang >= 5 && jamSekarang < 7);
+
     Object.entries(config.groups).forEach(([groupName, subAreas]) => {
         let groupTotalParams = 0;
         let groupFilledParams = 0;
@@ -1119,6 +1144,7 @@ function openGroupedLogsheet() {
             // 👇 SATPAM LAPIS 1: Cek KTP Area 👇
             const isAreaOperasi = subAreaLengkap.includes('[OPERASI]');
             const isAreaStop = subAreaLengkap.includes('[STOP]');
+            const isAreaAll = subAreaLengkap.includes('[ALL]'); // 👈 Tambahan Cek Area ALL
 
             if (statusPabrik === 'STOP' && isAreaOperasi) return; // Area mati, lewati!
             if (statusPabrik === 'OPERASI' && isAreaStop) return; // Area khusus stop, lewati!
@@ -1129,9 +1155,14 @@ function openGroupedLogsheet() {
             const parameterLolosFilter = paramsListRaw.filter(fullLabel => {
                 const isParamAll = fullLabel.includes('[ALL]');
                 const isParamStop = fullLabel.includes('[STOP]');
+                const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]'); // 👈 Deteksi Tag Laporan
 
+                // Aturan 1: Filter Operasi/Stop
                 if (statusPabrik === 'OPERASI' && isParamStop) return false;
-                if (statusPabrik === 'STOP' && !isAreaStop && !isParamAll && !isParamStop) return false;
+                if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false; // 👈 Pengecekan !isAreaAll dimasukkan
+
+                // 👇 Aturan 2: Filter Waktu Laporan Akhir Shift 👇
+                if (isParamLaporan && !isWaktuLaporan) return false;
 
                 return true;
             });
@@ -1189,7 +1220,6 @@ function openGroupedLogsheet() {
 
     navigateTo('panelSTGGroupScreen');
 }
-
 function openGroupedSubAreas(groupName) {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     document.getElementById('panelSTGHeaderTitle').textContent = groupName;
@@ -1201,10 +1231,17 @@ function openGroupedSubAreas(groupName) {
     // 👇 AMBIL STATUS PABRIK DARI MEMORI GLOBAL 👇
     const statusPabrik = window.currentStatusPabrik || 'OPERASI';
 
+    // 👇 LOGIKA WAKTU (Taruh di luar loop agar ringan) 👇
+    const jamSekarang = new Date().getHours();
+    const isWaktuLaporan = (jamSekarang >= 13 && jamSekarang < 15) || 
+                           (jamSekarang >= 21 && jamSekarang < 23) || 
+                           (jamSekarang >= 5 && jamSekarang < 7);
+
     subAreas.forEach(subAreaNameLengkap => {
         // SATPAM LAPIS 1: Cek Area
         const isAreaOperasi = subAreaNameLengkap.includes('[OPERASI]');
         const isAreaStop = subAreaNameLengkap.includes('[STOP]');
+        const isAreaAll = subAreaNameLengkap.includes('[ALL]'); // 👈 Tambahan Cek Area ALL
         
         if (statusPabrik === 'STOP' && isAreaOperasi) return;
         if (statusPabrik === 'OPERASI' && isAreaStop) return;
@@ -1215,15 +1252,22 @@ function openGroupedSubAreas(groupName) {
         const paramsList = paramsListRaw.filter(fullLabel => {
             const isParamAll = fullLabel.includes('[ALL]');
             const isParamStop = fullLabel.includes('[STOP]');
+            const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]'); // 👈 Deteksi Tag Laporan
+
+            // Aturan Status Pabrik
             if (statusPabrik === 'OPERASI' && isParamStop) return false;
-            if (statusPabrik === 'STOP' && !isAreaStop && !isParamAll && !isParamStop) return false;
+            if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false;
+            
+            // 👇 Aturan Waktu Laporan 👇
+            if (isParamLaporan && !isWaktuLaporan) return false;
+
             return true;
         });
 
         if (paramsList.length === 0) return; // Area kosong, jangan digambar
 
         // Bersihkan Nama Area untuk Layar
-        const subAreaNameBersih = subAreaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+        const subAreaNameBersih = subAreaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
 
         html += `
         <details data-area="${subAreaNameLengkap}" class="form-card glass" style="margin-bottom: 16px; padding: 16px; background: rgba(30, 41, 59, 0.7); border: 1px solid ${config.themeColor}40;">
@@ -1235,7 +1279,7 @@ function openGroupedSubAreas(groupName) {
         
         paramsList.forEach(fullLabel => {
             // Bersihkan Nama Alat untuk Layar
-            const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]/g, '').trim();
+            const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
             const nameOnly = fullLabelBersih.split(' (')[0];
             const unitMatch = fullLabelBersih.match(/\(([^)]+)\)/);
             const unit = unitMatch ? unitMatch[1] : '';
