@@ -703,12 +703,11 @@ function applyUnitTheme(deptName) {
     // 1. Deteksi Unit dari Data User
     if (dept.includes('UTILITAS') || dept.includes('UTIL')) unitKey = 'UTILITAS';
     else if (dept.includes('BATU BARA') || dept.includes('UBB')) unitKey = 'UBB';
-    else if (dept.includes('MELTER') || dept.includes('BELERANG')) unitKey = 'MELTER';
-    else if (dept.includes('SULFAT') || dept.includes('SA')) unitKey = 'SA';
+    // Gabungkan MELTER ke SA karena di config UNIT_THEMES tidak ada key MELTER
+    else if (dept.includes('SULFAT') || dept.includes('SA') || dept.includes('MELTER')) unitKey = 'SA';
 
-    // 2. Ambil Baju dari Lemari (di config.js)
-    const theme = UNIT_THEMES[unitKey];
-    if (!theme) return;
+    // 2. Ambil Baju dari Lemari (Fallback ke DEFAULT jika tidak ketemu)
+    const theme = UNIT_THEMES[unitKey] || UNIT_THEMES['DEFAULT'];
 
     console.log(`🎨 [THEME ENGINE] Mengubah tema menjadi: ${unitKey}`);
 
@@ -729,4 +728,24 @@ function applyUnitTheme(deptName) {
         loginLogo.src = theme.logo;
         loginLogo.style.display = 'block';
     }
+
+    // 6. Ganti Logo di Layar Supervisor Dashboard (FITUR BARU)
+    const spvLogo = document.getElementById('spvLogo');
+    if (spvLogo) {
+        spvLogo.src = theme.logo;
+        spvLogo.style.display = 'block';
+    }
+
+    // 7. Ganti Judul Teks (Title) di Layar (FITUR BARU)
+    // Ubah judul di layar login
+    const loginTitle = document.querySelector('.app-title');
+    if (loginTitle) loginTitle.textContent = theme.title;
+
+    // Ubah judul di layar home
+    const homeTitle = document.querySelector('.home-title');
+    if (homeTitle) homeTitle.textContent = theme.title;
+
+    // Ubah judul di dashboard supervisor
+    const spvTitle = document.getElementById('spvDashboardTitle');
+    if (spvTitle) spvTitle.textContent = theme.title;
 }
