@@ -15,6 +15,7 @@ const ASSETS = [
     '/index.html',
     '/manifest.json',
     '/logo.png',
+    '/icons/Produksi%203B.png',
     
     // CSS Modules
     '/css/style.css',
