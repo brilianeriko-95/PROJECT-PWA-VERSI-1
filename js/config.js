@@ -259,11 +259,11 @@ const AREAS_CT = {
                   "C-6702 B TEMP (°C)",
                   "C-6702 B FLOW (m3/h)"
       ],
-   "OLI GEARBOX SA": ["MT-6511 A (Cm)",
+   "OLI GEARBOX SA [ALL]": ["MT-6511 A (Cm)",
                       "MT-6511 B (Cm)", 
                       "MT-6511 C (Cm)", 
                       "MT-6511 D (Cm)"],
-   "OLI GEARBOX SU": ["MT-6521 A (Cm)",
+   "OLI GEARBOX SU [ALL]": ["MT-6521 A (Cm)",
                       "MT-6521 B (Cm)",
                       "MT-6521 C (Cm)",
                       "MT-6521 D (Cm)"]
