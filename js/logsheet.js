@@ -529,7 +529,13 @@ function saveUnivStep() {
     }
     
     // UPDATE STATE GLOBAL JUGA
+    // 1. Sisipkan stempel waktu saat ini ke dalam draf
+    univCurrentInput._savedAt = new Date().toISOString();
+
+    // 2. UPDATE STATE GLOBAL JUGA
     window.activeDrafts[activeLogsheetType] = univCurrentInput;
+    
+    // 3. Simpan draf utuh (yang sudah ada waktunya) ke memori HP
     localStorage.setItem(config.draftKey, JSON.stringify(univCurrentInput));
 }
 
