@@ -1464,12 +1464,14 @@ async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
         };
 
         // Kirim ke Server GAS
-        await fetch(GAS_URL, {
+        const response = await fetch(GAS_URL, {
             method: 'POST', 
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
+            // Hapus mode: 'no-cors' dan headers
             body: JSON.stringify(photoPayload)
         });
+        
+        const res = await response.json();
+        if (!res.success) throw new Error("Gagal upload background");
 
         if (univParamPhotos[areaName] && univParamPhotos[areaName][paramLabel]) {
             univParamPhotos[areaName][paramLabel] = 'UPLOADED_BACKGROUND';
@@ -1827,7 +1829,7 @@ window.filterRutinan = function(kategori, btnElement) {
     btnElement.classList.add('active');
 
     // 3. Tampilkan/Sembunyikan Kartu Tugas sesuai posisi
-    const semuaKartu = document.querySelectorAll('.routine-card');
+    const semuaKartu = document.querySelectorAll('.premium-job-card');
 
     semuaKartu.forEach(kartu => {
         const pos = kartu.getAttribute('data-posisi');
