@@ -24,7 +24,7 @@ const UNIT_THEMES = {
         color: '#10b981', // Hijau Asam Sulfat
         bgGradient: 'linear-gradient(135deg, #064e3b, #0f172a)',
         logo: 'assets/logo-sa.png',
-        title: 'Asam Sulfat Logsheet'
+        title: 'ASAM SULFAT LOGSHEET'
     },
     'UBB': { 
         color: '#f59e0b', // Oranye Batu Bara
@@ -36,7 +36,7 @@ const UNIT_THEMES = {
         color: '#3b82f6', // Biru Utilitas
         bgGradient: 'linear-gradient(135deg, #1e3a8a, #0f172a)',
         logo: 'assets/logo-utilitas.png',
-        title: 'Utilitas Logsheet'
+        title: 'UTILITAS LOGSHEET'
     },
     'DEFAULT': {
         color: '#64748b', // Abu-abu Netral
