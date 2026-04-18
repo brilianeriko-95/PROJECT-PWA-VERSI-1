@@ -485,9 +485,9 @@ async function syncOfflineData() {
             try {
                 // A. Kirim Foto dengan Jeda Singkat (Mencegah Rate Limit)
                 for (const [photoKey, photoData] of Object.entries(photos)) {
-                    await fetch(GAS_URL, {
-                        method: 'POST', mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
+                    const responsePhoto = await fetch(GAS_URL, {
+                        method: 'POST', 
+                        // ❌ HAPUS mode: 'no-cors' dan headers Content-Type
                         body: JSON.stringify({
                             type: 'LOGSHEET_PHOTO',
                             parentType: item.type || 'LOGSHEET_GENERAL', 
@@ -496,17 +496,26 @@ async function syncOfflineData() {
                             timestamp: new Date().toISOString()
                         })
                     });
+                    
+                    // ✅ TANGKAP BALASAN SERVER
+                    const resPhoto = await responsePhoto.json();
+                    if (!resPhoto.success) throw new Error("Server menolak foto offline");
+
                     // Jeda 300ms antar foto agar server tidak overload
                     await new Promise(resolve => setTimeout(resolve, 300));
                 }
 
                 // B. Kirim Data Teks Utama
-                await fetch(GAS_URL, {
-                    method: 'POST', mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                const responseText = await fetch(GAS_URL, {
+                    method: 'POST', 
+                    // ❌ HAPUS mode: 'no-cors' dan headers Content-Type
                     body: JSON.stringify(item),
                     signal: currentUploadController.signal
                 });
+                
+                // ✅ TANGKAP BALASAN SERVER
+                const resText = await responseText.json();
+                if (!resText.success) throw new Error("Server menolak teks offline");
                 
                 totalSuccess++;
                 
