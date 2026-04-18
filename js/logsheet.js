@@ -376,7 +376,7 @@ function openUnivAreaInput(areaNameLengkap) {
     const jamSekarang = new Date().getHours();
     const isWaktuLaporan = (jamSekarang >= 13 && jamSekarang < 15) || 
                            (jamSekarang >= 21 && jamSekarang < 23) || 
-                           (jamSekarang >= 5 && jamSekarang < 7); [cite: 1]
+                           (jamSekarang >= 5 && jamSekarang < 7);
 
     // 👇 1. SATPAM LEVEL AREA (Wajib di luar filter agar fungsi berhenti total) 👇
     if (isAreaLaporan && !isWaktuLaporan) {
@@ -398,7 +398,7 @@ function openUnivAreaInput(areaNameLengkap) {
         if (isParamLaporan && !isWaktuLaporan) return false;
         
         return true;
-    }); [cite: 1]
+    });
     
     const stepBadge = document.getElementById('univStepBadge');
     if (stepBadge) {
