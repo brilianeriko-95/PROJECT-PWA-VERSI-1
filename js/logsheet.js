@@ -393,7 +393,7 @@ function openUnivAreaInput(areaNameLengkap) {
         const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]');
         
         if (statusPabrik === 'OPERASI' && isParamStop) return false; 
-        if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false; [cite: 1]
+        if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false;
         
         if (isParamLaporan && !isWaktuLaporan) return false;
         
