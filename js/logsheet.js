@@ -167,7 +167,7 @@ function openUniversalLogsheet(type, statusPabrik) {
     if (!config) return;
 
     activeLogsheetType = type;
-    
+    window.currentStatusPabrik = statusPabrik || 'OPERASI';
     // Cek Grouped Logsheet
     if (config.groups) {
         if (typeof openGroupedLogsheet === 'function') openGroupedLogsheet();
@@ -1101,6 +1101,12 @@ function openGroupedLogsheet() {
 
     const listContainer = document.getElementById('panelGroupList');
     let html = '';
+    const warnaBg = statusPabrik === 'OPERASI' ? '#27ae60' : '#e74c3c';
+    html += `
+        <div style="background: ${warnaBg}; color: white; padding: 12px; text-align: center; font-weight: bold; position: sticky; top: 60px; z-index: 99; margin-bottom: 16px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            ⚠️ KONDISI PABRIK: ${statusPabrik}
+        </div>
+    `;
     let globalTotalParams = 0;
     let globalFilledParams = 0;
 
