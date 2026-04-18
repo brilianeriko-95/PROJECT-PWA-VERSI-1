@@ -495,7 +495,6 @@ async function submitBalancingData() {
             // --- PERBAIKAN 1: Hapus mode: 'no-cors' agar bisa membaca respon server ---
             const response = await fetch(GAS_URL, {
                 method: 'POST',
-                // Headers Content-Type dihapus agar dikirim sebagai text/plain (CORS bypass)
                 body: JSON.stringify(balancingData),
                 signal: currentUploadController.signal
             });
@@ -528,8 +527,7 @@ async function submitBalancingData() {
             console.error('Balancing Submit Error:', error);
             progress.error();
 
-            // --- PERBAIKAN 3: Pastikan struktur data offline sesuai dengan mesin sync di main.js ---
-            const offlineKey = 'offline_balancing'; // Sesuaikan dengan key di config
+            const offlineKey = 'offline_balancing';
             let queue = [];
             try {
                 queue = JSON.parse(localStorage.getItem(offlineKey) || '[]');
@@ -537,23 +535,24 @@ async function submitBalancingData() {
 
             queue.push({
                 ...balancingData,
-                photos: {} // Wajib ada agar tidak error saat dibaca main.js
+                photos: {} 
             });
 
-            // --- PERBAIKAN 4: Proteksi Memori HP Penuh ---
             try {
                 localStorage.setItem(offlineKey, JSON.stringify(queue));
-                checkOfflineData(); 
+                if (typeof checkOfflineData === 'function') checkOfflineData(); 
                 showCustomAlert('Sinyal lemah! Data balancing disimpan offline.', 'warning');
-                
-                // Pindah ke home agar operator bisa sinkronisasi nanti
                 setTimeout(() => navigateTo('homeScreen'), 1500);
             } catch (storageError) {
                 console.error("Gagal simpan offline:", storageError);
                 queue.pop();
                 localStorage.setItem(offlineKey, JSON.stringify(queue));
-                showCustomAlert('MEMORI HP PENUH! Segera bersihkan cache atau cari sinyal Wi-Fi!', 'error');
+                showCustomAlert('MEMORI HP PENUH! Tidak bisa menyimpan offline!', 'error');
             }
         }
-           }
-       }
+    } catch (outerError) {
+        // 👇 INI ADALAH PENUTUP UNTUK TRY DI BARIS 511 👇
+        console.error('Fatal Error:', outerError);
+        if (progress) progress.error();
+    }
+} // <--- PENUTUP FUNGSI submitBalancingData
