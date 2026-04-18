@@ -236,6 +236,7 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
         const isAreaOperasi = areaNameLengkap.includes('[OPERASI]');
         const isAreaStop = areaNameLengkap.includes('[STOP]');
         const isAreaAll = areaNameLengkap.includes('[ALL]');
+        const isAreaLaporan = areaNameLengkap.toUpperCase().includes('[LAPORAN]');
         
 
         if (statusPabrik === 'STOP' && isAreaOperasi) return; 
@@ -372,7 +373,7 @@ function openUnivAreaInput(areaNameLengkap) {
     const statusPabrik = window.currentStatusPabrik || 'OPERASI';
     const isAreaStop = areaNameLengkap.includes('[STOP]');
     const isAreaAll = areaNameLengkap.includes('[ALL]'); // 👈 Pengecekan Area ALL dimasukkan
-
+    const isAreaLaporan = areaNameLengkap.toUpperCase().includes('[LAPORAN]');
     // 👇 LOGIKA WAKTU (Di luar filter agar ringan) 👇
     const jamSekarang = new Date().getHours();
     const isWaktuLaporan = (jamSekarang >= 13 && jamSekarang < 15) || 
@@ -1145,7 +1146,8 @@ function openGroupedLogsheet() {
             const isAreaOperasi = subAreaLengkap.includes('[OPERASI]');
             const isAreaStop = subAreaLengkap.includes('[STOP]');
             const isAreaAll = subAreaLengkap.includes('[ALL]'); // 👈 Tambahan Cek Area ALL
-
+            const isAreaLaporan = subAreaLengkap.toUpperCase().includes('[LAPORAN]');
+           
             if (statusPabrik === 'STOP' && isAreaOperasi) return; // Area mati, lewati!
             if (statusPabrik === 'OPERASI' && isAreaStop) return; // Area khusus stop, lewati!
 
@@ -1242,7 +1244,7 @@ function openGroupedSubAreas(groupName) {
         const isAreaOperasi = subAreaNameLengkap.includes('[OPERASI]');
         const isAreaStop = subAreaNameLengkap.includes('[STOP]');
         const isAreaAll = subAreaNameLengkap.includes('[ALL]'); // 👈 Tambahan Cek Area ALL
-        
+        const isAreaLaporan = subAreaNameLengkap.toUpperCase().includes('[LAPORAN]');
         if (statusPabrik === 'STOP' && isAreaOperasi) return;
         if (statusPabrik === 'OPERASI' && isAreaStop) return;
 
