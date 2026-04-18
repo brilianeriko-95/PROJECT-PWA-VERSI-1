@@ -760,15 +760,13 @@ function handleUnivParamPhoto(event) {
         showCustomAlert('🔄 Memproses foto...', 'info');
     }
     
-    // 2. Kita gunakan kembali FileReader karena utils.js Anda membutuhkannya
-    // TAPI kita eksekusi kompresinya secara Asinkron agar UI tidak membeku
     const reader = new FileReader();
     
     reader.onload = async function(e) {
         const originalDataUrl = e.target.result;
         
         try {
-            // Gunakan fungsi kompresi asli Anda yang sudah berjalan baik sebelumnya
+            // Kompresi gambar
             const result = await compressImage(originalDataUrl, { 
                 maxWidth: 1200, 
                 maxHeight: 1200, 
@@ -776,7 +774,6 @@ function handleUnivParamPhoto(event) {
                 type: 'image/jpeg' 
             });
             
-            // Masukkan hasil kompresi ke variabel universal
             univCurrentPhoto = result.dataUrl;
             
             if (!univParamPhotos[activeUnivArea]) univParamPhotos[activeUnivArea] = {};
@@ -790,14 +787,12 @@ function handleUnivParamPhoto(event) {
                 localStorage.setItem(config.photoKey, JSON.stringify(univParamPhotos));
             } catch (storageError) {
                 console.warn("[Memori Penuh] Kapasitas lokal habis.");
-                // Hapus foto yang baru saja dicoba dimasukkan agar array kembali ke awal
                 delete univParamPhotos[activeUnivArea][fullLabel];
                 
                 if (typeof showTemporaryToast === 'function') {
-                    showTemporaryToast('⚠️ Memori HP penuh! Sinkronisasi (tekan awan merah) atau kirim draf ini sekarang.', 'error', 4000);
+                    showTemporaryToast('⚠️ Memori HP penuh! Sinkronisasi atau kirim draf ini sekarang.', 'error', 4000);
                 }
-                return; // Hentikan proses, jangan timpa draf lama
-               }
+                return; // Hentikan proses
             }
 
             // 👇 RENDER UI (Tampilkan Thumbnail) 👇
@@ -830,8 +825,6 @@ function handleUnivParamPhoto(event) {
     
     // Mulai pembacaan file
     reader.readAsDataURL(file);
-    
-    // Reset input file agar bisa memilih foto yang sama lagi jika perlu
     event.target.value = '';
 }
 
