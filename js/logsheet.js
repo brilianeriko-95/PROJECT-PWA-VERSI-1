@@ -968,6 +968,7 @@ async function submitUniversalLogsheet() {
         Operator: currentUser ? currentUser.name : 'Unknown',
         OperatorId: currentUser ? currentUser.username : 'Unknown',
         Group: currentUser ? (currentUser.group || '-') : '-',
+        StatusPabrik: window.currentStatusPabrik || 'OPERASI',
         photoCount: totalPhotoCount, // Catat total jepretan asli
         ...allParameters
     };
