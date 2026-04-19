@@ -88,8 +88,9 @@ function updateLiveLastDataUI() {
     if (lastDataElWizard && typeof activeUnivArea !== 'undefined' && typeof activeUnivFilteredParams !== 'undefined') {
         const fullLabel = activeUnivFilteredParams[activeUnivIdx];
         if (fullLabel) {
-            const nameOnly = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim().split(' (')[0];
-            const newValue = univLastData[fullLabel] || univLastData[nameOnly];
+            const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+            const nameOnly = fullLabelBersih.split(' (')[0];
+            const newValue = univLastData[fullLabel] || univLastData[fullLabelBersih] || univLastData[nameOnly];
             const newTime = univLastData._lastTime || '--:--';
 
             if (newValue && newValue !== '') {
@@ -449,7 +450,7 @@ function showUnivStep() {
     document.getElementById('univLabelInput').textContent = nameOnly;
     
     // --- TAMBAHAN UNTUK MENAMPILKAN LAST DATA (Gunakan nama asli untuk fetch) ---
-    const lastValue = univLastData[fullLabel] || univLastData[nameOnly]; 
+    const lastValue = univLastData[fullLabel] || univLastData[fullLabelBersih] || univLastData[nameOnly]; 
     const lastTime = univLastData._lastTime || '--:--'; 
     
     let lastDataEl = document.getElementById('univLastDataDisplay');
@@ -1336,7 +1337,7 @@ function openGroupedSubAreas(groupName) {
             const isErrorState = savedValue.toString().startsWith("ERROR");
             const noteText = isErrorState ? savedValue.split('\n')[1] || '' : '';
 
-            let lastDataVal = univLastData[fullLabel] || univLastData[nameOnly] || '';
+            let lastDataVal = univLastData[fullLabel] || univLastData[fullLabelBersih] || univLastData[nameOnly] || '';
             if (typeof lastDataVal === 'object' && lastDataVal !== null) {
                 lastDataVal = lastDataVal.value || '-'; 
             }
