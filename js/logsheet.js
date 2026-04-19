@@ -573,42 +573,47 @@ function saveUnivStep() {
  */
 function nextUnivStep() {
     const config = LOGSHEET_CONFIG[activeLogsheetType];
-    
-    // AMBIL LABEL DARI WADAH FILTER
     const fullLabel = activeUnivFilteredParams[activeUnivIdx];
     
     // 👇 PORTAL VALIDASI WAJIB FOTO UNTUK ERROR 👇
     const checkedStatus = document.querySelector('input[name="univParamStatus"]:checked');
     if (checkedStatus) {
-        // Cek apakah ada foto di memori HP untuk alat ini
         const currentPhoto = univParamPhotos[activeUnivArea]?.[fullLabel];
-        
         if (!currentPhoto || currentPhoto.trim() === '') {
-            // Jika kosong, blokir dan marahi operator!
             if (typeof showCustomAlert === 'function') {
                 showCustomAlert('📸 Bukti foto WAJIB dilampirkan untuk status Abnormal!', 'error');
             } else if (typeof showTemporaryToast === 'function') {
                 showTemporaryToast('📸 Bukti foto WAJIB dilampirkan!', 'error');
             }
             
-            // Efek kedip merah pada kotak foto biar operator sadar
             const photoContainer = document.getElementById('univParamPhotoSection');
             if (photoContainer) {
                 photoContainer.style.border = '2px solid #ef4444';
                 setTimeout(() => { photoContainer.style.border = ''; }, 1000);
             }
-            
-            return; // 🛑 PROGRAM BERHENTI DI SINI! Tidak bisa lanjut step.
+            return; 
         }
     }
-    // 👆 ================================================== 👆
 
-    saveUnivStep(); // Simpan data step saat ini dulu
+    // 👇 LOGIKA AUTO-FILL "-" SAAT STOP (WIZARD MODE) 👇
+    const inputEl = document.getElementById('univValInput');
+    const currentValue = inputEl ? inputEl.value.trim().toUpperCase() : '';
+    const isStatusParam = fullLabel.includes('(RUN/STOP)') || fullLabel.includes('STATUS');
     
-    // Ambil ulang foto setelah di-save (buat jaga-jaga)
-    const currentPhotoAfterSave = univParamPhotos[activeUnivArea]?.[fullLabel];
+    if (isStatusParam && currentValue === 'STOP') {
+        const equipmentPrefix = fullLabel.split(' (')[0].trim();
+        activeUnivFilteredParams.forEach((p, idx) => {
+            if (idx > activeUnivIdx && p.includes(equipmentPrefix)) {
+                if (!univCurrentInput[activeUnivArea]) univCurrentInput[activeUnivArea] = {};
+                univCurrentInput[activeUnivArea][p] = "-";
+            }
+        });
+    }
+
+    saveUnivStep(); 
     
     // 1. LOGIKA BACKGROUND UPLOAD FOTO
+    const currentPhotoAfterSave = univParamPhotos[activeUnivArea]?.[fullLabel];
     if (currentPhotoAfterSave && currentPhotoAfterSave.length > 100 && currentPhotoAfterSave !== 'UPLOADED_BACKGROUND') {
         if (navigator.onLine) {
             uploadPhotoInBackground(activeUnivArea, fullLabel, currentPhotoAfterSave);
@@ -625,18 +630,38 @@ function nextUnivStep() {
         }
     }
 
-    // 2. CEK NAVIGASI: LANJUT ATAU SELESAI?
+    // 👇 2. CEK NAVIGASI DENGAN FITUR "SMART AUTO-SKIP" 👇
+    let isFinished = false;
+
     if (activeUnivIdx < activeUnivFilteredParams.length - 1) {
-        // Masih ada alat berikutnya
-        activeUnivIdx++;
-        showUnivStep();
-    } else {
-        // SUDAH DI ALAT TERAKHIR -> KEMBALI KE MENU AREA
-        const areaNameBersih = activeUnivArea.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
-        
-        if (typeof showCustomAlert === 'function') {
-            showCustomAlert(`Area ${areaNameBersih} Selesai!`, 'success');
+        activeUnivIdx++; // Maju 1 langkah dulu
+
+        // 🚀 MESIN LONCAT: Skip terus selama isinya "-"
+        while (activeUnivIdx < activeUnivFilteredParams.length) {
+            const nextLabel = activeUnivFilteredParams[activeUnivIdx];
+            const nextSavedValue = (univCurrentInput[activeUnivArea] && univCurrentInput[activeUnivArea][nextLabel]) || '';
+            
+            if (nextSavedValue === "-") {
+                activeUnivIdx++; // Alat ini di-skip, loncat lagi!
+            } else {
+                break; // Stop loncat, tampilkan alat ini
+            }
         }
+
+        // Cek apakah setelah meloncat-loncat ternyata kebablasan sampai ujung area
+        if (activeUnivIdx >= activeUnivFilteredParams.length) {
+            isFinished = true;
+        } else {
+            showUnivStep(); // Tampilkan alat yang butuh diisi
+        }
+    } else {
+        isFinished = true;
+    }
+
+    // Eksekusi jika sudah sampai di ujung area
+    if (isFinished) {
+        const areaNameBersih = activeUnivArea.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+        if (typeof showCustomAlert === 'function') showCustomAlert(`Area ${areaNameBersih} Selesai!`, 'success');
         
         setTimeout(() => {
             const statusPabrik = window.currentStatusPabrik || 'OPERASI';
@@ -651,8 +676,22 @@ function nextUnivStep() {
  */
 function prevUnivStep(forceBack = false) {
     saveUnivStep();
+    
     if (!forceBack && activeUnivIdx > 0) {
-        activeUnivIdx--;
+        activeUnivIdx--; // Mundur 1 langkah
+
+        // 🚀 MESIN LONCAT MUNDUR: Skip mundur selama isinya "-"
+        while (activeUnivIdx > 0) {
+            const prevLabel = activeUnivFilteredParams[activeUnivIdx];
+            const prevSavedValue = (univCurrentInput[activeUnivArea] && univCurrentInput[activeUnivArea][prevLabel]) || '';
+            
+            if (prevSavedValue === "-") {
+                activeUnivIdx--; // Alat ini isinya "-", mundur lagi!
+            } else {
+                break; // Stop mundur, ini alat aslinya
+            }
+        }
+
         showUnivStep();
     } else {
         const statusPabrik = window.currentStatusPabrik || 'OPERASI';
