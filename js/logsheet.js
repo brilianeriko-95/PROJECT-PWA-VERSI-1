@@ -1090,7 +1090,13 @@ async function submitUniversalLogsheet() {
         if (!res.success) {
             throw new Error("Server gagal memproses data teks utama");
         }
-        
+        // 👇 JURUS 2: TEMBAKAN SILUMAN LAPORAN AKHIR (FIRE & FORGET) 👇
+        const dataLaporanAkhir = { ...finalData, type: 'SYNC_LAPORAN_AKHIR' };
+        fetch(GAS_URL, {
+            method: 'POST',
+            body: JSON.stringify(dataLaporanAkhir)
+        }).catch(e => console.log('Background Laporan Akhir tertunda/gagal:', e));
+        // 👆 ============================================================== 👆
         progress.complete();
         showCustomAlert('✓ Data Logsheet berhasil dikirim ke server!', 'success');
         
