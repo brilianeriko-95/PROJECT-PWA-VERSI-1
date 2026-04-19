@@ -48,7 +48,7 @@ const UNIT_THEMES = {
 // 👆 ================================================== 👆
 
 // 2. BACKEND & USER SETUP
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxnw8mVkwsW3BgM08peF2PXiPOFldgMGTFjZxfC65xkXSkYbedfd1cL3gbJtv_9r5Xu/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyBYa95a6yCcq1UGUQXfdV2qg-BbDDQV_Zh7Dvxb-jvjDq0_962yYx8D0B54uHG34eX/exec";
 
 const OFFLINE_USERS = {
     // Ubah ke MANAJEMEN agar Admin otomatis bisa melihat seluruh menu (SA & SU)
