@@ -998,6 +998,7 @@ async function submitUniversalLogsheet() {
     // Gabungkan parameter dari semua area (DENGAN MESIN CUCI KTP)
     let allParameters = {};
     Object.entries(univCurrentInput).forEach(([areaNameLengkap, params]) => {
+       if (areaNameLengkap === '_savedAt' || typeof params !== 'object') return;
         Object.entries(params).forEach(([paramNameLengkap, value]) => {
             // 👇 MESIN CUCI REGEX BERKERJA DI SINI 👇
             const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
