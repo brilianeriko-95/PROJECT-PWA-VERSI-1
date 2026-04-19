@@ -1090,13 +1090,35 @@ async function submitUniversalLogsheet() {
         if (!res.success) {
             throw new Error("Server gagal memproses data teks utama");
         }
-        // 👇 JURUS 2: TEMBAKAN SILUMAN LAPORAN AKHIR (FIRE & FORGET) 👇
+        // 👇 JURUS 2: TEMBAKAN SILUMAN LAPORAN AKHIR (FIRE & FORGET) DENGAN SABUK PENGAMAN 👇
         const dataLaporanAkhir = { ...finalData, type: 'SYNC_LAPORAN_AKHIR' };
+        
         fetch(GAS_URL, {
             method: 'POST',
             body: JSON.stringify(dataLaporanAkhir)
-        }).catch(e => console.log('Background Laporan Akhir tertunda/gagal:', e));
-        // 👆 ============================================================== 👆
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success) throw new Error("Server menolak Laporan Akhir");
+        })
+        .catch(e => {
+            console.warn('⚠️ Laporan Akhir tertunda/gagal:', e);
+            
+            // 1. Munculkan notifikasi jujur tanpa mengganggu layar sukses logsheet utama
+            if (typeof showTemporaryToast === 'function') {
+                showTemporaryToast('⚠️ Logsheet tersimpan, tapi Rekap Laporan tertunda (Sinyal Lemah)', 'warning', 4000);
+            }
+
+            // 2. Simpan diam-diam ke memori HP
+            let pendingLaporan = [];
+            try {
+                pendingLaporan = JSON.parse(localStorage.getItem('offline_laporan_akhir') || '[]');
+            } catch(err) {}
+            
+            pendingLaporan.push(dataLaporanAkhir);
+            localStorage.setItem('offline_laporan_akhir', JSON.stringify(pendingLaporan));
+        });
+        // 👆 ============================================================================ 👆
         progress.complete();
         showCustomAlert('✓ Data Logsheet berhasil dikirim ke server!', 'success');
         
