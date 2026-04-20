@@ -48,7 +48,7 @@ const UNIT_THEMES = {
 // 👆 ================================================== 👆
 
 // 2. BACKEND & USER SETUP
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxaWgZcYeAtS1ctVf4T3ID4JgLP5ys562h-ZhV0fS-GPp0U4EAHJmFIsYh2pCsWUNo/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbx1WfLaZHQfpcUr36QLhr589F9XqU2Si3F4kdtP87X2SevG-1ZdKHIlDGPT19wpogHA/exec";
 
 const OFFLINE_USERS = {
     // Ubah ke MANAJEMEN agar Admin otomatis bisa melihat seluruh menu (SA & SU)
@@ -898,7 +898,8 @@ const LOGSHEET_CONFIG = {
         draftKey: 'draft_turbine',
         offlineKey: 'offline_turbine',
         photoKey: 'photos_turbine',
-        themeColor: '#3b82f6'
+        themeColor: '#3b82f6',
+        spreadsheetId: '1505BXCba8jQUynCvCtDpuvMveiez_RpJpYfM3LgHFn0'
     },
     'CT': {
         title: 'Logsheet Cooling Tower',
@@ -908,7 +909,8 @@ const LOGSHEET_CONFIG = {
         offlineKey: 'offline_ct',
         photoKey: 'photos_ct',
         submitType: 'LOGSHEET_CT',
-        themeColor: '#06b6d4'
+        themeColor: '#06b6d4',
+        spreadsheetId: '1thBTCwTqK0Ip2_nmV9C2Cfa1iX0yoimLN5yQcNOshOU'
     },
     '1300': {
         title: 'Logsheet Area 1300',
@@ -918,7 +920,8 @@ const LOGSHEET_CONFIG = {
         offlineKey: 'offline_1300',
         photoKey: 'photos_1300',
         submitType: 'LOGSHEET_1300',
-        themeColor: '#8b5cf6'
+        themeColor: '#8b5cf6',
+        spreadsheetId: '1h8MMCrye3iH4xvsFgkWk3vGYOa4rSpeGUGpe_C0VcNs'
     },
     '1100_1200': {
         title: 'Logsheet Area 1100/1200',
@@ -928,7 +931,8 @@ const LOGSHEET_CONFIG = {
         offlineKey: 'offline_1100',
         photoKey: 'photos_1100',
         submitType: 'LOGSHEET_1100_1200',
-        themeColor: '#eab308'
+        themeColor: '#eab308',
+        spreadsheetId: '180JCPJ9zp-KJkUaCwVfOCBn4cBvvlG9aMd_wBvXawLQ'
     },
     '1000': {
         title: 'Logsheet Area 1000',
@@ -938,7 +942,8 @@ const LOGSHEET_CONFIG = {
         offlineKey: 'offline_1000',
         photoKey: 'photos_1000',
         submitType: 'LOGSHEET_1000',
-        themeColor: '#ef4444'
+        themeColor: '#ef4444',
+        spreadsheetId: '1YrgyD92z8z8yba1rKePH0UNa4hu03eDITwFdDp-J0QY'
     },
     'PANEL_STG': {
         title: 'Logsheet Panel STG 17.5 MW',
@@ -948,7 +953,8 @@ const LOGSHEET_CONFIG = {
         photoKey: 'photos_panel_stg',
         themeColor: '#1d6be8',
         areas: AREAS_PANEL_STG175,
-        groups: GROUPS_PANEL_STG175
+        groups: GROUPS_PANEL_STG175,
+        spreadsheetId: '1pp2GdxebsN5Ta2FpBsW-CSwr591BwN5GrR_jjbIKEmU'
     },
     'PANEL_ASAM_SULFAT': {
         title: 'Panel Asam Sulfat',
@@ -958,7 +964,8 @@ const LOGSHEET_CONFIG = {
         photoKey: 'photos_panel_asam_sulfat',
         themeColor: '#eab308',
         areas: AREAS_PANEL_ASAM_SULFAT,
-        groups: GROUPS_PANEL_ASAM_SULFAT
+        groups: GROUPS_PANEL_ASAM_SULFAT,
+        spreadsheetId: '1_1Hak9fgLcGlENwDL40IvQ_qeKxPodl8irLrmjUSiPs'
     },
     'BALANCING': {
         title: 'Balancing Power & Steam',
@@ -966,7 +973,8 @@ const LOGSHEET_CONFIG = {
         draftKey: 'draft_balancing',
         offlineKey: 'offline_balancing',
         photoKey: 'photos_balancing',
-        themeColor: '#10b981'
+        themeColor: '#10b981',
+        spreadsheetId: '1pp2GdxebsN5Ta2FpBsW-CSwr591BwN5GrR_jjbIKEmU'
     }
 };
 // ============================================
