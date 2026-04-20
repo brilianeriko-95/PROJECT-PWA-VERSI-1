@@ -1881,62 +1881,62 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
         Jam: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
     };
 
-    setTimeout(async () => {
-        element.classList.add('completed');
-        if (typeof showTemporaryToast === 'function') showTemporaryToast(`⬆️ Mengirim: ${tugasName.substring(0, 15)}...`, 'info');
-        
-        try {
-            const response = await fetch(GAS_URL, {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-            const res = await response.json();
-            
-            if (res.success) {
-                const today = new Date();
-                const todayString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
-                const memoryKey = 'completed_routines_' + todayString;
-                
-                let completedTasks = JSON.parse(localStorage.getItem(memoryKey) || '[]');
-                if (!completedTasks.includes(tugasName)) {
-                    completedTasks.push(tugasName);
-                    localStorage.setItem(memoryKey, JSON.stringify(completedTasks)); 
-                }
+    // 👇 JURUS 2: INSTANT UI UPDATE (Tanpa Nunggu Server) 👇
+    
+    // 1. Langsung hilangkan kartu dari layar saat itu juga!
+    element.classList.add('completed');
+    element.style.display = 'none'; 
 
-                setTimeout(() => {
-                    element.remove(); // Hapus kartu yang barusan di-klik dari layar
-                    
-                    // 👇 PERBAIKAN LOGIKA: CEK SISA KARTU TUGAS MENGGUNAKAN CLASS YANG BARU 👇
-                    const sisaTugas = document.querySelectorAll('.premium-job-card').length;
-                    
-                    if (sisaTugas === 0) {
-                        const jamSekarang = new Date().getHours();
-                        let currentShift = 'MALAM';
-                        if (jamSekarang >= 7 && jamSekarang < 15) currentShift = 'PAGI';
-                        else if (jamSekarang >= 15 && jamSekarang < 23) currentShift = 'SORE';
+    // 2. Cek apakah ini tugas terakhir?
+    const sisaTugas = document.querySelectorAll('.premium-job-card:not([style*="display: none"])').length;
+    if (sisaTugas === 0) {
+        const jamSekarang = new Date().getHours();
+        let currentShift = 'MALAM';
+        if (jamSekarang >= 7 && jamSekarang < 15) currentShift = 'PAGI';
+        else if (jamSekarang >= 15 && jamSekarang < 23) currentShift = 'SORE';
 
-                        const container = document.getElementById('jobListContainer');
-                        if (container) {
-                            container.innerHTML = `<div style="text-align:center; color:#10b981; font-style:italic; padding:20px; font-weight:bold; animation: fadeIn 0.5s ease-in-out;">🎉 Semua tugas rutin Shift ${currentShift} selesai!</div>`;
-                        }
-                    }
-                    // 👆 ========================================== 👆
-
-                }, 400); 
-
-                if (typeof showTemporaryToast === 'function') showTemporaryToast('✅ Tercatat di Laporan', 'success');
-            } else {
-                throw new Error("Gagal");
-            }
-        } catch (error) {
-            element.classList.remove('completed');
-            if (icon) icon.innerHTML = '🔘';
-            
-            element.onclick = function() { completeTask(element, tugasName, targetArea, dropdownId, fotoId) };
-            
-            if (typeof showTemporaryToast === 'function') showTemporaryToast('📶 Gagal mengirim, periksa sinyal!', 'error');
+        const container = document.getElementById('jobListContainer');
+        if (container) {
+            container.innerHTML = `<div style="text-align:center; color:#10b981; font-style:italic; padding:20px; font-weight:bold; animation: fadeIn 0.5s ease-in-out;">🎉 Semua tugas rutin Shift ${currentShift} selesai!</div>`;
         }
-    }, 300);
+    }
+
+    // 3. Catat di memori HP agar tidak muncul lagi kalau di-refresh
+    const today = new Date();
+    const todayString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    const memoryKey = 'completed_routines_' + todayString;
+    
+    let completedTasks = JSON.parse(localStorage.getItem(memoryKey) || '[]');
+    if (!completedTasks.includes(tugasName)) {
+        completedTasks.push(tugasName);
+        localStorage.setItem(memoryKey, JSON.stringify(completedTasks)); 
+    }
+
+    if (typeof showTemporaryToast === 'function') showTemporaryToast('✅ Tugas Selesai!', 'success');
+
+    // 👇 4. TEMBAKAN SILUMAN KE SERVER (FIRE & FORGET) 👇
+    // Perhatikan: Tidak ada kata "await" di sini!
+    fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (!res.success) throw new Error("Server menolak");
+        console.log("✅ Background upload rutinan sukses!");
+    })
+    .catch(error => {
+        console.warn('⚠️ Gagal mengirim rutinan (Sinyal), masuk ke antrean offline.');
+        
+        // Simpan ke antrean offline dengan nama awalan "offline_" agar otomatis terdeteksi Badge Merah
+        let pendingRutinan = JSON.parse(localStorage.getItem('offline_rutinan') || '[]');
+        pendingRutinan.push(payload);
+        localStorage.setItem('offline_rutinan', JSON.stringify(pendingRutinan));
+        
+        // Panggil fungsi bawaanmu untuk mengupdate angka di Badge Merah PWA
+        if (typeof checkOfflineData === 'function') checkOfflineData();
+    });
+    // 👆 ============================================================== 👆
 }
 // ==========================================
 // FUNGSI FILTER RUTINAN (DINAMIS)
