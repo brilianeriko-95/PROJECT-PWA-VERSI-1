@@ -1091,7 +1091,7 @@ async function submitUniversalLogsheet() {
             throw new Error("Server gagal memproses data teks utama");
         }
         // 👇 JURUS 2: TEMBAKAN SILUMAN LAPORAN AKHIR (FIRE & FORGET) DENGAN SABUK PENGAMAN 👇
-        const dataLaporanAkhir = { ...finalData, type: 'SYNC_LAPORAN_AKHIR' };
+        const dataLaporanAkhir = { ...finalData, type: 'SYNC_LAPORAN_AKHIR', targetArea: config.submitType };
         
         fetch(GAS_URL, {
             method: 'POST',
