@@ -53,7 +53,14 @@ function silentFetchLastData(type) {
         silentFetchAbortController = null;
     };
 
+    const config = LOGSHEET_CONFIG[type];
+    const fileId = config ? config.spreadsheetId : '';
+    
     let actionParam = '&action=getLast' + type.toUpperCase();
+    if (fileId) {
+        actionParam += '&targetFileId=' + fileId; // Titipkan Kunci Rumah di URL!
+    }
+    
     const script = document.createElement('script');
     script.id = scriptId;
     script.src = `${GAS_URL}?callback=${callbackName}${actionParam}`;
