@@ -1037,6 +1037,7 @@ async function submitUniversalLogsheet() {
         Group: currentUser ? (currentUser.group || '-') : '-',
         StatusPabrik: window.currentStatusPabrik || 'OPERASI',
         photoCount: totalPhotoCount, // Catat total jepretan asli
+        targetFileId: config.spreadsheetId,
         ...allParameters
     };
     
@@ -1051,7 +1052,8 @@ async function submitUniversalLogsheet() {
                     Operator: currentUser ? currentUser.name : 'Unknown',
                     photoKey: key,
                     photo: photoData,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    targetFileId: config.spreadsheetId
                 };
                 const response = await fetch(GAS_URL, {
                     method: 'POST',
@@ -1590,7 +1592,8 @@ async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
             Operator: currentUser ? currentUser.name : 'Unknown',
             photoKey: `${areaName}__${paramLabel}`,
             photo: base64Data,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            targetFileId: config.spreadsheetId
         };
 
         // Kirim ke Server GAS
