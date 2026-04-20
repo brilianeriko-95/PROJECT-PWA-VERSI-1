@@ -419,24 +419,28 @@ window.addEventListener('appinstalled', (evt) => {
 // ============================================
 function checkOfflineData() {
     let totalOffline = 0;
-    
+   
+   // 👇 TAMBAHKAN INI: Jalankan pelunasan Laporan Akhir secara siluman 👇
+    if (navigator.onLine && typeof syncOfflineLaporanAkhir === 'function') {
+        syncOfflineLaporanAkhir();
+     }
+   // 👆 ============================================================== 👆
     // 1. SCANNING OTOMATIS: Kelilingi seluruh memori localStorage
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         
         // 2. FILTER CERDAS: Ambil hanya kunci yang mengandung kata 'offline'
-        if (key && key.toLowerCase().includes('offline')) {
+        if (key && key.toLowerCase().includes('offline') && key !== 'offline_laporan_akhir') {
             try {
                 const data = JSON.parse(localStorage.getItem(key) || '[]');
                 if (Array.isArray(data)) {
-                    totalOffline += data.length; // Tambahkan jumlah antrean dari kunci ini
+                    totalOffline += data.length; 
                 }
             } catch (e) {
                 console.warn('Gagal membaca draf otomatis untuk kunci:', key);
             }
         }
     }
-
     // 3. UPDATE UI: Tampilkan total akumulasi ke Operator
     const syncContainer = document.getElementById('offlineSyncContainer');
     const syncBadge = document.getElementById('offlineSyncBadge');
@@ -750,5 +754,46 @@ function applyUnitTheme(deptName) {
     const spvTitle = document.getElementById('spvDashboardTitle');
     if (spvTitle) {
         spvTitle.textContent = theme.title;
+    }
+}
+// ============================================================
+// SYSTEM SELF-HEALING: SINKRONISASI LAPORAN AKHIR TERTUNDA
+// ============================================================
+async function syncOfflineLaporanAkhir() {
+    let pendingLaporan = [];
+    try {
+        pendingLaporan = JSON.parse(localStorage.getItem('offline_laporan_akhir') || '[]');
+    } catch(e) { return; }
+
+    if (pendingLaporan.length === 0) return;
+
+    console.log(`🔄 Menemukan ${pendingLaporan.length} antrean Laporan Akhir. Mulai melunasi diam-diam...`);
+    
+    const remainingLaporan = []; 
+
+    for (const data of pendingLaporan) {
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            
+            const res = await response.json();
+            if (!res.success) throw new Error("Server masih menolak");
+            
+            console.log('✅ 1 Laporan Akhir tertunda berhasil disusulkan!');
+            await new Promise(resolve => setTimeout(resolve, 500)); 
+            
+        } catch (error) {
+            console.warn('⚠️ Gagal menyusulkan laporan akhir, dikembalikan ke antrean.');
+            remainingLaporan.push(data); 
+        }
+    }
+
+    // Update brankas memori HP
+    if (remainingLaporan.length > 0) {
+        localStorage.setItem('offline_laporan_akhir', JSON.stringify(remainingLaporan));
+    } else {
+        localStorage.removeItem('offline_laporan_akhir');
     }
 }
