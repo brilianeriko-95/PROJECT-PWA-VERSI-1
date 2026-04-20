@@ -204,8 +204,11 @@ function loadLastBalancingData(isManualLoad = false) {
         if (typeof cleanupJSONP === 'function') cleanupJSONP(callbackName);
     };
     
+    const config = LOGSHEET_CONFIG['BALANCING'];
+    const fileId = config ? config.spreadsheetId : '';
+    
     const script = document.createElement('script');
-    script.src = `${GAS_URL}?action=getLastBalancing&callback=${callbackName}&t=${Date.now()}`;
+    script.src = `${GAS_URL}?action=getLastBalancing&callback=${callbackName}&targetFileId=${fileId}&t=${Date.now()}`;
     document.body.appendChild(script);
 }
 
@@ -420,6 +423,7 @@ async function submitBalancingData() {
         Tanggal: document.getElementById('balancingDate')?.value || '',
         Jam: document.getElementById('balancingTime')?.value || '',
         Shift: currentShift,
+        targetFileId: config.spreadsheetId,
         
         // Output Power
         'Load_MW': parseFloat(document.getElementById('loadMW')?.value) || 0,
