@@ -586,20 +586,33 @@ function nextUnivStep() {
     // 👇 PORTAL VALIDASI WAJIB FOTO UNTUK ERROR 👇
     const checkedStatus = document.querySelector('input[name="univParamStatus"]:checked');
     if (checkedStatus) {
+        // Cek apakah tombol "Temuan Berulang" dicentang
+        const isBypass = document.getElementById('univBypassFoto') && document.getElementById('univBypassFoto').checked;
         const currentPhoto = univParamPhotos[activeUnivArea]?.[fullLabel];
-        if (!currentPhoto || currentPhoto.trim() === '') {
-            if (typeof showCustomAlert === 'function') {
-                showCustomAlert('📸 Bukti foto WAJIB dilampirkan untuk status Abnormal!', 'error');
-            } else if (typeof showTemporaryToast === 'function') {
-                showTemporaryToast('📸 Bukti foto WAJIB dilampirkan!', 'error');
+        
+        if (isBypass) {
+            // JIKA LAMA/BYPASS: Foto tidak wajib, TAPI Keterangan Wajib!
+            const noteInput = document.getElementById('univStatusNote');
+            if (!noteInput || noteInput.value.trim() === '') {
+                if (typeof showTemporaryToast === 'function') showTemporaryToast('⚠️ Wajib isi keterangan kerusakan!', 'error');
+                return;
             }
-            
-            const photoContainer = document.getElementById('univParamPhotoSection');
-            if (photoContainer) {
-                photoContainer.style.border = '2px solid #ef4444';
-                setTimeout(() => { photoContainer.style.border = ''; }, 1000);
+        } else {
+            // JIKA BARU: Wajib ada Foto!
+            if (!currentPhoto || currentPhoto.trim() === '') {
+                if (typeof showCustomAlert === 'function') {
+                    showCustomAlert('📸 Bukti foto WAJIB dilampirkan untuk status Abnormal!', 'error');
+                } else if (typeof showTemporaryToast === 'function') {
+                    showTemporaryToast('📸 Bukti foto WAJIB dilampirkan!', 'error');
+                }
+                
+                const photoContainer = document.getElementById('univParamPhotoSection');
+                if (photoContainer) {
+                    photoContainer.style.border = '2px solid #ef4444';
+                    setTimeout(() => { photoContainer.style.border = ''; }, 1000);
+                }
+                return; 
             }
-            return; 
         }
     }
 
@@ -714,9 +727,43 @@ function prevUnivStep(forceBack = false) {
 function handleUnivStatusChange(checkbox) {
     const noteContainer = document.getElementById('univStatusNoteContainer');
     const valInput = document.getElementById('univValInput');
-    
-    // 👇 Panggil kotak foto (Pastikan ID-nya sesuai dengan di HTML Anda)
     const photoContainer = document.getElementById('univParamPhotoSection'); 
+
+    // 👇 INJEKSI SAKLAR BYPASS FOTO OTOMATIS 👇
+    let bypassDiv = document.getElementById('bypassContainer');
+    if (!bypassDiv && noteContainer) {
+        bypassDiv = document.createElement('div');
+        bypassDiv.id = 'bypassContainer';
+        bypassDiv.style.marginTop = '10px';
+        bypassDiv.style.marginBottom = '10px';
+        bypassDiv.style.padding = '10px';
+        bypassDiv.style.background = 'rgba(245, 158, 11, 0.1)';
+        bypassDiv.style.border = '1px dashed #f59e0b';
+        bypassDiv.style.borderRadius = '8px';
+        bypassDiv.innerHTML = `
+            <label style="display:flex; align-items:center; gap:8px; color:#fbbf24; font-size:0.85rem; font-weight:bold; cursor:pointer;">
+                <input type="checkbox" id="univBypassFoto" onchange="toggleBypassFoto(this)" style="width:18px; height:18px;">
+                🔄 Alat Masih Rusak (Tidak Perlu Foto)
+            </label>
+        `;
+        // Sisipkan pas di atas kotak kamera
+        if (photoContainer) {
+            photoContainer.parentElement.insertBefore(bypassDiv, photoContainer);
+        }
+        
+        // Logika saat saklar dicentang
+        window.toggleBypassFoto = function(cb) {
+            const pContainer = document.getElementById('univParamPhotoSection');
+            const noteInput = document.getElementById('univStatusNote');
+            if (cb.checked) {
+                if (pContainer) pContainer.style.display = 'none'; // Hilangkan kamera
+                if (noteInput && noteInput.value === '') noteInput.value = 'Temuan berulang. Alat masih rusak / menunggu perbaikan.';
+            } else {
+                if (pContainer) pContainer.style.display = 'block'; // Munculkan kamera
+            }
+        };
+    }
+    // 👆 ====================================== 👆
 
     // Matikan checkbox lain (radio-like behavior)
     document.querySelectorAll('input[name="univParamStatus"]').forEach(cb => {
@@ -728,14 +775,20 @@ function handleUnivStatusChange(checkbox) {
 
     if (checkbox.checked) {
         if (noteContainer) noteContainer.style.display = 'block';
-        if (photoContainer) photoContainer.style.display = 'block'; // 📸 Munculkan form foto!
+        if (bypassDiv) bypassDiv.style.display = 'block';
+        
+        // Cek status bypass saat ini
+        const isBypass = document.getElementById('univBypassFoto') && document.getElementById('univBypassFoto').checked;
+        if (photoContainer) photoContainer.style.display = isBypass ? 'none' : 'block'; 
+        
         if (valInput) {
             valInput.disabled = true;
             valInput.style.opacity = '0.3';
         }
     } else {
         if (noteContainer) noteContainer.style.display = 'none';
-        if (photoContainer) photoContainer.style.display = 'none'; // 👻 Sembunyikan form foto!
+        if (photoContainer) photoContainer.style.display = 'none'; 
+        if (bypassDiv) bypassDiv.style.display = 'none';
         if (valInput) {
             valInput.disabled = false;
             valInput.style.opacity = '1';
@@ -756,9 +809,8 @@ function loadUnivAbnormalStatus(fullLabel) {
     const noteContainer = document.getElementById('univStatusNoteContainer');
     const noteInput = document.getElementById('univStatusNote');
     const valInput = document.getElementById('univValInput');
-    
-    // 👇 Panggil kotak foto
     const photoContainer = document.getElementById('univParamPhotoSection'); 
+    const bypassDiv = document.getElementById('bypassContainer'); 
 
     let foundStatus = false;
     checkboxes.forEach(cb => {
@@ -769,15 +821,27 @@ function loadUnivAbnormalStatus(fullLabel) {
 
     if (foundStatus) {
         if (noteContainer) noteContainer.style.display = 'block';
-        if (photoContainer) photoContainer.style.display = 'block'; // 📸 Munculkan!
         if (noteInput) noteInput.value = notePart;
         if (valInput) {
             valInput.disabled = true;
             valInput.style.opacity = '0.3';
         }
+
+        // Cek memori: Apakah dulu diklik temuan berulang?
+        const isBypass = notePart.includes('Temuan berulang') || notePart.includes('masih rusak');
+        const bypassCb = document.getElementById('univBypassFoto');
+        
+        if (bypassDiv) bypassDiv.style.display = 'block';
+        if (bypassCb) {
+            bypassCb.checked = isBypass;
+            if (photoContainer) photoContainer.style.display = isBypass ? 'none' : 'block';
+        } else {
+            if (photoContainer) photoContainer.style.display = 'block';
+        }
     } else {
         if (noteContainer) noteContainer.style.display = 'none';
-        if (photoContainer) photoContainer.style.display = 'none'; // 👻 Sembunyikan!
+        if (photoContainer) photoContainer.style.display = 'none';
+        if (bypassDiv) bypassDiv.style.display = 'none';
         if (noteInput) noteInput.value = '';
         if (valInput) {
             valInput.disabled = false;
