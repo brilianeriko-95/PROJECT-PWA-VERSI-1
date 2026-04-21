@@ -556,6 +556,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     checkOfflineData();
     runStorageMaintenance();
+    fetchMasterAlat();
 
     // Deteksi jika aplikasi dibuka dari Homescreen HP (Standalone Mode)
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
@@ -795,5 +796,207 @@ async function syncOfflineLaporanAkhir() {
         localStorage.setItem('offline_laporan_akhir', JSON.stringify(remainingLaporan));
     } else {
         localStorage.removeItem('offline_laporan_akhir');
+    }
+}
+/* ============================================================
+   FITUR ENTERPRISE: CMMS & HISTORY ALAT (JURUS DOUBLE ENTRY)
+   ============================================================ */
+
+// 1. Tarik Data Master Alat dari Server
+async function fetchMasterAlat() {
+    try {
+        // Cek brankas lokal dulu biar offline tetap jalan
+        const localData = localStorage.getItem('master_alat');
+        if (localData) {
+            window.masterAlat = JSON.parse(localData);
+        }
+
+        if (!navigator.onLine) return; 
+
+        // Telepon server untuk daftar terbaru
+        const response = await fetch(`${GAS_URL}?action=getMasterAlat`);
+        const res = await response.json();
+        
+        if (res.success && res.data) {
+            window.masterAlat = res.data;
+            localStorage.setItem('master_alat', JSON.stringify(res.data));
+            console.log(`✅ [CMMS] Berhasil download ${res.data.length} Master Alat`);
+        }
+    } catch (error) {
+        console.warn('Gagal fetch Master Alat:', error);
+    }
+}
+
+// 2. Buka Form & Otomatis Filter Area Sesuai Unit Operator
+function openCMMSModal() {
+    const modal = document.getElementById('cmmsModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        
+        // --- LOGIKA SMART FILTER AREA ---
+        const areaSelect = document.getElementById('cmmsArea');
+        areaSelect.innerHTML = '<option value="">Pilih Area...</option>'; // Reset isi
+        
+        // Ambil unit operator yang sedang login (Ubah jadi huruf besar biar gampang dicocokkan)
+        const unitUser = (typeof currentUser !== 'undefined' && currentUser && currentUser.department) 
+                         ? currentUser.department.toUpperCase() : '';
+
+        // Master Data Area dan kepemilikan Unitnya
+        const daftarArea = [
+            { value: 'LAPANGANTURBIN', label: 'Lapangan Turbin', owner: 'UTILITAS 3B' },
+            { value: 'PANEL_STG', label: 'Panel STG', owner: 'UTILITAS 3B' },
+            { value: 'CT', label: 'Cooling Tower', owner: 'UTILITAS 3B' },
+            { value: '1000', label: 'Area 1000', owner: 'ASAM SULFAT' },
+            { value: '1100_1200', label: 'Area 1100/1200', owner: 'ASAM SULFAT' },
+            { value: '1300', label: 'Area 1300', owner: 'ASAM SULFAT' },
+            { value: 'PANEL_ASAM_SULFAT', label: 'Panel Asam Sulfat', owner: 'ASAM SULFAT' },
+            { value: 'UBB', label: 'Utilitas Batu Bara', owner: 'UBB' }
+        ];
+
+        // Suntikkan hanya area yang cocok dengan unit operator
+        daftarArea.forEach(item => {
+            // Jika dia Admin, atau nama unitnya mengandung kata kunci (misal "UTILITAS" cocok dengan "UTILITAS 3B")
+            if (unitUser.includes('ADMIN') || unitUser.includes(item.owner) || unitUser === '') {
+                const opt = document.createElement('option');
+                opt.value = item.value;
+                opt.textContent = item.label;
+                areaSelect.appendChild(opt);
+            }
+        });
+        // ---------------------------------
+        
+        // Jika dibuka dari dalam suatu logsheet area, otomatiskan dropdown areanya
+        if (window.currentActiveMenu) {
+            areaSelect.value = window.currentActiveMenu;
+        }
+        
+        filterCMMSAlat(); // Panggil filter dropdown alat
+    }
+}
+function closeCMMSModal() {
+    const modal = document.getElementById('cmmsModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+}
+
+// 3. Filter Alat Berdasarkan Area yang Dipilih
+function filterCMMSAlat() {
+    const selectedArea = document.getElementById('cmmsArea').value;
+    const alatSelect = document.getElementById('cmmsAlat');
+    
+    alatSelect.innerHTML = '<option value="">Pilih Alat...</option>';
+
+    if (!window.masterAlat || !selectedArea) return;
+
+    // Filter daftar alat yang sesuai dengan area
+    const filtered = window.masterAlat.filter(item => item.area.toUpperCase() === selectedArea.toUpperCase());
+    
+    filtered.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.namaAlat;
+        opt.textContent = item.namaAlat;
+        alatSelect.appendChild(opt);
+    });
+
+    if (filtered.length === 0) {
+        alatSelect.innerHTML = '<option value="">(Tidak ada alat di area ini)</option>';
+    }
+}
+
+// 4. JURUS DOUBLE ENTRY (Eksekusi Pengiriman)
+async function submitCMMSData() {
+    const area = document.getElementById('cmmsArea').value;
+    const alat = document.getElementById('cmmsAlat').value;
+    const tindakan = document.getElementById('cmmsTindakan').value;
+    const keterangan = document.getElementById('cmmsKeterangan').value;
+
+    if (!area || !alat || !tindakan) {
+        showCustomAlert('⚠️ Area, Alat, dan Tindakan wajib diisi!', 'error');
+        return;
+    }
+
+    const now = new Date();
+    // Hitung shift (Pagi=1, Sore=2, Malam=3)
+    const hour = now.getHours();
+    const shift = (hour >= 7 && hour < 15) ? 1 : (hour >= 15 && hour < 23) ? 2 : 3;
+    const operatorName = currentUser ? currentUser.name : 'Unknown';
+
+    // ----------------------------------------------------
+    // PAKET 1: Untuk Database CMMS Terpusat
+    // ----------------------------------------------------
+    const payloadCMMS = {
+        type: 'SUBMIT_HISTORY_ALAT',
+        Tanggal: formatDate(now),
+        Jam: formatTime(now),
+        Shift: shift,
+        Area: area,
+        Nama_Alat: alat,
+        Tindakan: tindakan,
+        Keterangan: keterangan,
+        Operator: operatorName
+    };
+
+    // ----------------------------------------------------
+    // PAKET 2: Untuk Disuntik ke Laporan Akhir (Handover WA)
+    // ----------------------------------------------------
+    let icon = '🔧';
+    if(tindakan.includes('Breakdown')) icon = '🛑';
+    else if(tindakan.includes('Oli') || tindakan.includes('Flushing')) icon = '💧';
+    else if(tindakan.includes('Rutin')) icon = '✅';
+
+    const formatKegiatan = `${icon} [${alat}] - ${tindakan}: ${keterangan}`;
+    
+    const payloadRoutine = {
+        type: 'CHECKLIST_ROUTINE',
+        targetArea: 'LOGSHEET_' + area, // Sesuaikan dengan standar Laporan Akhir
+        Operator: operatorName,
+        Jam: formatTime(now),
+        tugas: formatKegiatan,
+        isRoutine: true
+    };
+
+    const progress = showUploadProgress('Memproses Data Mesin...');
+    
+    try {
+        if (!navigator.onLine) throw new Error("Offline Mode");
+
+        // Tembakan 1: Ke CMMS
+        progress.updateText('Menyimpan ke History Alat...');
+        const res1 = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadCMMS) });
+        const json1 = await res1.json();
+        if(!json1.success) throw new Error(json1.error || "Gagal simpan CMMS");
+
+        // Tembakan 2: Ke Laporan Akhir Area Terkait
+        progress.updateText('Menyuntikkan ke Laporan Akhir...');
+        const res2 = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadRoutine) });
+        
+        progress.complete();
+        showCustomAlert('✓ Pekerjaan berhasil dicatat ganda!', 'success');
+        
+        // Bersihkan form & tutup modal
+        document.getElementById('cmmsKeterangan').value = '';
+        document.getElementById('cmmsTindakan').value = '';
+        closeCMMSModal();
+
+    } catch (err) {
+        console.warn("[CMMS Offline Triggered]:", err);
+        progress.error();
+        
+        // Simpan CMMS ke brankas offline
+        let queueCMMS = JSON.parse(localStorage.getItem('offline_cmms') || '[]');
+        queueCMMS.push(payloadCMMS);
+        localStorage.setItem('offline_cmms', JSON.stringify(queueCMMS));
+        
+        // Simpan Rutinan ke brankas offline laporan akhir
+        let queueRoutine = JSON.parse(localStorage.getItem('offline_laporan_akhir') || '[]');
+        queueRoutine.push(payloadRoutine);
+        localStorage.setItem('offline_laporan_akhir', JSON.stringify(queueRoutine));
+
+        showCustomAlert('Sinyal lemah! Data History & Laporan disimpan offline.', 'warning');
+        closeCMMSModal();
+        checkOfflineData(); // Perbarui lencana sinkronisasi di layar
     }
 }
