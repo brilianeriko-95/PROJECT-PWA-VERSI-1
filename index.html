@@ -278,6 +278,53 @@
             </div>
         </form>
     </div>
+</div> <div id="cmmsModal" class="custom-alert hidden" style="z-index: 10006;">
+    <div class="alert-content" style="max-width: 420px; width: 90%; text-align: left; padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #f8fafc; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <span>🔧</span> Catat Pekerjaan Alat
+            </h3>
+            <button onclick="closeCMMSModal()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">&times;</button>
+        </div>
+        
+        <div class="form-field" style="margin-bottom: 16px;">
+            <label style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 6px; display: block; font-weight: 600;">Area / Unit</label>
+            <select id="cmmsArea" onchange="filterCMMSAlat()" class="login-input" style="width: 100%; font-size: 0.9375rem;">
+                <option value="">Pilih Area...</option>
+            </select>
+        </div>
+
+        <div class="form-field" style="margin-bottom: 16px;">
+            <label style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 6px; display: block; font-weight: 600;">Nama Alat (Dari Master Data)</label>
+            <select id="cmmsAlat" class="login-input" style="width: 100%; font-size: 0.9375rem;">
+                <option value="">Pilih Area dulu...</option>
+            </select>
+        </div>
+
+        <div class="form-field" style="margin-bottom: 16px;">
+            <label style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 6px; display: block; font-weight: 600;">Jenis Tindakan</label>
+            <select id="cmmsTindakan" class="login-input" style="width: 100%; font-size: 0.9375rem;">
+                <option value="">Pilih Tindakan...</option>
+                <option value="Overhaul">🔧 Overhaul</option>
+                <option value="Breakdown">🛑 Breakdown / Rusak</option>
+                <option value="Preventive Maintenance">⚙️ Preventive Maintenance</option>
+                <option value="Ganti Oli">💧 Ganti Oli</option>
+                <option value="Flushing / Backwash">🌊 Flushing / Backwash</option>
+                <option value="Pengecekan Rutin">✅ Pengecekan Rutin</option>
+                <option value="Lainnya">📝 Lainnya</option>
+            </select>
+        </div>
+
+        <div class="form-field" style="margin-bottom: 24px;">
+            <label style="color: #94a3b8; font-size: 0.875rem; margin-bottom: 6px; display: block; font-weight: 600;">Keterangan Tambahan</label>
+            <textarea id="cmmsKeterangan" rows="3" class="login-input" placeholder="Jelaskan detail pekerjaan/kerusakan..." style="width: 100%; resize: vertical; font-size: 0.9375rem; font-family: inherit;"></textarea>
+        </div>
+
+        <button onclick="submitCMMSData()" class="btn btn-primary btn-full" style="width: 100%; padding: 14px; display: flex; justify-content: center; align-items: center; gap: 8px; font-weight: 700; background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); border: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            Simpan & Kirim Laporan
+        </button>
+    </div>
 </div>
 
 <div class="app-container">
@@ -439,7 +486,16 @@
                         </div>
                         <span class="modern-menu-label">Balancing</span>
                     </div>
-
+                    <div class="modern-menu-card" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); color: #a78bfa;" onclick="openCMMSModal(); closeBranchMenuPopup();">
+                        <div class="modern-menu-icon">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                                <line x1="12" y1="11" x2="12" y2="17"/>
+                                <line x1="9" y1="14" x2="15" y2="14"/>
+                            </svg>
+                        </div>
+                        <span class="modern-menu-label" style="color: #c4b5fd;">History Alat</span>
+                    </div>
                     <div class="modern-menu-card danger" id="menu-user" onclick="showUserManagement(); closeBranchMenuPopup();">
                         <div class="modern-menu-icon">
                             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
