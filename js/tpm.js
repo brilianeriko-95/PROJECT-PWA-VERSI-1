@@ -247,7 +247,8 @@ async function submitTPMData() {
         photo: currentTPMPhoto, 
         user: currentUser?.name || 'Unknown',
         unit: currentUser?.department || 'UNIT_UNKNOWN',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        targetFileId: TPM_SPREADSHEET_ID
     };
     
     // 👇 2. SULAP INSTAN: BERSIHKAN & PINDAH LAYAR DETIK INI JUGA! 👇
