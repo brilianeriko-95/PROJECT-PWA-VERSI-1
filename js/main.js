@@ -593,7 +593,55 @@ window.addEventListener('DOMContentLoaded', () => {
             showCustomAlert('⚠️ Gunakan tombol "Kembali" di layar, jangan tombol Back HP.', 'warning');
         }
     };
-    
+
+    // ==========================================
+    // SENSOR SMART AUTO-SYNC (KEMBALI ONLINE)
+    // ==========================================
+    window.addEventListener('online', () => {
+        // 1. Cek apakah ada data offline yang mengantre
+        let totalAntrean = 0;
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('offline')) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(key) || '[]');
+                    totalAntrean += Array.isArray(data) ? data.length : 0;
+                } catch(e) {}
+            }
+        });
+
+        if (totalAntrean > 0) {
+            // 2. Cek apakah operator sedang santai di Home Screen
+            const isAtHome = document.getElementById('homeScreen')?.classList.contains('active');
+
+            if (isAtHome) {
+                // Eksekusi Auto-Sync jika di Home
+                if (typeof showTemporaryToast === 'function') {
+                    showTemporaryToast('📶 Sinyal Wi-Fi stabil terdeteksi! Memulai sinkronisasi otomatis...', 'info', 3000);
+                }
+                
+                // Jeda 3 detik (Anti-Flapping) untuk pastikan sinyal beneran kuat
+                setTimeout(() => {
+                    if (navigator.onLine && typeof syncOfflineData === 'function') {
+                        syncOfflineData(); 
+                    }
+                }, 3000);
+            } else {
+                // Cuma kasih Notif kalau operator lagi sibuk ngetik form
+                if (typeof showTemporaryToast === 'function') {
+                    showTemporaryToast('📶 Sinyal kembali! Laporan Anda siap disinkronisasi nanti.', 'success', 4000);
+                }
+                checkOfflineData(); // Update lencana angka merah
+            }
+        }
+    });
+
+    // Sensor kalau tiba-tiba offline
+    window.addEventListener('offline', () => {
+        if (typeof showTemporaryToast === 'function') {
+            showTemporaryToast('⚠️ Koneksi terputus. Anda masuk Mode Offline.', 'warning', 3000);
+        }
+    });
+   
     console.log(`${APP_NAME} v${APP_VERSION} initialized successfully`);
 });
 
@@ -979,7 +1027,7 @@ async function submitCMMSData() {
         // Bersihkan form & tutup modal
         document.getElementById('cmmsKeterangan').value = '';
         document.getElementById('cmmsTindakan').value = '';
-        closeCMMSModal();
+        //closeCMMSModal();
 
     } catch (err) {
         console.warn("[CMMS Offline Triggered]:", err);
@@ -996,7 +1044,7 @@ async function submitCMMSData() {
         localStorage.setItem('offline_laporan_akhir', JSON.stringify(queueRoutine));
 
         showCustomAlert('Sinyal lemah! Data History & Laporan disimpan offline.', 'warning');
-        closeCMMSModal();
+        //closeCMMSModal();
         checkOfflineData(); // Perbarui lencana sinkronisasi di layar
     }
 }
