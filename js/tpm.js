@@ -274,21 +274,15 @@ async function submitTPMData() {
     .catch(error => {
         console.warn('⚠️ Gagal kirim TPM (Sinyal Lemah):', error);
 
-        // Pisahkan foto untuk diamankan ke memori HP
-        const offlineData = { ...tpmData };
-        delete offlineData.photo; 
-
         const offlineKey = 'offline_tpm';
         let queue = [];
         try {
             queue = JSON.parse(localStorage.getItem(offlineKey) || '[]');
         } catch(e) { queue = []; }
 
-        // Masukkan ke antrean offline
-        queue.push({
-            ...offlineData, 
-            photos: { "TPM_PHOTO": tpmData.photo } // Ambil dari variabel tpmData yang masih utuh
-        });
+        // 👇 PERBAIKAN: Masukkan paket data UTUH tanpa dipisah/dihapus fotonya 👇
+        queue.push(tpmData);
+        // 👆 ================================================================= 👆
 
         try {
             localStorage.setItem(offlineKey, JSON.stringify(queue));
@@ -305,4 +299,3 @@ async function submitTPMData() {
             }
         }
     });
-}
