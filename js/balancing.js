@@ -11,16 +11,18 @@ function initBalancingScreen() {
     if (!requireAuth()) return;
     
     const balancingUser = document.getElementById('balancingUser');
-    // currentUser berasal dari state.js
     if (balancingUser && currentUser) balancingUser.textContent = currentUser.name;
     
     detectShift();
     
-    // 1. Tarik data riwayat dari server
-    loadLastBalancingData(true);
+    // 👇 1. TAMPILKAN DATA INSTAN DARI CACHE MEMORI HP (0 Detik!)
+    loadCachedBalancingData();
     
-    // 2. Sinkronisasi draf dari memori global (Hasil load initState main.js)
+    // 👇 2. TARIK DATA DRAF YANG BELUM DIKIRIM (Menimpa cache riwayat)
     loadBalancingDraft();
+
+    // 👇 3. SINKRONISASI DIAM-DIAM DI BACKGROUND (Tanpa Loading)
+    silentFetchBalancingData();
     
     calculateLPBalance();
     setupBalancingAutoSave();
@@ -160,46 +162,73 @@ function hasBalancingData() {
 }
 
 // ============================================
-// 3. SERVER DATA SYNC
+// 3. SMART CACHE & SERVER DATA SYNC
 // ============================================
 
-function loadLastBalancingData(isManualLoad = false) {
-    if (isManualLoad) showCustomAlert('🔄 Sinkronisasi riwayat...', 'info');
+// Fungsi 1: Menyuntikkan data ke layar (Bisa dipanggil dari Cache atau Server)
+function applyBalancingDataToUI(lastData) {
+    const mapping = {
+        'loadMW': 'Load_MW', 'eksporMW': 'Ekspor_Impor_MW', 'plnMW': 'PLN_MW',
+        'ubbMW': 'UBB_MW', 'pieMW': 'PIE_MW', 'tg65MW': 'TG65_MW', 'tg66MW': 'TG66_MW',
+        'gtgMW': 'GTG_MW', 'ss6500MW': 'SS6500_MW', 'ss2000Via': 'SS2000_Via',
+        'activePowerMW': 'Active_Power_MW', 'reactivePowerMVAR': 'Reactive_Power_MVAR',
+        'currentS': 'Current_S_A', 'voltageV': 'Voltage_V', 'hvs65l02MW': 'HVS65_L02_MW',
+        'hvs65l02Current': 'HVS65_L02_Current_A', 'total3BMW': 'Total_3B_MW',
+        'fq1105': 'Produksi_Steam_SA_t/h', 'stgSteam': 'STG_Steam_t/h',
+        'pa2Steam': 'PA2_Steam_t/h', 'puri2Steam': 'Puri2_Steam_t/h',
+        'melterSA2': 'Melter_SA2_t/h', 'ejectorSteam': 'Ejector_t/h',
+        'glandSealSteam': 'Gland_Seal_t/h', 'deaeratorSteam': 'Deaerator_t/h',
+        'dumpCondenser': 'Dump_Condenser_t/h', 'pcv6105': 'PCV6105_t/h',
+        'pi6122': 'PI6122_kg/cm2', 'ti6112': 'TI6112_C', 'ti6146': 'TI6146_C',
+        'ti6126': 'TI6126_C', 'axialDisplacement': 'Axial_Displacement_mm',
+        'vi6102': 'VI6102_μm', 'te6134': 'TE6134_C', 'ctSuFan': 'CT_SU_Fan',
+        'ctSuPompa': 'CT_SU_Pompa', 'ctSaFan': 'CT_SA_Fan', 'ctSaPompa': 'CT_SA_Pompa',
+        'kegiatanShift': 'Kegiatan_Shift'
+    };
+    
+    Object.entries(mapping).forEach(([htmlId, apiKey]) => {
+        const el = document.getElementById(htmlId);
+        // HANYA ISI kalau kotak input masih kosong (Jangan rusak ketikan draf operator)
+        if (el && lastData[apiKey] !== undefined && (!el.value || el.value.trim() === '')) {
+            el.value = (typeof lastData[apiKey] === 'object') ? (lastData[apiKey].value || lastData[apiKey].text || '') : lastData[apiKey];
+        }
+    });
+
+    const eksporEl = document.getElementById('eksporMW');
+    if (eksporEl && eksporEl.value) handleEksporInput(eksporEl);
+    calculateLPBalance();
+}
+
+// Fungsi 2: Tarik dari memori lokal (Super Cepat)
+function loadCachedBalancingData() {
+    try {
+        const cached = localStorage.getItem('last_balancing_data');
+        if (cached) {
+            applyBalancingDataToUI(JSON.parse(cached));
+        }
+    } catch(e) {
+        console.warn('Cache balancing kosong.');
+    }
+}
+
+// Fungsi 3: Tarik dari server diam-diam
+function silentFetchBalancingData(isManual = false) {
+    if (isManual) {
+        if (typeof showTemporaryToast === 'function') showTemporaryToast('🔄 Sinkronisasi...', 'info');
+    }
 
     const callbackName = 'jsonp_balancing_' + Date.now();
     window[callbackName] = (result) => {
         if (result.success && result.data) {
-            const lastData = result.data;
-            const mapping = {
-                'loadMW': 'Load_MW', 'eksporMW': 'Ekspor_Impor_MW', 'plnMW': 'PLN_MW',
-                'ubbMW': 'UBB_MW', 'pieMW': 'PIE_MW', 'tg65MW': 'TG65_MW', 'tg66MW': 'TG66_MW',
-                'gtgMW': 'GTG_MW', 'ss6500MW': 'SS6500_MW', 'ss2000Via': 'SS2000_Via',
-                'activePowerMW': 'Active_Power_MW', 'reactivePowerMVAR': 'Reactive_Power_MVAR',
-                'currentS': 'Current_S_A', 'voltageV': 'Voltage_V', 'hvs65l02MW': 'HVS65_L02_MW',
-                'hvs65l02Current': 'HVS65_L02_Current_A', 'total3BMW': 'Total_3B_MW',
-                'fq1105': 'Produksi_Steam_SA_t/h', 'stgSteam': 'STG_Steam_t/h',
-                'pa2Steam': 'PA2_Steam_t/h', 'puri2Steam': 'Puri2_Steam_t/h',
-                'melterSA2': 'Melter_SA2_t/h', 'ejectorSteam': 'Ejector_t/h',
-                'glandSealSteam': 'Gland_Seal_t/h', 'deaeratorSteam': 'Deaerator_t/h',
-                'dumpCondenser': 'Dump_Condenser_t/h', 'pcv6105': 'PCV6105_t/h',
-                'pi6122': 'PI6122_kg/cm2', 'ti6112': 'TI6112_C', 'ti6146': 'TI6146_C',
-                'ti6126': 'TI6126_C', 'axialDisplacement': 'Axial_Displacement_mm',
-                'vi6102': 'VI6102_μm', 'te6134': 'TE6134_C', 'ctSuFan': 'CT_SU_Fan',
-                'ctSuPompa': 'CT_SU_Pompa', 'ctSaFan': 'CT_SA_Fan', 'ctSaPompa': 'CT_SA_Pompa',
-                'kegiatanShift': 'Kegiatan_Shift'
-            };
+            // 1. Simpan ke Cache HP untuk bekal buka aplikasi berikutnya
+            localStorage.setItem('last_balancing_data', JSON.stringify(result.data));
             
-            Object.entries(mapping).forEach(([htmlId, apiKey]) => {
-                const el = document.getElementById(htmlId);
-                if (el && lastData[apiKey]) {
-                    // Proteksi ganda agar tidak ada nilai object[object]
-                    el.value = (typeof lastData[apiKey] === 'object') ? (lastData[apiKey].value || lastData[apiKey].text || '') : lastData[apiKey];
-                }
-            });
-
-            handleEksporInput(document.getElementById('eksporMW'));
-            calculateLPBalance();
-            if (isManualLoad) showCustomAlert('✓ Riwayat dimuat.', 'success');
+            // 2. Suntikkan ke layar UI
+            applyBalancingDataToUI(result.data);
+            
+            if (isManual && typeof showTemporaryToast === 'function') {
+                showTemporaryToast('✓ Riwayat balancing diperbarui', 'success');
+            }
         }
         if (typeof cleanupJSONP === 'function') cleanupJSONP(callbackName);
     };
