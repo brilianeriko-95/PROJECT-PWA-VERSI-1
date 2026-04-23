@@ -522,10 +522,14 @@ async function submitBalancingData() {
             
             setTimeout(() => {
                 const waMessage = encodeURIComponent(formatWhatsAppMessage(balancingData));
-                window.open(`https://wa.me/6281382160345?text=${waMessage}`, '_blank');
-                navigateTo('homeScreen');
+                
+                // 1. Bersihkan draf dulu sebelum pindah
                 clearBalancingDraft(); 
-            }, 1000);
+                
+                // 2. Langsung paksa layar PWA melompat ke aplikasi WhatsApp!
+                window.location.href = `https://wa.me/6281382160345?text=${waMessage}`;
+                
+            }, 500);
             
         } catch (error) {
             console.error('Balancing Submit Error:', error);
