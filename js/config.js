@@ -980,6 +980,7 @@ const LOGSHEET_CONFIG = {
 // ============================================
 // 4. TPM CONFIG MASTER (STANDALONE)
 // ============================================
+const TPM_SPREADSHEET_ID = '14PQJVmj_-lnTJHeg7mtCD9CIR1CyiRRoaOJwsoVyjqo';
 const TPM_CONFIG_MASTER = {
     'SULFAT': [
         { name: "AREA 1100 / 1200", icon: "🏭", color: "#eab308" },
