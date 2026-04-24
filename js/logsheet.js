@@ -89,7 +89,6 @@ function silentFetchLastData(type) {
 // 👇 FUNGSI SAKTI: MENGUBAH TULISAN DI LAYAR (WIZARD & PANEL)
 // =========================================================
 function updateLiveLastDataUI() {
-    
     // --- 1. JALANKAN UNTUK MODE WIZARD (LAPANGAN) ---
     const lastDataElWizard = document.getElementById('univLastDataDisplay');
     if (lastDataElWizard && typeof activeUnivArea !== 'undefined' && typeof activeUnivFilteredParams !== 'undefined') {
@@ -97,17 +96,19 @@ function updateLiveLastDataUI() {
         if (fullLabel) {
             const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
             const nameOnly = fullLabelBersih.split(' (')[0];
-            let newValue = univLastData[fullLabel] || univLastData[fullLabelBersih] || univLastData[nameOnly];
+            
+            // PERBAIKAN: Gunakan ?? agar nilai 0 tidak dianggap kosong
+            let newValue = univLastData[fullLabel] ?? univLastData[fullLabelBersih] ?? univLastData[nameOnly];
             const newTime = univLastData._lastTime || '--:--';
 
-            // Ekstrak jika format berupa object
             if (typeof newValue === 'object' && newValue !== null) {
-                newValue = newValue.value || '-';
+                newValue = (newValue.value !== undefined && newValue.value !== null) ? newValue.value : '-';
             }
 
-            if (newValue && newValue !== '') {
+            // PERBAIKAN: Pengecekan tidak boleh memblokir angka 0
+            if (newValue !== undefined && newValue !== null && newValue !== '') {
                 const currentText = lastDataElWizard.innerText;
-                if (!currentText.includes(newValue) || !currentText.includes(newTime)) {
+                if (!currentText.includes(String(newValue)) || !currentText.includes(newTime)) {
                     lastDataElWizard.innerHTML = `🕒 Tersinkron (${newTime}): <span style="color: #10b981; font-weight: 900; text-shadow: 0 0 10px rgba(16,185,129,0.8); transition: all 0.5s;">${newValue}</span> <span style="font-size: 0.75rem; color: #10b981; margin-left: 6px;">✨ Baru</span>`;
                     lastDataElWizard.style.transform = 'scale(1.05)';
                     setTimeout(() => { lastDataElWizard.style.transform = 'scale(1)'; }, 300);
@@ -121,21 +122,21 @@ function updateLiveLastDataUI() {
     if (panelElements.length > 0) {
         panelElements.forEach(el => {
             const fullLabel = el.getAttribute('data-label');
-            const fullLabelBersih = el.getAttribute('data-bersih'); // Deteksi tag bersih
+            const fullLabelBersih = el.getAttribute('data-bersih');
             const nameOnly = el.getAttribute('data-name');
             
-            // Prioritaskan pencarian dengan nama yang sudah dibersihkan
-            let newValue = univLastData[fullLabel] || (fullLabelBersih && univLastData[fullLabelBersih]) || univLastData[nameOnly];
+            // PERBAIKAN: Gunakan ?? agar nilai 0 tidak terlewat
+            let newValue = univLastData[fullLabel] ?? (fullLabelBersih ? univLastData[fullLabelBersih] : undefined) ?? univLastData[nameOnly];
             let newTime = univLastData._lastTime || '--:--';
 
-            // Ekstrak jika format berupa object
             if (typeof newValue === 'object' && newValue !== null) {
-                newValue = newValue.value || '-';
+                newValue = (newValue.value !== undefined && newValue.value !== null) ? newValue.value : '-';
             }
 
-            if (newValue && newValue !== '') {
+            // PERBAIKAN: Pengecekan tidak boleh memblokir angka 0
+            if (newValue !== undefined && newValue !== null && newValue !== '') {
                 const currentText = el.innerText;
-                if (!currentText.includes(newValue) || !currentText.includes(newTime)) {
+                if (!currentText.includes(String(newValue)) || !currentText.includes(newTime)) {
                     el.innerHTML = `🕒 Tersinkron (${newTime}): <strong style="color: #10b981; text-shadow: 0 0 8px rgba(16,185,129,0.6);">${newValue}</strong> ✨`;
                     el.style.transform = 'scale(1.03)';
                     setTimeout(() => { el.style.transform = 'scale(1)'; }, 400);
@@ -465,12 +466,11 @@ function showUnivStep() {
     document.getElementById('univLabelInput').textContent = nameOnly;
     
     // --- TAMBAHAN UNTUK MENAMPILKAN LAST DATA (Gunakan nama asli untuk fetch) ---
-    let lastValue = univLastData[fullLabel] || univLastData[fullLabelBersih] || univLastData[nameOnly]; 
+    let lastValue = univLastData[fullLabel] ?? univLastData[fullLabelBersih] ?? univLastData[nameOnly]; 
     const lastTime = univLastData._lastTime || '--:--'; 
     
-    // 👇 Ekstrak nilai jika respons dari server berupa object (Bukan langsung string)
     if (typeof lastValue === 'object' && lastValue !== null) {
-        lastValue = lastValue.value || '-';
+        lastValue = (lastValue.value !== undefined && lastValue.value !== null) ? lastValue.value : '-';
     } 
     
     let lastDataEl = document.getElementById('univLastDataDisplay');
@@ -484,7 +484,8 @@ function showUnivStep() {
         document.getElementById('univLabelInput').after(lastDataEl);
     }
     
-    if (lastValue && lastValue !== '') {
+    // PERBAIKAN: Jika nilainya 0, tetap render ke layar
+    if (lastValue !== undefined && lastValue !== null && lastValue !== '') {
         lastDataEl.innerHTML = `🕒 Data sebelumnya (${lastTime}): <span style="color: ${config.themeColor}; font-weight: bold;">${lastValue}</span>`;
     } else {
         lastDataEl.innerHTML = `🕒 Data sebelumnya: -`;
