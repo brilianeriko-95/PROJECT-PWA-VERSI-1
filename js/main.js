@@ -1048,3 +1048,24 @@ async function submitCMMSData() {
         checkOfflineData(); // Perbarui lencana sinkronisasi di layar
     }
 }
+// ==========================================
+// HELPER FORMAT WAKTU (FRONTEND)
+// ==========================================
+
+function formatDate(date) {
+    // Menghasilkan: "Kamis, 24 April 2026"
+    return date.toLocaleDateString('id-ID', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+    });
+}
+
+function formatTime(date) {
+    // Menghasilkan: "14:30" atau "08:15"
+    return date.toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
+}
