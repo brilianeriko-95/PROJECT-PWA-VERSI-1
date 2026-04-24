@@ -97,8 +97,13 @@ function updateLiveLastDataUI() {
         if (fullLabel) {
             const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
             const nameOnly = fullLabelBersih.split(' (')[0];
-            const newValue = univLastData[fullLabel] || univLastData[fullLabelBersih] || univLastData[nameOnly];
+            let newValue = univLastData[fullLabel] || univLastData[fullLabelBersih] || univLastData[nameOnly];
             const newTime = univLastData._lastTime || '--:--';
+
+            // Ekstrak jika format berupa object
+            if (typeof newValue === 'object' && newValue !== null) {
+                newValue = newValue.value || '-';
+            }
 
             if (newValue && newValue !== '') {
                 const currentText = lastDataElWizard.innerText;
@@ -112,20 +117,24 @@ function updateLiveLastDataUI() {
     }
 
     // --- 2. JALANKAN UNTUK MODE PANEL (DROPDOWN) ---
-    // Cari semua elemen yang dipasangi sensor alarm
     const panelElements = document.querySelectorAll('.live-update-panel');
     if (panelElements.length > 0) {
         panelElements.forEach(el => {
-            // Baca data yang disimpan di sensor
             const fullLabel = el.getAttribute('data-label');
+            const fullLabelBersih = el.getAttribute('data-bersih'); // Deteksi tag bersih
             const nameOnly = el.getAttribute('data-name');
             
-            const newValue = univLastData[fullLabel] || univLastData[nameOnly];
+            // Prioritaskan pencarian dengan nama yang sudah dibersihkan
+            let newValue = univLastData[fullLabel] || (fullLabelBersih && univLastData[fullLabelBersih]) || univLastData[nameOnly];
             let newTime = univLastData._lastTime || '--:--';
+
+            // Ekstrak jika format berupa object
+            if (typeof newValue === 'object' && newValue !== null) {
+                newValue = newValue.value || '-';
+            }
 
             if (newValue && newValue !== '') {
                 const currentText = el.innerText;
-                // Kalau angkanya beda sama yang di layar, tembakkan efek hijau!
                 if (!currentText.includes(newValue) || !currentText.includes(newTime)) {
                     el.innerHTML = `🕒 Tersinkron (${newTime}): <strong style="color: #10b981; text-shadow: 0 0 8px rgba(16,185,129,0.6);">${newValue}</strong> ✨`;
                     el.style.transform = 'scale(1.03)';
@@ -135,7 +144,6 @@ function updateLiveLastDataUI() {
         });
     }
 }
-
 function updateStatusIndicator(isOnline) {
     console.log('System Status:', isOnline ? 'Online' : 'Offline');
     // Jika Anda punya elemen UI indikator online/offline, bisa diupdate di sini
@@ -457,8 +465,13 @@ function showUnivStep() {
     document.getElementById('univLabelInput').textContent = nameOnly;
     
     // --- TAMBAHAN UNTUK MENAMPILKAN LAST DATA (Gunakan nama asli untuk fetch) ---
-    const lastValue = univLastData[fullLabel] || univLastData[fullLabelBersih] || univLastData[nameOnly]; 
+    let lastValue = univLastData[fullLabel] || univLastData[fullLabelBersih] || univLastData[nameOnly]; 
     const lastTime = univLastData._lastTime || '--:--'; 
+    
+    // 👇 Ekstrak nilai jika respons dari server berupa object (Bukan langsung string)
+    if (typeof lastValue === 'object' && lastValue !== null) {
+        lastValue = lastValue.value || '-';
+    } 
     
     let lastDataEl = document.getElementById('univLastDataDisplay');
     if (!lastDataEl) {
@@ -1451,7 +1464,7 @@ function openGroupedSubAreas(groupName) {
                     </label>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         
-                        <small class="live-update-panel" data-label="${fullLabel}" data-name="${nameOnly}" style="color: #94a3b8; transition: all 0.3s ease-in-out; display: inline-block;">
+                        <small class="live-update-panel" data-label="${fullLabel}" data-bersih="${fullLabelBersih}" data-name="${nameOnly}" style="color: #94a3b8; transition: all 0.3s ease-in-out; display: inline-block;">
                             🕒 Sblm (${lastTime}): <strong style="color: ${config.themeColor};">${lastDataVal || '-'}</strong>
                         </small>
                         <button type="button" 
