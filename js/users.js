@@ -349,7 +349,7 @@ async function toggleUserStatus(username) {
             targetUsername: username
         };
         
-        await fetch(GAS_URL, {
+        await fetch(getGasUrl(), {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
@@ -387,7 +387,7 @@ async function deleteUser(username) {
             targetUsername: username
         };
         
-        await fetch(GAS_URL, {
+        await fetch(getGasUrl(), {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
@@ -431,7 +431,7 @@ function fetchUsersFromServer() {
         };
         
         const script = document.createElement('script');
-        script.src = `${GAS_URL}?action=getUsers&adminUser=${encodeURIComponent(currentUser.username)}&adminPass=admin123&callback=${callbackName}`;
+        script.src = `${getGasUrl()}?action=getUsers&adminUser=${encodeURIComponent(currentUser.username)}&adminPass=admin123&callback=${callbackName}`;
         
         script.onerror = () => {
             clearTimeout(timeout);
@@ -489,7 +489,7 @@ function addUserToServerWithCache(userData) {
         });
         
         const script = document.createElement('script');
-        script.src = `${GAS_URL}?${params.toString()}`;
+        script.src = `${getGasUrl()}?${params.toString()}`;
         
         script.onerror = () => {
             clearTimeout(timeout);
@@ -570,7 +570,7 @@ async function syncUsersForOffline() {
             };
             
             const script = document.createElement('script');
-            script.src = `${GAS_URL}?action=getUsers&adminUser=${encodeURIComponent(currentUser.username)}&adminPass=admin123&callback=${callbackName}`;
+            script.src = `${getGasUrl()}?action=getUsers&adminUser=${encodeURIComponent(currentUser.username)}&adminPass=admin123&callback=${callbackName}`;
             
             script.onerror = () => {
                 cleanup();
