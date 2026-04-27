@@ -18,8 +18,37 @@ const AUTH_CONFIG = {
     REMEMBER_ME_DURATION: 30 * 24 * 60 * 60 * 1000
 };
 
+// 👇 TAMBAHKAN LANGKAH 1 DI SINI (LEMARI TEMA GLOBAL) 👇
+const UNIT_THEMES = {
+    'SA': { 
+        color: '#10b981', // Hijau Asam Sulfat
+        bgGradient: 'linear-gradient(135deg, #064e3b, #0f172a)',
+        logo: 'assets/logo-sa.png',
+        title: 'ASAM SULFAT LOGSHEET'
+    },
+    'UBB': { 
+        color: '#f59e0b', // Oranye Batu Bara
+        bgGradient: 'linear-gradient(135deg, #78350f, #0f172a)',
+        logo: 'assets/logo-ubb.png',
+        title: 'Batu Bara Logsheet'
+    },
+    'UTILITAS': { 
+        color: '#3b82f6', // Biru Utilitas
+        bgGradient: 'linear-gradient(135deg, #1e3a8a, #0f172a)',
+        logo: 'assets/logo-utilitas.png',
+        title: 'UTILITAS LOGSHEET'
+    },
+    'DEFAULT': {
+        color: '#64748b', // Abu-abu Netral
+        bgGradient: 'linear-gradient(135deg, #334155, #0f172a)',
+        logo: 'assets/logo-petrokop.png',
+        title: 'Logsheet Digital'
+    }
+};
+// 👆 ================================================== 👆
+
 // 2. BACKEND & USER SETUP
-const GAS_URL = "https://script.google.com/macros/s/AKfycbzbavcQkFdUlFpnW9V6arN0boFFwsd1gWCnQhZbB3eYOdROp_Y0HDUF5wlKtE8F9vXO/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbyxxKWZHYlaVTKAfMlM4_dW9htqd97882WS4WJJn9mCfZ80CEjR8wvHjD-4pf-vGJ0/exec";
 
 const OFFLINE_USERS = {
     // Ubah ke MANAJEMEN agar Admin otomatis bisa melihat seluruh menu (SA & SU)
@@ -55,18 +84,18 @@ const AREAS = {
         "MPS Inlet 30-TP-6101 TI-6153 (°C)", 
         "MPS Inlet 30-TP-6101 PI-6116 (kg/cm2)", 
         "LPS Extrac 30-TP-6101 PI-6123 (kg/cm2)", 
-        "Gland Steam TI-6156 (°C)", 
+        "Gland Steam TI-6156 (°C) [ALL]", 
         "MPS Inlet 30-TP-6101 PI-6108 (Kg/cm2)", 
         "Exhaust Steam PI-6111 (kg/cm2)", 
-        "Gland Steam PI-6118 (Kg/cm2)"
+        "Gland Steam PI-6118 (Kg/cm2) [ALL]"
     ],
     "Low Pressure Steam": [
         "LPS from U-6101 PI-6104 (kg/cm2)", 
         "LPS from U-6101 TI-6102 (°C)", 
-        "LPS Header PI-6106 (Kg/cm2)", 
-        "LPS Header TI-6107 (°C)"
+        "LPS Header PI-6106 (Kg/cm2) [ALL]", 
+        "LPS Header TI-6107 (°C) [ALL]"
     ],
-    "Lube Oil": [
+    "Lube Oil [ALL]": [
         "Lube Oil 30-TK-6102 LI-6104 (%)", 
         "Lube Oil 30-TK-6102 TI-6125 (°C)", 
         "Lube Oil 30-C-6101 (On/Off)", 
@@ -90,38 +119,38 @@ const AREAS = {
         "Lube Oil FG-6121 (%)", 
         "Lube Oil FG-6116 (%)"
     ],
-    "Control Oil": [
-        "Control Oil 30-TK-6103 LI-6106 (%)", 
-        "Control Oil 30-TK-6103 TI-6128 (°C)", 
+    "Control Oil ": [
+        "Control Oil 30-TK-6103 LI-6106 (%) [ALL]", 
+        "Control Oil 30-TK-6103 TI-6128 (°C) [ALL]", 
         "Control Oil P-6106 (A/B)", 
         "Control Oil FIL-6103 (A/B)", 
         "Control Oil PI-6152 (Bar)"
     ],
-    "Shaft Line": [
+    "Shaft Line [STOP]": [
         "Jacking Oil 30-P-6105 PI-6158 (Bar)", 
         "Jacking Oil 30-P-6105 PI-6161 (Bar)", 
         "Electrical Turning Gear U-6103 (Remote/Running/Stop)", 
         "EH-6101 (ON/OFF)"
     ],
     "Condenser 30-E-6102": [
-        "LG-6102 (%)", 
-        "30-P-6101 (A/B)", 
-        "30-P-6101 Suction (kg/cm2)", 
-        "30-P-6101 Discharge (kg/cm2)", 
-        "30-P-6101 Load (Ampere)"
+        "LG-6102 (%) [ALL]", 
+        "30-P-6101 (A/B) [ALL]", 
+        "30-P-6101 Suction (kg/cm2) [ALL]", 
+        "30-P-6101 Discharge (kg/cm2) [ALL]", 
+        "30-P-6101 Load (Ampere) [ALL]"
     ],
-    "Ejector": [
-        "J-6101 PI-6126 A (Kg/cm2)", 
-        "J-6101 PI-6127 B (Kg/cm2)", 
-        "J-6102 PI-6128 A (Kg/cm2)", 
-        "J-6102 PI-6129 B (Kg/cm2)", 
-        "J-6104 PI-6131 (Kg/cm2)", 
-        "J-6104 PI-6138 (Kg/cm2)", 
-        "PI-6172 (kg/cm2)", 
+    "Ejector ": [
+        "J-6101 PI-6126 A (Kg/cm2) [ALL]", 
+        "J-6101 PI-6127 B (Kg/cm2) [ALL]", 
+        "J-6102 PI-6128 A (Kg/cm2) [ALL]", 
+        "J-6102 PI-6129 B (Kg/cm2) [ALL]", 
+        "J-6104 PI-6131 (Kg/cm2) [ALL]", 
+        "J-6104 PI-6138 (Kg/cm2) [ALL]", 
+        "PI-6172 (kg/cm2) [ALL]", 
         "LPS Extrac 30-TP-6101 TI-6155 (°C)", 
         "from U-6102 TI-6104 (°C)"
     ],
-    "Generator Cooling Water": [
+    "Generator Cooling Water [OPERASI]": [
         "Air Cooler PI-6124 A (Kg/cm2)", 
         "Air Cooler PI-6124 B (Kg/cm2)", 
         "Air Cooler TI-6113 A (°C)", 
@@ -131,7 +160,7 @@ const AREAS = {
         "Air Cooler TI-6114 A (°C)", 
         "Air Cooler TI-6114 B (°C)"
     ],
-    "Condenser Cooling Water": [
+    "Condenser Cooling Water [OPERASI]": [
         "Condenser PI-6135 A (Kg/cm2)", 
         "Condenser PI-6135 B (Kg/cm2)", 
         "Condenser TI-6118 A (°C)", 
@@ -141,7 +170,7 @@ const AREAS = {
         "Condenser TI-6119 A (°C)", 
         "Condenser TI-6119 B (°C)"
     ],
-    "BFW System": [
+    "BFW System [ALL]": [
         "Condensate Tank TK-6201 (%)", 
         "Condensate Tank TI-6216 (°C)", 
         "P-6202 (A/B)", 
@@ -165,15 +194,15 @@ const AREAS = {
         "Condensate Drum 30-D-6201 TI-6215 (°C)"
     ],
     "Chemical Dosing": [
-        "30-TK-6205 LI-6204 (%)", 
+        "30-TK-6205 LI-6204 (%) [ALL]", 
         "30-TK-6205 30-P-6205 (A/B)", 
         "30-TK-6205 Disch (kg/cm2)", 
         "30-TK-6205 Stroke (%)", 
-        "30-TK-6206 LI-6206 (%)", 
+        "30-TK-6206 LI-6206 (%) [ALL]", 
         "30-TK-6206 30-P-6206 (A/B)", 
         "30-TK-6206 Disch (kg/cm2)", 
         "30-TK-6206 Stroke (%)", 
-        "30-TK-6207 LI-6208 (%)", 
+        "30-TK-6207 LI-6208 (%) [ALL]", 
         "30-TK-6207 30-P-6207 (A/B)", 
         "30-TK-6207 Disch (kg/cm2)", 
         "30-TK-6207 Stroke (%)"
@@ -183,58 +212,58 @@ const AREAS = {
 // Struktur Area CT Logsheet
 const AREAS_CT = {
     "BASIN SA": [
-        "D-6511 LEVEL BASIN (Meter)",
-        "D-6511 BLOWDOWN (%)",
-        "D-6511 PH BASIN", 
-        "D-6511 TRASSAR (A/M)", 
-        "TK-6511 LEVEL ACID (%)", 
-        "FIL-6511 (A/B)", 
-        "30-P-6511 A PRESS (kg/cm2)", 
-        "30-P-6511 B PRESS (kg/cm2)", 
-        "30-P-6511 C PRESS (kg/cm2)", 
+        "D-6511 LEVEL BASIN (Meter) [ALL]",
+        "D-6511 BLOWDOWN (%) [ALL]",
+        "D-6511 PH BASIN [ALL]", 
+        "D-6511 TRASSAR (A/M) [ALL]", 
+        "TK-6511 LEVEL ACID (%) [ALL]", 
+        "FIL-6511 (A/B) [ALL]", 
+        "30-P-6511 A PRESS (kg/cm2) [ALL]", 
+        "30-P-6511 B PRESS (kg/cm2) [ALL]", 
+        "30-P-6511 C PRESS (kg/cm2) [ALL]", 
         "MT-6511 A (RUN/STOP)", 
         "MT-6511 B (RUN/STOP)", 
         "MT-6511 C (RUN/STOP)", 
         "MT-6511 D (RUN/STOP)"
     ], 
     "BASIN SU": [
-        "D-6521 LEVEL BASIN (Meter)",
-        "D-6521 BLOWDOWN (%)",
-        "D-6521 PH BASIN", 
-        "D-6521 TRASSAR (A/M)", 
-        "TK-6521 LEVEL ACID (%)", 
+        "D-6521 LEVEL BASIN (Meter) [ALL]",
+        "D-6521 BLOWDOWN (%) [ALL]",
+        "D-6521 PH BASIN [ALL]", 
+        "D-6521 TRASSAR (A/M) [ALL]", 
+        "TK-6521 LEVEL ACID (%) [ALL]", 
         "FIL-6521 (A/B)", 
-        "30-P-6521 A PRESS (kg/cm2)", 
-        "30-P-6521 B PRESS (kg/cm2)", 
-        "30-P-6521 C PRESS (kg/cm2)", 
+        "30-P-6521 A PRESS (kg/cm2) [ALL]", 
+        "30-P-6521 B PRESS (kg/cm2) [ALL]", 
+        "30-P-6521 C PRESS (kg/cm2) [ALL]", 
         "MT-6521 A (RUN/STOP)", 
         "MT-6521 B (RUN/STOP)", 
         "MT-6521 C (RUN/STOP)", 
         "MT-6521 D (RUN/STOP)"
     ],
-   "COMPRESSOR": [
+   "COMPRESSOR [ALL]": [
                   "C-6701 A (RUN/STOP)",
                   "C-6701 A PRESSURE (kg/cm2)",
-                  "C-6701 A TEMP (°C)",
-                  "C-6701 A FLOW (m3/h)",
+                  "C-6701 A TEMP (°C)[LAPORAN]",
+                  "C-6701 A FLOW (m3/h)[LAPORAN]",
                   "C-6701 B (RUN/STOP)",
                   "C-6701 B PRESSURE (kg/cm2)",
-                  "C-6701 B TEMP (°C)",
-                  "C-6701 B FLOW (m3/h)",
+                  "C-6701 B TEMP (°C)[LAPORAN]",
+                  "C-6701 B FLOW (m3/h)[LAPORAN]",
                   "C-6702 A (RUN/STOP)",
                   "C-6702 A PRESSURE (kg/cm2)",
-                  "C-6702 A TEMP(°C)",
-                  "C-6702 A FLOW (m3/h)",
+                  "C-6702 A TEMP(°C)[LAPORAN]",
+                  "C-6702 A FLOW (m3/h)[LAPORAN]",
                   "C-6702 B (RUN/STOP)", 
                   "C-6702 B PRESSURE (kg/cm2)",
-                  "C-6702 B TEMP (°C)",
-                  "C-6702 B FLOW (m3/h)"
+                  "C-6702 B TEMP (°C)[LAPORAN]",
+                  "C-6702 B FLOW (m3/h)[LAPORAN]"
       ],
-   "OLI GEARBOX SA": ["MT-6511 A (Cm)",
+   "OLI GEARBOX SA [LAPORAN][ALL]": ["MT-6511 A (Cm)",
                       "MT-6511 B (Cm)", 
                       "MT-6511 C (Cm)", 
                       "MT-6511 D (Cm)"],
-   "OLI GEARBOX SU": ["MT-6521 A (Cm)",
+   "OLI GEARBOX SU [ALL][LAPORAN]": ["MT-6521 A (Cm)",
                       "MT-6521 B (Cm)",
                       "MT-6521 C (Cm)",
                       "MT-6521 D (Cm)"]
@@ -869,7 +898,8 @@ const LOGSHEET_CONFIG = {
         draftKey: 'draft_turbine',
         offlineKey: 'offline_turbine',
         photoKey: 'photos_turbine',
-        themeColor: '#3b82f6'
+        themeColor: '#3b82f6',
+        spreadsheetId: '1505BXCba8jQUynCvCtDpuvMveiez_RpJpYfM3LgHFn0'
     },
     'CT': {
         title: 'Logsheet Cooling Tower',
@@ -879,7 +909,8 @@ const LOGSHEET_CONFIG = {
         offlineKey: 'offline_ct',
         photoKey: 'photos_ct',
         submitType: 'LOGSHEET_CT',
-        themeColor: '#06b6d4'
+        themeColor: '#06b6d4',
+        spreadsheetId: '1thBTCwTqK0Ip2_nmV9C2Cfa1iX0yoimLN5yQcNOshOU'
     },
     '1300': {
         title: 'Logsheet Area 1300',
@@ -889,7 +920,8 @@ const LOGSHEET_CONFIG = {
         offlineKey: 'offline_1300',
         photoKey: 'photos_1300',
         submitType: 'LOGSHEET_1300',
-        themeColor: '#8b5cf6'
+        themeColor: '#8b5cf6',
+        spreadsheetId: '1h8MMCrye3iH4xvsFgkWk3vGYOa4rSpeGUGpe_C0VcNs'
     },
     '1100_1200': {
         title: 'Logsheet Area 1100/1200',
@@ -899,7 +931,8 @@ const LOGSHEET_CONFIG = {
         offlineKey: 'offline_1100',
         photoKey: 'photos_1100',
         submitType: 'LOGSHEET_1100_1200',
-        themeColor: '#eab308'
+        themeColor: '#eab308',
+        spreadsheetId: '180JCPJ9zp-KJkUaCwVfOCBn4cBvvlG9aMd_wBvXawLQ'
     },
     '1000': {
         title: 'Logsheet Area 1000',
@@ -909,7 +942,8 @@ const LOGSHEET_CONFIG = {
         offlineKey: 'offline_1000',
         photoKey: 'photos_1000',
         submitType: 'LOGSHEET_1000',
-        themeColor: '#ef4444'
+        themeColor: '#ef4444',
+        spreadsheetId: '1YrgyD92z8z8yba1rKePH0UNa4hu03eDITwFdDp-J0QY'
     },
     'PANEL_STG': {
         title: 'Logsheet Panel STG 17.5 MW',
@@ -919,7 +953,8 @@ const LOGSHEET_CONFIG = {
         photoKey: 'photos_panel_stg',
         themeColor: '#1d6be8',
         areas: AREAS_PANEL_STG175,
-        groups: GROUPS_PANEL_STG175
+        groups: GROUPS_PANEL_STG175,
+        spreadsheetId: '1pp2GdxebsN5Ta2FpBsW-CSwr591BwN5GrR_jjbIKEmU'
     },
     'PANEL_ASAM_SULFAT': {
         title: 'Panel Asam Sulfat',
@@ -929,7 +964,8 @@ const LOGSHEET_CONFIG = {
         photoKey: 'photos_panel_asam_sulfat',
         themeColor: '#eab308',
         areas: AREAS_PANEL_ASAM_SULFAT,
-        groups: GROUPS_PANEL_ASAM_SULFAT
+        groups: GROUPS_PANEL_ASAM_SULFAT,
+        spreadsheetId: '1_1Hak9fgLcGlENwDL40IvQ_qeKxPodl8irLrmjUSiPs'
     },
     'BALANCING': {
         title: 'Balancing Power & Steam',
@@ -937,12 +973,14 @@ const LOGSHEET_CONFIG = {
         draftKey: 'draft_balancing',
         offlineKey: 'offline_balancing',
         photoKey: 'photos_balancing',
-        themeColor: '#10b981'
+        themeColor: '#10b981',
+        spreadsheetId: '1pp2GdxebsN5Ta2FpBsW-CSwr591BwN5GrR_jjbIKEmU'
     }
 };
 // ============================================
 // 4. TPM CONFIG MASTER (STANDALONE)
 // ============================================
+const TPM_SPREADSHEET_ID = '14PQJVmj_-lnTJHeg7mtCD9CIR1CyiRRoaOJwsoVyjqo';
 const TPM_CONFIG_MASTER = {
     'SULFAT': [
         { name: "AREA 1100 / 1200", icon: "🏭", color: "#eab308" },

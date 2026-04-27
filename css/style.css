@@ -8,7 +8,7 @@
    ============================================ */
 :root {
     /* Primary Colors - Modern Blue Gradient */
-    --primary: #3b82f6;
+    --primary: var(--primary-color); /* 👈 INI KUNCINYA! NYAMBUNG KE JS! */
     --primary-light: #60a5fa;
     --primary-dark: #2563eb;
     --primary-glow: rgba(59, 130, 246, 0.3);
@@ -179,7 +179,7 @@ input, textarea, select {
 }
 
 .glass-header {
-    background: linear-gradient(180deg, rgba(17, 24, 39, 0.95) 0%, rgba(17, 24, 39, 0.8) 100%);
+    background: var(--header-bg); /* 👈 Warna ngikutin unit */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
@@ -549,7 +549,7 @@ input, textarea, select {
 }
 .btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: 0.5; pointer-events: none; }
-.btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; box-shadow: 0 4px 16px var(--primary-glow); }
+.btn-primary { background: var(--primary-color); color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .btn-primary:hover { box-shadow: 0 6px 24px var(--primary-glow); transform: translateY(-2px); }
 .btn-secondary { background: rgba(30, 41, 59, 0.8); color: var(--text-secondary); border: 1px solid var(--border); }
 .btn-secondary:hover { background: var(--surface-hover); border-color: var(--border-hover); }
@@ -576,28 +576,120 @@ input, textarea, select {
    7. SCREENS & MODULES
    ============================================ */
 
-/* 7.1. Login Screen */
-.login-container { min-height: 100vh; display: flex; flex-direction: column; padding: var(--lg); padding-top: calc(var(--xxl) + var(--safe-top)); position: relative; }
+/* ============================================
+   7.1. Login Screen (Premium Glassmorphism)
+   ============================================ */
+.login-container { min-height: 100vh; display: flex; flex-direction: column; padding: var(--lg); padding-top: calc(var(--xxl) + var(--safe-top)); position: relative; overflow: hidden; }
+
+/* Animasi Masuk (Stacking Fade-Up) */
+#loginScreen .login-header { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+#loginScreen .login-form { opacity: 0; animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards; }
+#loginScreen .login-footer { opacity: 0; animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards; }
+
 .login-header { text-align: center; margin-bottom: var(--xxl); position: relative; z-index: 1; }
-.logo-container { width: 120px; height: 120px; margin: 0 auto var(--lg); position: relative; }
-.logo-container::before { content: ''; position: absolute; inset: -8px; border-radius: 28px; background: linear-gradient(135deg, var(--primary), var(--info), var(--success)); opacity: 0.3; filter: blur(15px); animation: pulse 3s ease-in-out infinite; }
-.logo-container.small { width: 80px; height: 80px; }
-.logo-container img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.3)); }
-.logo-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: var(--radius-xl); color: white; position: relative; z-index: 1; box-shadow: var(--shadow-glow); }
-.logo-container.animated { animation: float 4s ease-in-out infinite; }
-.app-title { font-size: 1.75rem; font-weight: 800; margin-bottom: var(--xs); background: linear-gradient(135deg, var(--text) 0%, var(--primary-light) 50%, var(--info-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+/* ============================================
+   STYLING LOGO PREMIUM (Dark Glass Pedestal & Glow)
+   ============================================ */
+.logo-container { 
+    width: 140px; 
+    height: 140px; 
+    margin: 0 auto 32px; /* Jarak ke bawah lebih lega */
+    position: relative; 
+    
+    /* 1. Background Kaca Gelap Elegan (Menyatu dengan tema) */
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    
+    /* 2. Efek Pantulan Cahaya di Atas Kaca (Bevel Effect) */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    
+    border-radius: 36px; /* Lengkungan modern (Squircle) yang lebih halus */
+    padding: 24px; /* Ruang bernapas logo lebih luas agar tidak sesak */
+    
+    /* 3. Bayangan Dalam (Inner Glow) dan Luar (Drop Shadow) */
+    box-shadow: 
+        inset 0 4px 20px rgba(255, 255, 255, 0.03), 
+        0 25px 50px -12px rgba(0, 0, 0, 0.7); 
+        
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* Cahaya Pendar (Aura) di belakang kotak logo */
+.logo-container::before { 
+    content: ''; 
+    position: absolute; 
+    inset: -4px; 
+    border-radius: 40px; 
+    /* Mengikuti warna dominan tema unit otomatis */
+    background: linear-gradient(135deg, var(--primary-light, #60a5fa), var(--primary-dark, #2563eb)); 
+    opacity: 0.5; 
+    filter: blur(25px); 
+    z-index: -1; 
+    animation: pulseGlow 4s ease-in-out infinite alternate; 
+}
+
+.logo-container.small { width: 80px; height: 80px; border-radius: 20px; padding: 12px; margin: 0 auto var(--lg); }
+.logo-container.small::before { border-radius: 24px; filter: blur(14px); }
+
+/* Gambar Logo 3D Effect */
+.logo-container img { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: contain; 
+    /* Bayangan tajam agar logo terlihat pop-out/3D */
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.6)); 
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Efek sentuhan responsif */
+.logo-container:hover img { 
+    transform: scale(1.15) translateY(-4px); 
+}
+
+.logo-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; background: transparent; color: white; }
+
+/* Animasi Mengambang (Floating) yang lebih kalem */
+.logo-container.animated { animation: floatLogo 5s ease-in-out infinite; }
+
+/* --- KEYFRAMES --- */
+@keyframes floatLogo { 
+    0%, 100% { transform: translateY(0); } 
+    50% { transform: translateY(-10px); } 
+}
+
+@keyframes pulseGlow { 
+    0% { opacity: 0.3; filter: blur(20px); transform: scale(0.98); } 
+    100% { opacity: 0.7; filter: blur(35px); transform: scale(1.05); } 
+}
+/* Judul Gradient Premium */
+.app-title { font-size: 1.75rem; font-weight: 900; margin-bottom: 4px; background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3)); }
 .app-subtitle { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
-.login-form { padding: var(--xxl); border-radius: var(--radius-xl); margin-bottom: auto; background: linear-gradient(145deg, rgba(30, 41, 59, 0.6) 0%, rgba(17, 24, 39, 0.8) 100%); border: 1px solid var(--border); position: relative; z-index: 1; }
+
+/* Form Kaca (Advanced Glassmorphism) */
+.login-form { padding: 32px 24px; border-radius: 28px; margin: 0 16px auto 16px; background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1); position: relative; z-index: 1; }
 .login-title { font-size: 1.375rem; font-weight: 700; margin-bottom: var(--xs); text-align: center; color: var(--text); }
 .login-subtitle { font-size: 0.9375rem; color: var(--text-muted); text-align: center; margin-bottom: var(--xl); }
 .input-group { margin-bottom: var(--lg); }
 .login-input-wrapper { position: relative; display: flex; align-items: center; }
 .login-input-icon { position: absolute; left: var(--md); color: var(--text-muted); pointer-events: none; transition: color 0.2s; }
-.login-input { width: 100%; padding: var(--md) var(--lg); padding-left: 48px; background: rgba(15, 23, 42, 0.6); border: 2px solid var(--border); border-radius: var(--radius-md); color: var(--text); font-size: 1rem; outline: none; transition: all 0.2s ease; }
-.login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-glow); }
+
+/* Input Glow Interactive */
+.login-input { width: 100%; padding: 14px 16px; padding-left: 44px; background: rgba(2, 6, 23, 0.4); border: 2px solid rgba(148, 163, 184, 0.15); border-radius: 14px; color: var(--text); font-size: 1rem; outline: none; transition: all 0.3s ease; }
+.login-input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); background: rgba(2, 6, 23, 0.7); }
 .login-input:focus + .login-input-icon, .login-input-wrapper:focus-within .login-input-icon { color: var(--primary); }
 .login-input.error { border-color: var(--danger); }
 .login-error { color: var(--danger); font-size: 0.875rem; text-align: center; margin-top: var(--sm); display: none; padding: var(--md); background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-md); border: 1px solid rgba(239, 68, 68, 0.2); }
+
+/* Tombol Login Premium (Khusus Layar Login) */
+#loginScreen .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border: none; border-radius: 14px; padding: 16px; font-size: 1.05rem; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255,255,255,0.2); transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+#loginScreen .btn-primary:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); }
+
 .login-footer { text-align: center; padding-top: var(--xl); position: relative; z-index: 1; }
 .login-footer p { font-size: 0.8125rem; color: var(--text-muted); margin-bottom: var(--sm); }
 .version-tag { display: inline-flex; align-items: center; gap: var(--xs); padding: var(--xs) var(--md); background: rgba(59, 130, 246, 0.1); color: var(--primary-light); border-radius: var(--radius-full); font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(59, 130, 246, 0.2); }
@@ -841,4 +933,234 @@ input, textarea, select {
     border: none;
     font-weight: 600;
     cursor: pointer;
+}
+/* Gaya Kartu Tugas Rutin */
+.routine-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.4s ease-in-out;
+  overflow: hidden;
+}
+
+.routine-card:active {
+  transform: scale(0.98);
+}
+
+.routine-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-text {
+  font-weight: 700;
+  color: #f8fafc;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.task-area {
+  font-size: 0.75rem;
+  color: #3b82f6; /* Warna biru muda */
+  font-weight: 600;
+}
+
+.check-icon {
+  font-size: 1.4rem;
+  opacity: 0.7;
+}
+
+/* KUNCI ANIMASI "NAIK OTOMATIS" */
+.routine-card.completed {
+  transform: translateX(100%); /* Geser jauh ke kanan */
+  opacity: 0;
+  
+  /* Menyusutkan ukuran menjadi 0 secara perlahan */
+  height: 0 !important; 
+  min-height: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  border: none !important;
+}
+/* --- UI STICKY STATUS BAR --- */
+.sticky-status-bar {
+    position: sticky;
+    top: 0;           
+    z-index: 1000;    
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    font-size: 16px;
+    border-radius: 0 0 10px 10px; 
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    transition: background-color 0.3s ease;
+}
+
+.sticky-status-bar.operasi { background-color: #27ae60; } /* Hijau */
+.sticky-status-bar.stop { background-color: #e74c3c; }    /* Merah */
+
+/* --- MODAL STATUS PABRIK PREMIUM --- */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 23, 42, 0.85); /* Efek blur gelap */
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; /* Pastikan selalu paling atas */
+}
+
+.modal-card {
+    background: #1e293b; /* Warna latar gelap elegan */
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 24px;
+    width: 90%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    color: white;
+    animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalPop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.modal-icon { font-size: 48px; margin-bottom: 12px; }
+.modal-card h3 { margin: 0 0 8px 0; font-size: 1.3rem; color: #f8fafc; font-weight: bold; }
+.modal-card p { margin: 0 0 24px 0; font-size: 0.9rem; color: #94a3b8; }
+
+.modal-buttons { display: flex; flex-direction: column; gap: 12px; }
+
+.btn-operasi, .btn-stop {
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s ease;
+}
+
+.btn-operasi {
+    background: linear-gradient(135deg, #10b981, #059669); /* Hijau */
+    color: white;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+.btn-operasi:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5); }
+
+.btn-stop {
+    background: linear-gradient(135deg, #ef4444, #dc2626); /* Merah */
+    color: white;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+}
+.btn-stop:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5); }
+/* =========================================
+   UI KARTU JOB / CHECKLIST RUTINAN PREMIUM
+   ========================================= */
+
+.premium-job-card {
+    background: rgba(30, 41, 59, 0.7); /* Biru gelap transparan */
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.premium-job-card:active {
+    transform: scale(0.98);
+}
+
+.job-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.job-title-group h3 {
+    margin: 0 0 6px 0;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #f8fafc;
+    letter-spacing: 0.5px;
+}
+
+/* Badge untuk nama Area */
+.job-area-badge {
+    display: inline-block;
+    background: rgba(56, 189, 248, 0.15); /* Biru muda transparan */
+    color: #38bdf8;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+/* KOTAK UPLOAD FOTO PREMIUM */
+.job-upload-box {
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px dashed rgba(239, 68, 68, 0.4);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.job-upload-warning {
+    color: #ef4444;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Tombol Upload Custom (Menutupi input file asli) */
+.btn-custom-upload {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    transition: all 0.2s;
+    display: inline-block;
+    text-align: center;
+}
+
+.btn-custom-upload:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+/* Sembunyikan input file bawaan browser yang jelek */
+.hidden-file-input {
+    display: none;
 }

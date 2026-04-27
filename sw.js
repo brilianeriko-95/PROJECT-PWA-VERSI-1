@@ -15,6 +15,7 @@ const ASSETS = [
     '/index.html',
     '/manifest.json',
     '/logo.png',
+    '/icons/Produksi_3B.png',
     
     // CSS Modules
     '/css/style.css',
@@ -88,42 +89,38 @@ self.addEventListener('activate', (event) => {
 });
 
 // ============================================
-// FETCH EVENT - Network First / Cache Fallback
+// FETCH EVENT - Network First (Real) / Cache Fallback
 // ============================================
 self.addEventListener('fetch', (event) => {
-    // 1. Abaikan request API ke Google Apps Script agar data selalu fresh
-    // 2. Abaikan metode selain GET (POST tidak boleh di-cache)
+    // 1. Abaikan request API ke Google Apps Script
     if (event.request.url.includes('script.google.com') || event.request.method !== 'GET') {
         return;
     }
 
     event.respondWith(
-        caches.match(event.request)
-            .then((cachedResponse) => {
-                // Gunakan cache jika ada
-                if (cachedResponse) {
-                    return cachedResponse;
-                }
-
-                // Jika tidak ada di cache, ambil dari network
-                return fetch(event.request)
-                    .then((networkResponse) => {
-                        // Cache response baru yang valid (status 200)
-                        if (networkResponse && networkResponse.status === 200) {
-                            const cacheCopy = networkResponse.clone();
-                            caches.open(CACHE_NAME).then((cache) => {
-                                cache.put(event.request, cacheCopy);
-                            });
-                        }
-                        return networkResponse;
-                    })
-                    .catch((error) => {
-                        console.error('[SW] Fetch failed:', error);
-                        // Jika offline dan membuka halaman utama, sajikan index.html
-                        if (event.request.mode === 'navigate') {
-                            return caches.match('/');
-                        }
+        fetch(event.request)
+            .then((networkResponse) => {
+                // Jika ADA INTERNET: Ambil file baru dari server, lalu simpan ke Cache
+                if (networkResponse && networkResponse.status === 200) {
+                    const cacheCopy = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, cacheCopy);
                     });
+                }
+                return networkResponse;
+            })
+            .catch(() => {
+                // Jika OFFLINE (Gagal Fetch): Baru ambil file lama dari Cache
+                console.log('[SW] Sedang offline, menggunakan cache untuk:', event.request.url);
+                return caches.match(event.request).then((cachedResponse) => {
+                    if (cachedResponse) {
+                        return cachedResponse;
+                    }
+                    // Jika halaman tidak ada di cache sama sekali, arahkan ke layar utama
+                    if (event.request.mode === 'navigate') {
+                        return caches.match('/index.html');
+                    }
+                });
             })
     );
 });

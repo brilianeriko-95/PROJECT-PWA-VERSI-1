@@ -189,121 +189,7 @@ function hideLoader() {
 }
 
 // ============================================
-// 3. JOB LIST FROM SPREADSHEET
-// ============================================
-
-const JOB_SHEET_URL = 'https://script.google.com/macros/s/AKfycbzkh6ZViJMh8MJWFnunALO3QIrjqBv1ePXJ8ObW3C_HCGKl4FHX19XGvuUFc9-Fzvwz/exec';
-
-function loadTodayJobs() {
-    const jobDateEl = document.getElementById('jobDate');
-    const jobListContainer = document.getElementById('jobListContainer');
-    
-    const today = new Date();
-    if (jobDateEl) {
-        jobDateEl.textContent = today.toLocaleDateString('id-ID', { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric' 
-        });
-    }
-    
-    if (jobListContainer) {
-        jobListContainer.innerHTML = `
-            <div class="job-loading">
-                <div class="spinner"></div>
-                <span>Memuat data...</span>
-            </div>
-        `;
-    }
-    
-    fetchJobsFromSheet();
-}
-
-async function fetchJobsFromSheet() {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-    try {
-        const targetSheet = encodeURIComponent("joblist hari ini");
-        const response = await fetch(`${JOB_SHEET_URL}?action=getJobs&date=today&sheetName=${targetSheet}`, {
-            method: 'GET',
-            mode: 'cors',
-            signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) throw new Error('Network error');
-        
-        const data = await response.json();
-        
-        if (data.success && data.jobs && data.jobs.length > 0) {
-            renderJobList(data.jobs);
-        } else {
-            renderEmptyJobList();
-        }
-    } catch (error) {
-        console.log('Fetch jobs error/timeout, memuat sample:', error);
-        clearTimeout(timeoutId);
-        renderSampleJobs();
-    }
-}
-
-function renderJobList(jobs) {
-    const jobListContainer = document.getElementById('jobListContainer');
-    if (!jobListContainer) return;
-    
-    let html = '';
-    jobs.forEach(job => {
-        const statusClass = job.status === 'completed' ? 'completed' : 'pending';
-        html += `
-            <div class="job-item">
-                <div class="job-item-status ${statusClass}"></div>
-                <span class="job-item-text">${job.description || job.name}</span>
-            </div>
-        `;
-    });
-    
-    jobListContainer.innerHTML = html;
-}
-
-function renderEmptyJobList() {
-    const jobListContainer = document.getElementById('jobListContainer');
-    if (!jobListContainer) return;
-    
-    jobListContainer.innerHTML = `
-        <div class="job-empty">
-            <div class="job-empty-icon">📋</div>
-            <p>Tidak ada job untuk hari ini</p>
-        </div>
-    `;
-}
-
-function renderSampleJobs() {
-    const jobListContainer = document.getElementById('jobListContainer');
-    if (!jobListContainer) return;
-    
-    const sampleJobs = [
-        { description: 'Input Logsheet Shift 3', status: 'pending' },
-        { description: 'TPM Area Turbin', status: 'completed' },
-        { description: 'Update Balancing Power', status: 'pending' }
-    ];
-    
-    let html = '';
-    sampleJobs.forEach(job => {
-        const statusClass = job.status === 'completed' ? 'completed' : 'pending';
-        html += `
-            <div class="job-item">
-                <div class="job-item-status ${statusClass}"></div>
-                <span class="job-item-text">${job.description}</span>
-            </div>
-        `;
-    });
-    
-    jobListContainer.innerHTML = html;
-}
-// ============================================
-// 4. UI & NAVIGATION HELPERS
+// 3. UI & NAVIGATION HELPERS
 // ============================================
 
 // State Global untuk menandai posisi operator
@@ -376,7 +262,8 @@ function navigateTo(screenId) {
 /**
  * PINTU MASUK UNIVERSAL (Gatekeeper Unit)
  */
-function openLogsheetMenu(menuKey) {
+// 👇 WAJIB tambahkan kata "async" di depan function
+async function openLogsheetMenu(menuKey) { 
     const config = LOGSHEET_CONFIG[menuKey];
     
     // 1. Validasi Konfigurasi
@@ -396,19 +283,25 @@ function openLogsheetMenu(menuKey) {
             initBalancingScreen();
         }
     } else {
-        // PENTING: Panggil openUniversalLogsheet agar logsheet.js bisa mengecek 
-        // apakah config unit ini memiliki properti 'groups' (Panel) atau tidak (Wizard).
+        // 👇 1. PANGGIL MODAL CUSTOM & TUNGGU JAWABAN (DULU PAKAI confirm) 👇
+        // Fungsi askPabrikStatus() akan memunculkan Pop-up yang kita buat di index.html
+        const statusPabrik = await askPabrikStatus(); 
+        // Program akan "berhenti" di sini sampai operator klik OPERASI atau STOP
+        // 👆 ============================================================= 👆
+
+        // 2. PINDAH LAYAR (Setelah status dipilih)
+        navigateTo('universalAreaListScreen'); 
+
+        // 3. BARU LEMPAR STATUS KE PEMBUAT FORM
         if (typeof openUniversalLogsheet === 'function') {
-            openUniversalLogsheet(menuKey);
+            openUniversalLogsheet(menuKey, statusPabrik); 
         }
         
-        // Tarik data background secara diam-diam
         if (typeof fetchLastDataUniversal === 'function') {
             fetchLastDataUniversal(menuKey);
         }
     }
 }
-   
 // ============================================
 // 5. UI SETUP & LISTENERS
 // ============================================
@@ -526,24 +419,28 @@ window.addEventListener('appinstalled', (evt) => {
 // ============================================
 function checkOfflineData() {
     let totalOffline = 0;
-    
+   
+   // 👇 TAMBAHKAN INI: Jalankan pelunasan Laporan Akhir secara siluman 👇
+    if (navigator.onLine && typeof syncOfflineLaporanAkhir === 'function') {
+        syncOfflineLaporanAkhir();
+     }
+   // 👆 ============================================================== 👆
     // 1. SCANNING OTOMATIS: Kelilingi seluruh memori localStorage
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         
         // 2. FILTER CERDAS: Ambil hanya kunci yang mengandung kata 'offline'
-        if (key && key.toLowerCase().includes('offline')) {
+        if (key && key.toLowerCase().includes('offline') && key !== 'offline_laporan_akhir') {
             try {
                 const data = JSON.parse(localStorage.getItem(key) || '[]');
                 if (Array.isArray(data)) {
-                    totalOffline += data.length; // Tambahkan jumlah antrean dari kunci ini
+                    totalOffline += data.length; 
                 }
             } catch (e) {
                 console.warn('Gagal membaca draf otomatis untuk kunci:', key);
             }
         }
     }
-
     // 3. UPDATE UI: Tampilkan total akumulasi ke Operator
     const syncContainer = document.getElementById('offlineSyncContainer');
     const syncBadge = document.getElementById('offlineSyncBadge');
@@ -592,9 +489,9 @@ async function syncOfflineData() {
             try {
                 // A. Kirim Foto dengan Jeda Singkat (Mencegah Rate Limit)
                 for (const [photoKey, photoData] of Object.entries(photos)) {
-                    await fetch(GAS_URL, {
-                        method: 'POST', mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
+                    const responsePhoto = await fetch(GAS_URL, {
+                        method: 'POST', 
+                        // ❌ HAPUS mode: 'no-cors' dan headers Content-Type
                         body: JSON.stringify({
                             type: 'LOGSHEET_PHOTO',
                             parentType: item.type || 'LOGSHEET_GENERAL', 
@@ -603,17 +500,26 @@ async function syncOfflineData() {
                             timestamp: new Date().toISOString()
                         })
                     });
+                    
+                    // ✅ TANGKAP BALASAN SERVER
+                    const resPhoto = await responsePhoto.json();
+                    if (!resPhoto.success) throw new Error("Server menolak foto offline");
+
                     // Jeda 300ms antar foto agar server tidak overload
                     await new Promise(resolve => setTimeout(resolve, 300));
                 }
 
                 // B. Kirim Data Teks Utama
-                await fetch(GAS_URL, {
-                    method: 'POST', mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
+                const responseText = await fetch(GAS_URL, {
+                    method: 'POST', 
+                    // ❌ HAPUS mode: 'no-cors' dan headers Content-Type
                     body: JSON.stringify(item),
                     signal: currentUploadController.signal
                 });
+                
+                // ✅ TANGKAP BALASAN SERVER
+                const resText = await responseText.json();
+                if (!resText.success) throw new Error("Server menolak teks offline");
                 
                 totalSuccess++;
                 
@@ -642,12 +548,15 @@ async function syncOfflineData() {
 // ============================================
 // 7. DOM READY INITIALIZATION
 // ============================================
-
 window.addEventListener('DOMContentLoaded', () => {
     initState();
-    loadTodayJobs();
+    //loadTodayJobs();
+    if (typeof loadRoutineChecklist === 'function') {
+        loadRoutineChecklist();
+    }
     checkOfflineData();
     runStorageMaintenance();
+    fetchMasterAlat();
 
     // Deteksi jika aplikasi dibuka dari Homescreen HP (Standalone Mode)
     if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
@@ -684,7 +593,55 @@ window.addEventListener('DOMContentLoaded', () => {
             showCustomAlert('⚠️ Gunakan tombol "Kembali" di layar, jangan tombol Back HP.', 'warning');
         }
     };
-    
+
+    // ==========================================
+    // SENSOR SMART AUTO-SYNC (KEMBALI ONLINE)
+    // ==========================================
+    window.addEventListener('online', () => {
+        // 1. Cek apakah ada data offline yang mengantre
+        let totalAntrean = 0;
+        Object.keys(localStorage).forEach(key => {
+            if (key.includes('offline')) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(key) || '[]');
+                    totalAntrean += Array.isArray(data) ? data.length : 0;
+                } catch(e) {}
+            }
+        });
+
+        if (totalAntrean > 0) {
+            // 2. Cek apakah operator sedang santai di Home Screen
+            const isAtHome = document.getElementById('homeScreen')?.classList.contains('active');
+
+            if (isAtHome) {
+                // Eksekusi Auto-Sync jika di Home
+                if (typeof showTemporaryToast === 'function') {
+                    showTemporaryToast('📶 Sinyal Wi-Fi stabil terdeteksi! Memulai sinkronisasi otomatis...', 'info', 3000);
+                }
+                
+                // Jeda 3 detik (Anti-Flapping) untuk pastikan sinyal beneran kuat
+                setTimeout(() => {
+                    if (navigator.onLine && typeof syncOfflineData === 'function') {
+                        syncOfflineData(); 
+                    }
+                }, 3000);
+            } else {
+                // Cuma kasih Notif kalau operator lagi sibuk ngetik form
+                if (typeof showTemporaryToast === 'function') {
+                    showTemporaryToast('📶 Sinyal kembali! Laporan Anda siap disinkronisasi nanti.', 'success', 4000);
+                }
+                checkOfflineData(); // Update lencana angka merah
+            }
+        }
+    });
+
+    // Sensor kalau tiba-tiba offline
+    window.addEventListener('offline', () => {
+        if (typeof showTemporaryToast === 'function') {
+            showTemporaryToast('⚠️ Koneksi terputus. Anda masuk Mode Offline.', 'warning', 3000);
+        }
+    });
+   
     console.log(`${APP_NAME} v${APP_VERSION} initialized successfully`);
 });
 
@@ -765,4 +722,391 @@ function checkStorageQuota() {
             alert(`⚠️ Memori HP Penuh (${mbUsed}MB)! Segera SINKRONISASI data offline Anda.`);
         }
     }
+}
+// --- LOGIKA MODAL CUSTOM STATUS PABRIK ---
+let modalStatusResolve = null; // Variabel penyimpan jawaban
+
+function askPabrikStatus() {
+    return new Promise((resolve) => {
+        const modal = document.getElementById('modalStatusPabrik');
+        if (modal) modal.style.display = 'flex'; // Tampilkan Modal
+        modalStatusResolve = resolve; // Simpan fungsi "tunggu"
+    });
+}
+
+function resolveModalStatus(status) {
+    const modal = document.getElementById('modalStatusPabrik');
+    if (modal) modal.style.display = 'none'; // Sembunyikan Modal
+    
+    if (modalStatusResolve) {
+        modalStatusResolve(status); // Kirim jawaban (OPERASI / STOP)
+        modalStatusResolve = null;
+    }
+}
+// ============================================
+// DYNAMIC THEME ENGINE (MESIN PENGGANTI BAJU)
+// ============================================
+function applyUnitTheme(deptName) {
+    // Pengaman jika lemari tema belum dimuat
+    if (typeof UNIT_THEMES === 'undefined') return; 
+
+    let unitKey = 'DEFAULT';
+    let dept = String(deptName).toUpperCase();
+
+    // 1. Deteksi Unit dari Data User
+    if (dept.includes('UTILITAS') || dept.includes('UTIL')) unitKey = 'UTILITAS';
+    else if (dept.includes('BATU BARA') || dept.includes('UBB')) unitKey = 'UBB';
+    else if (dept.includes('SULFAT') || dept.includes('SA') || dept.includes('MELTER')) unitKey = 'SA';
+
+    // 2. Ambil Baju dari Lemari (Fallback ke DEFAULT jika tidak ketemu)
+    const theme = UNIT_THEMES[unitKey] || UNIT_THEMES['DEFAULT'];
+
+    console.log(`🎨 [THEME ENGINE] Mengubah tema menjadi: ${unitKey}`);
+
+    // 3. Suntik Warna Dasar CSS (Otomatis se-aplikasi berubah!)
+    document.documentElement.style.setProperty('--primary-color', theme.color);
+    document.documentElement.style.setProperty('--header-bg', theme.bgGradient);
+    
+    // 4. Ganti Logo di Berbagai Layar
+    const homeLogo = document.getElementById('mainLogo'); 
+    if (homeLogo) {
+        homeLogo.src = theme.logo;
+        homeLogo.style.display = 'block';
+    }
+
+    const loginLogo = document.getElementById('loginLogo');
+    if (loginLogo) {
+        loginLogo.src = theme.logo;
+        loginLogo.style.display = 'block';
+    }
+
+    const spvLogo = document.getElementById('spvLogo'); // Pastikan ID ini sudah ditambahkan di HTML layar SPV
+    if (spvLogo) {
+        spvLogo.src = theme.logo;
+        spvLogo.style.display = 'block';
+    }
+
+    // 5. Ganti Judul Teks (Title) Menggunakan Konfigurasi Baru
+    // Mengubah tulisan "ASAM SULFAT 3B" di halaman login
+    const loginTitle = document.querySelector('.app-title');
+    if (loginTitle) {
+        loginTitle.textContent = theme.title;
+    }
+
+    // Mengubah tulisan "LOGSHEET DIGITAL" di halaman home
+    const homeTitle = document.querySelector('.home-title');
+    if (homeTitle) {
+        homeTitle.textContent = theme.title;
+    }
+
+    // Mengubah tulisan di Dashboard Supervisor (opsional, jika Anda menggunakan elemen ini)
+    const spvTitle = document.getElementById('spvDashboardTitle');
+    if (spvTitle) {
+        spvTitle.textContent = theme.title;
+    }
+}
+// ============================================================
+// SYSTEM SELF-HEALING: SINKRONISASI LAPORAN AKHIR TERTUNDA
+// ============================================================
+async function syncOfflineLaporanAkhir() {
+    let pendingLaporan = [];
+    try {
+        pendingLaporan = JSON.parse(localStorage.getItem('offline_laporan_akhir') || '[]');
+    } catch(e) { return; }
+
+    if (pendingLaporan.length === 0) return;
+
+    console.log(`🔄 Menemukan ${pendingLaporan.length} antrean Laporan Akhir. Mulai melunasi diam-diam...`);
+    
+    const remainingLaporan = []; 
+
+    for (const data of pendingLaporan) {
+        try {
+            const response = await fetch(GAS_URL, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            
+            const res = await response.json();
+            if (!res.success) throw new Error("Server masih menolak");
+            
+            console.log('✅ 1 Laporan Akhir tertunda berhasil disusulkan!');
+            await new Promise(resolve => setTimeout(resolve, 500)); 
+            
+        } catch (error) {
+            console.warn('⚠️ Gagal menyusulkan laporan akhir, dikembalikan ke antrean.');
+            remainingLaporan.push(data); 
+        }
+    }
+
+    // Update brankas memori HP
+    if (remainingLaporan.length > 0) {
+        localStorage.setItem('offline_laporan_akhir', JSON.stringify(remainingLaporan));
+    } else {
+        localStorage.removeItem('offline_laporan_akhir');
+    }
+}
+/* ============================================================
+   FITUR ENTERPRISE: CMMS & HISTORY ALAT (JURUS DOUBLE ENTRY)
+   ============================================================ */
+
+// 1. Tarik Data Master Alat dari Server
+async function fetchMasterAlat() {
+    try {
+        // Cek brankas lokal dulu biar offline tetap jalan
+        const localData = localStorage.getItem('master_alat');
+        if (localData) {
+            window.masterAlat = JSON.parse(localData);
+        }
+
+        if (!navigator.onLine) return; 
+
+        // Telepon server untuk daftar terbaru
+        const response = await fetch(`${GAS_URL}?action=getMasterAlat`);
+        const res = await response.json();
+        
+        if (res.success && res.data) {
+            window.masterAlat = res.data;
+            localStorage.setItem('master_alat', JSON.stringify(res.data));
+            console.log(`✅ [CMMS] Berhasil download ${res.data.length} Master Alat`);
+        }
+    } catch (error) {
+        console.warn('Gagal fetch Master Alat:', error);
+    }
+}
+
+// 2. Buka Form & Otomatis Filter Area Sesuai Unit Operator
+function openCMMSModal() {
+    const modal = document.getElementById('cmmsModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        
+        // --- LOGIKA SMART FILTER AREA ---
+        const areaSelect = document.getElementById('cmmsArea');
+        areaSelect.innerHTML = '<option value="">Pilih Area...</option>'; // Reset isi
+        
+        // Ambil unit operator yang sedang login (Ubah jadi huruf besar biar gampang dicocokkan)
+        const unitUser = (typeof currentUser !== 'undefined' && currentUser && currentUser.department) 
+                         ? currentUser.department.toUpperCase() : '';
+
+        // Master Data Area dan kepemilikan Unitnya
+        const daftarArea = [
+            { value: 'LAPANGANTURBIN', label: 'Lapangan Turbin', owner: 'UTILITAS 3B' },
+            { value: 'PANEL_STG', label: 'Panel STG', owner: 'UTILITAS 3B' },
+            { value: 'CT', label: 'Cooling Tower', owner: 'UTILITAS 3B' },
+            { value: '1000', label: 'Area 1000', owner: 'ASAM SULFAT' },
+            { value: '1100_1200', label: 'Area 1100/1200', owner: 'ASAM SULFAT' },
+            { value: '1300', label: 'Area 1300', owner: 'ASAM SULFAT' },
+            { value: 'PANEL_ASAM_SULFAT', label: 'Panel Asam Sulfat', owner: 'ASAM SULFAT' },
+            { value: 'UBB', label: 'Utilitas Batu Bara', owner: 'UBB' }
+        ];
+
+        // Suntikkan hanya area yang cocok dengan unit operator
+        daftarArea.forEach(item => {
+            // Jika dia Admin, atau nama unitnya mengandung kata kunci (misal "UTILITAS" cocok dengan "UTILITAS 3B")
+            if (unitUser.includes('ADMIN') || unitUser.includes(item.owner) || unitUser === '') {
+                const opt = document.createElement('option');
+                opt.value = item.value;
+                opt.textContent = item.label;
+                areaSelect.appendChild(opt);
+            }
+        });
+        // ---------------------------------
+        
+        // Jika dibuka dari dalam suatu logsheet area, otomatiskan dropdown areanya
+        if (window.currentActiveMenu) {
+            areaSelect.value = window.currentActiveMenu;
+        }
+        
+        filterCMMSAlat(); // Panggil filter dropdown alat
+    }
+}
+function closeCMMSModal() {
+    const modal = document.getElementById('cmmsModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        setTimeout(() => modal.style.display = 'none', 300);
+    }
+}
+
+// 3. Filter Alat Berdasarkan Area yang Dipilih
+function filterCMMSAlat() {
+    const selectedArea = document.getElementById('cmmsArea').value;
+    const alatSelect = document.getElementById('cmmsAlat');
+    
+    alatSelect.innerHTML = '<option value="">Pilih Alat...</option>';
+
+    if (!window.masterAlat || !selectedArea) return;
+
+    // Filter daftar alat yang sesuai dengan area
+    const filtered = window.masterAlat.filter(item => item.area.toUpperCase() === selectedArea.toUpperCase());
+    
+    filtered.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.namaAlat;
+        opt.textContent = item.namaAlat;
+        alatSelect.appendChild(opt);
+    });
+
+    if (filtered.length === 0) {
+        alatSelect.innerHTML = '<option value="">(Tidak ada alat di area ini)</option>';
+    }
+}
+
+// 4. JURUS DOUBLE ENTRY (Eksekusi Pengiriman)
+async function submitCMMSData() {
+    const area = document.getElementById('cmmsArea').value;
+    const alat = document.getElementById('cmmsAlat').value;
+    const tindakan = document.getElementById('cmmsTindakan').value;
+    const keterangan = document.getElementById('cmmsKeterangan').value;
+
+    if (!area || !alat || !tindakan) {
+        showCustomAlert('⚠️ Area, Alat, dan Tindakan wajib diisi!', 'error');
+        return;
+    }
+
+    const now = new Date();
+    // Hitung shift (Pagi=1, Sore=2, Malam=3)
+    const hour = now.getHours();
+    const shift = (hour >= 7 && hour < 15) ? 1 : (hour >= 15 && hour < 23) ? 2 : 3;
+    const operatorName = currentUser ? currentUser.name : 'Unknown';
+
+    // ----------------------------------------------------
+    // PAKET 1: Untuk Database CMMS Terpusat
+    // ----------------------------------------------------
+    const payloadCMMS = {
+        type: 'SUBMIT_HISTORY_ALAT',
+        Tanggal: formatDate(now),
+        Jam: formatTime(now),
+        Shift: shift,
+        Area: area,
+        Nama_Alat: alat,
+        Tindakan: tindakan,
+        Keterangan: keterangan,
+        Operator: operatorName
+    };
+
+    // ----------------------------------------------------
+    // PAKET 2: Untuk Disuntik ke Laporan Akhir (Handover WA)
+    // ----------------------------------------------------
+    let icon = '🔧';
+    if(tindakan.includes('Breakdown')) icon = '🛑';
+    else if(tindakan.includes('Oli') || tindakan.includes('Flushing')) icon = '💧';
+    else if(tindakan.includes('Rutin')) icon = '✅';
+
+    const formatKegiatan = `${icon} [${alat}] - ${tindakan}: ${keterangan}`;
+    
+    const payloadRoutine = {
+        type: 'CHECKLIST_ROUTINE',
+        targetArea: 'LOGSHEET_' + area, // Sesuaikan dengan standar Laporan Akhir
+        Operator: operatorName,
+        Jam: formatTime(now),
+        tugas: formatKegiatan,
+        isRoutine: true
+    };
+
+    const btnSubmit = document.querySelector('button[onclick="submitCMMSData()"]');
+    const originalBtnText = btnSubmit ? btnSubmit.innerHTML : 'Kirim Laporan';
+    
+    if (btnSubmit) {
+        btnSubmit.disabled = true; // Kunci tombol biar gak di-spam klik
+        btnSubmit.innerHTML = '⏳ Mengirim...';
+        btnSubmit.style.opacity = '0.7';
+    }
+
+    // Munculkan notifikasi ngambang kecil
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('🔄 Memproses Data Mesin...', 'info');
+    }
+    
+    // Munculkan notifikasi ngambang kecil
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('🔄 Memproses Data Mesin...', 'info');
+    }
+
+    // 👇 ======================================================== 👇
+    // MULAI DARI SINI: GANTI BLOK TRY-CATCH-FINALLY LAMA DENGAN INI
+    // 👇 ======================================================== 👇
+
+    // 1. UI INSTAN: LANGSUNG BERSIHKAN FORM & MUNCULKAN SUKSES SEKEJAP MATA!
+    showCustomAlert('✓ Pekerjaan sedang dikirim ke server!', 'success');
+    document.getElementById('cmmsKeterangan').value = '';
+    document.getElementById('cmmsTindakan').value = '';
+    document.getElementById('cmmsAlat').value = ''; 
+    
+    // Kembalikan tombol seperti semula seketika (Biar bisa langsung nge-klik pompa lain)
+    if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalBtnText;
+        btnSubmit.style.opacity = '1';
+    }
+
+    // 2. MESIN PENGIRIMAN SILUMAN (FIRE & FORGET)
+    if (!navigator.onLine) {
+        simpanCMMSOffline(payloadCMMS, payloadRoutine);
+        return; // Berhenti di sini
+    }
+
+    // Tembakan Ganda (Barengan) di Latar Belakang
+    Promise.all([
+        fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadCMMS) }).then(r => r.json()),
+        fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadRoutine) }).then(r => r.json())
+    ])
+    .then(([res1, res2]) => {
+        if (!res1.success || !res2.success) throw new Error("Server menolak data");
+        console.log("✅ Upload CMMS Siluman Berhasil!");
+        
+        // 👇 TAMBAHKAN 3 BARIS INI AGAR TOAST HIJAU MUNCUL 👇
+        if (typeof showTemporaryToast === 'function') {
+            showTemporaryToast('✅ History Alat & Rutinan sukses mendarat!', 'success');
+        }
+        // 👆 ============================================== 👆
+    })
+    .catch(err => {
+        console.warn("⚠️ Sinyal putus saat proses siluman, dialihkan ke Offline.", err);
+        simpanCMMSOffline(payloadCMMS, payloadRoutine);
+    });
+}
+
+// 👇 TAMBAHKAN FUNGSI BANTUAN INI PERSIS DI BAWAH FUNGSI submitCMMSData() 👇
+function simpanCMMSOffline(payloadCMMS, payloadRoutine) {
+    // Simpan CMMS ke brankas offline
+    let queueCMMS = JSON.parse(localStorage.getItem('offline_cmms') || '[]');
+    queueCMMS.push(payloadCMMS);
+    localStorage.setItem('offline_cmms', JSON.stringify(queueCMMS));
+    
+    // Simpan Rutinan ke brankas offline laporan akhir
+    let queueRoutine = JSON.parse(localStorage.getItem('offline_laporan_akhir') || '[]');
+    queueRoutine.push(payloadRoutine);
+    localStorage.setItem('offline_laporan_akhir', JSON.stringify(queueRoutine));
+
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('Sinyal lemah! Data diamankan di antrean offline.', 'warning', 4000);
+    } else {
+        showCustomAlert('Sinyal lemah! Data disimpan offline.', 'warning');
+    }
+    
+    if (typeof checkOfflineData === 'function') checkOfflineData(); 
+}
+// ==========================================
+// HELPER FORMAT WAKTU (FRONTEND)
+// ==========================================
+
+function formatDate(date) {
+    // Menghasilkan: "Kamis, 24 April 2026"
+    return date.toLocaleDateString('id-ID', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+    });
+}
+
+function formatTime(date) {
+    // Menghasilkan: "14:30" atau "08:15"
+    return date.toLocaleTimeString('id-ID', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+    });
 }

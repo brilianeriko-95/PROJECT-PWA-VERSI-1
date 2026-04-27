@@ -286,11 +286,18 @@ function navigateTo(screenId) {
             const userEl = document.getElementById('logsheetSelectUser');
             if (userEl) userEl.textContent = currentUser.name || currentUser.username;
         }
-    } else {
+
+        // 👇 PEMANGGILAN CHECKLIST RUTIN 👇
+        if (screenId === 'homeScreen') {
+            if (typeof loadRoutineChecklist === 'function') {
+                loadRoutineChecklist();
+            }
+        }
+        
+    } else { // <--- Pastikan else langsung menyambung dengan penutup blok if(targetScreen)
         console.error(`Layar dengan ID "${screenId}" tidak ditemukan!`);
     }
 }
-
 // ============================================
 // 6. SMART SHIFT DETECTOR (ROSTER 28 HARI)
 // ============================================

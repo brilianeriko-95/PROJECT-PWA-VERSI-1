@@ -214,7 +214,7 @@ function handleTPMPhoto(event) {
 }
 
 // ============================================
-// 3. SUBMIT DATA TO SERVER (ANTI-CRASH)
+// 3. SUBMIT DATA TO SERVER (FIRE & FORGET SAKTI)
 // ============================================
 
 async function submitTPMData() {
@@ -232,8 +232,12 @@ async function submitTPMData() {
         return;
     }
     
-    const progress = showUploadProgress('Mengupload TPM...');
+    // Tampilkan notifikasi kecil TANPA memblokir layar
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('✅ Menyiapkan Laporan TPM...', 'info');
+    }
     
+    // 1. Bungkus datanya
     const tpmData = {
         type: 'TPM',
         area: activeTPMArea,
@@ -243,30 +247,38 @@ async function submitTPMData() {
         photo: currentTPMPhoto, 
         user: currentUser?.name || 'Unknown',
         unit: currentUser?.department || 'UNIT_UNKNOWN',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        targetFileId: TPM_SPREADSHEET_ID
     };
     
-    try {
-        const response = await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(tpmData)
-        });
+    // 👇 2. SULAP INSTAN: BERSIHKAN & PINDAH LAYAR DETIK INI JUGA! 👇
+    currentTPMPhoto = null;
+    currentTPMStatus = '';
+    resetTPMForm();
+    navigateTo('tpmScreen'); // Langsung lempar operator balik ke menu utama TPM!
+    
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('☁️ TPM dikirim di latar belakang...', 'success');
+    }
+    
+    // 👇 3. MESIN SILUMAN LATAR BELAKANG (Tanpa 'await') 👇
+    fetch(GAS_URL, {
+        method: 'POST',
+        body: JSON.stringify(tpmData)
+    })
+    .then(response => response.json())
+    .then(res => {
+        if (!res.success) throw new Error("Server menolak data");
+        console.log('✅ Background upload TPM sukses mendarat!');
         
-        progress.complete();
-        showCustomAlert('✓ Data TPM berhasil disimpan!', 'success');
-        
-        currentTPMPhoto = null;
-        currentTPMStatus = '';
-        setTimeout(() => navigateTo('tpmScreen'), 1500);
-        
-    } catch (error) {
-        console.error('TPM Submit Error:', error);
-        progress.error();
-
-        const offlineData = { ...tpmData };
-        delete offlineData.photo; 
+        // 👇 NOTIFIKASI HIJAU SUSULAN SUDAH DITAMBAHKAN DI SINI 👇
+        if (typeof showTemporaryToast === 'function') {
+            showTemporaryToast('✅ Data TPM & Foto sukses mendarat!', 'success');
+        }
+        // 👆 ================================================== 👆
+    })
+    .catch(error => {
+        console.warn('⚠️ Gagal kirim TPM (Sinyal Lemah):', error);
 
         const offlineKey = 'offline_tpm';
         let queue = [];
@@ -274,24 +286,22 @@ async function submitTPMData() {
             queue = JSON.parse(localStorage.getItem(offlineKey) || '[]');
         } catch(e) { queue = []; }
 
-        queue.push({
-            ...offlineData, 
-            photos: { "TPM_PHOTO": currentTPMPhoto } 
-        });
+        // PERBAIKAN: Masukkan paket data UTUH tanpa dipisah/dihapus fotonya
+        queue.push(tpmData);
 
-        // 👇 PENGAMAN STORAGE: Cegah Crash kalau memori Offline penuh 👇
         try {
             localStorage.setItem(offlineKey, JSON.stringify(queue));
-            checkOfflineData(); 
-            showCustomAlert('Sinyal lemah! Laporan TPM disimpan offline.', 'warning');
-            currentTPMPhoto = null;
-            currentTPMStatus = '';
-            setTimeout(() => navigateTo('tpmScreen'), 1500);
+            if (typeof checkOfflineData === 'function') checkOfflineData(); 
+            if (typeof showTemporaryToast === 'function') {
+                showTemporaryToast('📶 Sinyal hilang. TPM masuk antrean Offline.', 'warning', 4000);
+            }
         } catch (storageError) {
             console.error("Gagal simpan offline:", storageError);
-            queue.pop(); // Batalkan data terakhir
-            localStorage.setItem(offlineKey, JSON.stringify(queue)); // Kembalikan ke state awal
-            showCustomAlert('MEMORI HP PENUH! Tidak bisa menyimpan TPM offline. Cari sinyal Wi-Fi untuk mengirim data!', 'error');
+            queue.pop(); 
+            localStorage.setItem(offlineKey, JSON.stringify(queue)); 
+            if (typeof showCustomAlert === 'function') {
+                showCustomAlert('MEMORI HP PENUH! TPM gagal tersimpan.', 'error');
+            }
         }
-    }
+    });
 }
