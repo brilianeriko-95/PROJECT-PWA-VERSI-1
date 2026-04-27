@@ -1006,8 +1006,6 @@ async function submitCMMSData() {
         isRoutine: true
     };
 
-    // const progress = showUploadProgress('Memproses Data Mesin...'); <--- MATIKAN/HAPUS INI
-    
     const btnSubmit = document.querySelector('button[onclick="submitCMMSData()"]');
     const originalBtnText = btnSubmit ? btnSubmit.innerHTML : 'Kirim Laporan';
     
@@ -1025,27 +1023,24 @@ async function submitCMMSData() {
     try {
         if (!navigator.onLine) throw new Error("Offline Mode");
 
-        // Tembakan 1: Ke CMMS
-        progress.updateText('Menyimpan ke History Alat...');
+        // Tembakan 1: Ke CMMS (HAPUS progress.updateText di sini)
         const res1 = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadCMMS) });
         const json1 = await res1.json();
         if(!json1.success) throw new Error(json1.error || "Gagal simpan CMMS");
 
-        // Tembakan 2: Ke Laporan Akhir Area Terkait
-        progress.updateText('Menyuntikkan ke Laporan Akhir...');
+        // Tembakan 2: Ke Laporan Akhir Area Terkait (HAPUS progress.updateText di sini)
         const res2 = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadRoutine) });
         
-        progress.complete();
+        // HAPUS progress.complete() di sini
         showCustomAlert('✓ Pekerjaan berhasil dicatat ganda!', 'success');
         
-        // Bersihkan form & tutup modal
+        // Bersihkan form & JANGAN tutup modal
         document.getElementById('cmmsKeterangan').value = '';
         document.getElementById('cmmsTindakan').value = '';
-        //closeCMMSModal();
+        document.getElementById('cmmsAlat').value = ''; 
 
     } catch (err) {
         console.warn("[CMMS Offline Triggered]:", err);
-        //progress.error();
         
         // Simpan CMMS ke brankas offline
         let queueCMMS = JSON.parse(localStorage.getItem('offline_cmms') || '[]');
@@ -1058,8 +1053,22 @@ async function submitCMMSData() {
         localStorage.setItem('offline_laporan_akhir', JSON.stringify(queueRoutine));
 
         showCustomAlert('Sinyal lemah! Data History & Laporan disimpan offline.', 'warning');
-        //closeCMMSModal();
+        
+        // Bersihkan form & JANGAN tutup modal
+        document.getElementById('cmmsKeterangan').value = '';
+        document.getElementById('cmmsTindakan').value = '';
+        document.getElementById('cmmsAlat').value = ''; 
+        
         checkOfflineData(); // Perbarui lencana sinkronisasi di layar
+        
+    } finally {
+        // 👇 WAJIB ADA: Kembalikan Tombol seperti semula saat sukses/gagal 👇
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = originalBtnText;
+            btnSubmit.style.opacity = '1';
+        }
+        // 👆 ============================================================= 👆
     }
 }
 // ==========================================
