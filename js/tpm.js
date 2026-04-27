@@ -262,7 +262,7 @@ async function submitTPMData() {
     }
     
     // 👇 3. MESIN SILUMAN LATAR BELAKANG (Tanpa 'await') 👇
-    fetch(GAS_URL, {
+    fetch(getGasUrl(), {
         method: 'POST',
         body: JSON.stringify(tpmData)
     })
