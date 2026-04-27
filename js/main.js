@@ -1006,7 +1006,21 @@ async function submitCMMSData() {
         isRoutine: true
     };
 
-    const progress = showUploadProgress('Memproses Data Mesin...');
+    // const progress = showUploadProgress('Memproses Data Mesin...'); <--- MATIKAN/HAPUS INI
+    
+    const btnSubmit = document.querySelector('button[onclick="submitCMMSData()"]');
+    const originalBtnText = btnSubmit ? btnSubmit.innerHTML : 'Kirim Laporan';
+    
+    if (btnSubmit) {
+        btnSubmit.disabled = true; // Kunci tombol biar gak di-spam klik
+        btnSubmit.innerHTML = '⏳ Mengirim...';
+        btnSubmit.style.opacity = '0.7';
+    }
+
+    // Munculkan notifikasi ngambang kecil
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('🔄 Memproses Data Mesin...', 'info');
+    }
     
     try {
         if (!navigator.onLine) throw new Error("Offline Mode");
