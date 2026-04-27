@@ -48,7 +48,28 @@ const UNIT_THEMES = {
 // 👆 ================================================== 👆
 
 // 2. BACKEND & USER SETUP
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyxxKWZHYlaVTKAfMlM4_dW9htqd97882WS4WJJn9mCfZ80CEjR8wvHjD-4pf-vGJ0/exec";
+const MULTI_GAS_URLS = {
+    'SA': 'https://script.google.com/macros/s/AKfycbyxxKWZHYlaVTKAfMlM4_dW9htqd97882WS4WJJn9mCfZ80CEjR8wvHjD-4pf-vGJ0/exec',
+    'UBB': 'https://script.google.com/macros/s/URL_MASTER_UBB/exec',
+    'UTILITAS': 'https://script.google.com/macros/s/AKfycbyxxKWZHYlaVTKAfMlM4_dW9htqd97882WS4WJJn9mCfZ80CEjR8wvHjD-4pf-vGJ0/exec',
+    'DEFAULT': 'https://script.google.com/macros/s/AKfycbyxxKWZHYlaVTKAfMlM4_dW9htqd97882WS4WJJn9mCfZ80CEjR8wvHjD-4pf-vGJ0/exec' // Jaga-jaga
+};
+// 👇 2. MESIN RADAR PENENTU PINTU MASUK 👇
+window.getGasUrl = function() {
+    // A. Jika user sudah login, ikuti URL yang menempel di ID Card-nya
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.gasUrl) {
+        return currentUser.gasUrl;
+    }
+
+    // B. Jika belum login (masih di layar login), baca pilihan dropdown
+    const unitDropdown = document.getElementById('loginUnitDropdown');
+    if (unitDropdown && unitDropdown.value) {
+        return MULTI_GAS_URLS[unitDropdown.value];
+    }
+
+    // C. Jika bingung, lempar ke Default
+    return MULTI_GAS_URLS['DEFAULT'];
+};
 
 const OFFLINE_USERS = {
     // Ubah ke MANAJEMEN agar Admin otomatis bisa melihat seluruh menu (SA & SU)
