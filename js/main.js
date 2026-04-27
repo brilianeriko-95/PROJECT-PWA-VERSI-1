@@ -1020,56 +1020,68 @@ async function submitCMMSData() {
         showTemporaryToast('🔄 Memproses Data Mesin...', 'info');
     }
     
-    try {
-        if (!navigator.onLine) throw new Error("Offline Mode");
-
-        // Tembakan 1: Ke CMMS (HAPUS progress.updateText di sini)
-        const res1 = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadCMMS) });
-        const json1 = await res1.json();
-        if(!json1.success) throw new Error(json1.error || "Gagal simpan CMMS");
-
-        // Tembakan 2: Ke Laporan Akhir Area Terkait (HAPUS progress.updateText di sini)
-        const res2 = await fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadRoutine) });
-        
-        // HAPUS progress.complete() di sini
-        showCustomAlert('✓ Pekerjaan berhasil dicatat ganda!', 'success');
-        
-        // Bersihkan form & JANGAN tutup modal
-        document.getElementById('cmmsKeterangan').value = '';
-        document.getElementById('cmmsTindakan').value = '';
-        document.getElementById('cmmsAlat').value = ''; 
-
-    } catch (err) {
-        console.warn("[CMMS Offline Triggered]:", err);
-        
-        // Simpan CMMS ke brankas offline
-        let queueCMMS = JSON.parse(localStorage.getItem('offline_cmms') || '[]');
-        queueCMMS.push(payloadCMMS);
-        localStorage.setItem('offline_cmms', JSON.stringify(queueCMMS));
-        
-        // Simpan Rutinan ke brankas offline laporan akhir
-        let queueRoutine = JSON.parse(localStorage.getItem('offline_laporan_akhir') || '[]');
-        queueRoutine.push(payloadRoutine);
-        localStorage.setItem('offline_laporan_akhir', JSON.stringify(queueRoutine));
-
-        showCustomAlert('Sinyal lemah! Data History & Laporan disimpan offline.', 'warning');
-        
-        // Bersihkan form & JANGAN tutup modal
-        document.getElementById('cmmsKeterangan').value = '';
-        document.getElementById('cmmsTindakan').value = '';
-        document.getElementById('cmmsAlat').value = ''; 
-        
-        checkOfflineData(); // Perbarui lencana sinkronisasi di layar
-        
-    } finally {
-        // 👇 WAJIB ADA: Kembalikan Tombol seperti semula saat sukses/gagal 👇
-        if (btnSubmit) {
-            btnSubmit.disabled = false;
-            btnSubmit.innerHTML = originalBtnText;
-            btnSubmit.style.opacity = '1';
-        }
-        // 👆 ============================================================= 👆
+    // Munculkan notifikasi ngambang kecil
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('🔄 Memproses Data Mesin...', 'info');
     }
+
+    // 👇 ======================================================== 👇
+    // MULAI DARI SINI: GANTI BLOK TRY-CATCH-FINALLY LAMA DENGAN INI
+    // 👇 ======================================================== 👇
+
+    // 1. UI INSTAN: LANGSUNG BERSIHKAN FORM & MUNCULKAN SUKSES SEKEJAP MATA!
+    showCustomAlert('✓ Pekerjaan sedang dikirim ke server!', 'success');
+    document.getElementById('cmmsKeterangan').value = '';
+    document.getElementById('cmmsTindakan').value = '';
+    document.getElementById('cmmsAlat').value = ''; 
+    
+    // Kembalikan tombol seperti semula seketika (Biar bisa langsung nge-klik pompa lain)
+    if (btnSubmit) {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = originalBtnText;
+        btnSubmit.style.opacity = '1';
+    }
+
+    // 2. MESIN PENGIRIMAN SILUMAN (FIRE & FORGET)
+    if (!navigator.onLine) {
+        simpanCMMSOffline(payloadCMMS, payloadRoutine);
+        return; // Berhenti di sini
+    }
+
+    // Tembakan Ganda (Barengan) di Latar Belakang
+    Promise.all([
+        fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadCMMS) }).then(r => r.json()),
+        fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadRoutine) }).then(r => r.json())
+    ])
+    .then(([res1, res2]) => {
+        if (!res1.success || !res2.success) throw new Error("Server menolak data");
+        console.log("✅ Upload CMMS Siluman Berhasil!");
+    })
+    .catch(err => {
+        console.warn("⚠️ Sinyal putus saat proses siluman, dialihkan ke Offline.", err);
+        simpanCMMSOffline(payloadCMMS, payloadRoutine);
+    });
+}
+
+// 👇 TAMBAHKAN FUNGSI BANTUAN INI PERSIS DI BAWAH FUNGSI submitCMMSData() 👇
+function simpanCMMSOffline(payloadCMMS, payloadRoutine) {
+    // Simpan CMMS ke brankas offline
+    let queueCMMS = JSON.parse(localStorage.getItem('offline_cmms') || '[]');
+    queueCMMS.push(payloadCMMS);
+    localStorage.setItem('offline_cmms', JSON.stringify(queueCMMS));
+    
+    // Simpan Rutinan ke brankas offline laporan akhir
+    let queueRoutine = JSON.parse(localStorage.getItem('offline_laporan_akhir') || '[]');
+    queueRoutine.push(payloadRoutine);
+    localStorage.setItem('offline_laporan_akhir', JSON.stringify(queueRoutine));
+
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('Sinyal lemah! Data diamankan di antrean offline.', 'warning', 4000);
+    } else {
+        showCustomAlert('Sinyal lemah! Data disimpan offline.', 'warning');
+    }
+    
+    if (typeof checkOfflineData === 'function') checkOfflineData(); 
 }
 // ==========================================
 // HELPER FORMAT WAKTU (FRONTEND)
