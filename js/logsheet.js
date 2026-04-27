@@ -1068,33 +1068,23 @@ function loadUnivParamPhotoForCurrentStep() {
 }
 
 /**
- * MENGIRIM DATA KE GOOGLE SHEET SECARA UNIVERSAL
+ * MENGIRIM DATA KE GOOGLE SHEET SECARA UNIVERSAL (VERSI KILAT SILUMAN)
  */
 async function submitUniversalLogsheet() {
     if (!requireAuth()) return;
     
     const config = LOGSHEET_CONFIG[activeLogsheetType];
     
-    // Bagian konfirmasi telah dihapus agar pengiriman data lebih cepat
-    
-    const progress = showUploadProgress(`Mengirim ${config.title} & Foto...`);
-    progress.updateText('Mengumpulkan data...');
-    currentUploadController = new AbortController();
-    
-    // Gabungkan parameter dari semua area (DENGAN MESIN CUCI KTP)
+    // 👇 1. KUMPULKAN DATA DENGAN MESIN CUCI REGEX 👇
     let allParameters = {};
     Object.entries(univCurrentInput).forEach(([areaNameLengkap, params]) => {
        if (areaNameLengkap === '_savedAt' || typeof params !== 'object') return;
         Object.entries(params).forEach(([paramNameLengkap, value]) => {
-            // 👇 MESIN CUCI REGEX BERKERJA DI SINI 👇
             const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
-            
-            // Masukkan nilai dengan menggunakan nama kunci yang sudah bersih
             allParameters[paramNameBersih] = value;
         });
     });
     
-    // Kumpulkan foto dari semua area (DENGAN MESIN CUCI KTP)
     let pendingPhotos = {}; 
     let totalPhotoCount = 0;
 
@@ -1102,13 +1092,10 @@ async function submitUniversalLogsheet() {
         Object.entries(areaPhotos).forEach(([paramNameLengkap, photoData]) => {
             if (photoData) {
                 totalPhotoCount++;
-                
-                // 👇 MESIN CUCI REGEX UNTUK FOTO 👇
                 const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
                 const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
 
                 if (photoData !== 'UPLOADED_BACKGROUND') {
-                    // Gunakan nama bersih untuk ID fotonya
                     pendingPhotos[`${areaNameBersih}__${paramNameBersih}`] = photoData;
                 }
             }
@@ -1121,150 +1108,115 @@ async function submitUniversalLogsheet() {
         OperatorId: currentUser ? currentUser.username : 'Unknown',
         Group: currentUser ? (currentUser.group || '-') : '-',
         StatusPabrik: window.currentStatusPabrik || 'OPERASI',
-        photoCount: totalPhotoCount, // Catat total jepretan asli
+        photoCount: totalPhotoCount, 
         targetFileId: config.spreadsheetId,
         ...allParameters
     };
+
+    // Siapkan paket komplit untuk dikirim/disimpan
+    const dataLaporanAkhir = { ...finalData, type: 'SYNC_LAPORAN_AKHIR', targetArea: config.submitType };
+    const savedOfflineData = { ...finalData, photos: pendingPhotos };
+
+    // 👇 2. UI INSTAN: 0 DETIK LOADING 👇
+    // Munculkan notifikasi sukses tanpa memblokir layar!
+    showCustomAlert('✓ Logsheet sedang dikirim di latar belakang!', 'success');
+    if (typeof showTemporaryToast === 'function') {
+        showTemporaryToast('🔄 Upload Siluman berjalan...', 'info');
+    }
     
-    // ===== UBAH BAGIAN PENGIRIMAN FOTO PARALEL =====
-    if (Object.keys(pendingPhotos).length > 0) {
-        progress.updateText(`Menyusulkan ${Object.keys(pendingPhotos).length} foto tertunda...`);
-        for (const [key, photoData] of Object.entries(pendingPhotos)) {
-            try {
-                const photoPayload = {
-                    type: 'LOGSHEET_PHOTO',
-                    parentType: config.submitType,
-                    Operator: currentUser ? currentUser.name : 'Unknown',
-                    photoKey: key,
-                    photo: photoData,
-                    timestamp: new Date().toISOString(),
-                    targetFileId: config.spreadsheetId
-                };
-                const response = await fetch(GAS_URL, {
-                    method: 'POST',
-                    // Hapus mode: 'no-cors' dan headers Content-Type
-                    body: JSON.stringify(photoPayload),
-                    signal: currentUploadController.signal
-                });
-                
-                // Baca balasan dari server
-                const res = await response.json(); 
-                if (!res.success) {
-                    throw new Error("Gagal upload foto: " + key);
-                }
+    // Langsung bersihkan RAM detik itu juga
+    univCurrentInput = {};
+    univParamPhotos = {};
+    localStorage.removeItem(config.draftKey);
+    localStorage.removeItem(config.photoKey);
+    if (window.activeDrafts) delete window.activeDrafts[activeLogsheetType];
+    if (window.activePhotos) delete window.activePhotos[activeLogsheetType];
+    
+    // Langsung pindah ke Menu Utama (Home)
+    setTimeout(() => navigateTo('homeScreen'), 500);
 
-                await new Promise(resolve => setTimeout(resolve, 200)); 
-            } catch (error) { 
-                console.warn('Error upload foto:', error);
-               throw new Error("Gagal kirim foto. Membatalkan kirim teks untuk mengamankan data ke mode Offline.");
-            }
-        }
-    } 
+    // 👇 3. MESIN TEMBAK SILUMAN BERSAMAAN (PROMISE.ALL) 👇
+    if (!navigator.onLine) {
+        simpanLogsheetOffline(config, savedOfflineData, dataLaporanAkhir);
+        return; // Berhenti kalau offline
+    }
 
-    // 2. Upload Data Teks
-    progress.updateText('Mengirim data parameter utama...');
     try {
-        const response = await fetch(GAS_URL, {
-            method: 'POST',
-            // Hapus mode: 'no-cors' dan headers Content-Type
-            body: JSON.stringify(finalData),
-            signal: currentUploadController.signal
-        });
-        
-        // Baca balasan dari server
-        const res = await response.json();
-        
-        if (!res.success) {
-            throw new Error("Server gagal memproses data teks utama");
-        }
-        // 👇 JURUS 2: TEMBAKAN SILUMAN LAPORAN AKHIR (FIRE & FORGET) DENGAN SABUK PENGAMAN 👇
-        const dataLaporanAkhir = { ...finalData, type: 'SYNC_LAPORAN_AKHIR', targetArea: config.submitType };
-        
-        fetch(GAS_URL, {
-            method: 'POST',
-            body: JSON.stringify(dataLaporanAkhir)
-        })
-        .then(r => r.json())
-        .then(res => {
-            if (!res.success) throw new Error("Server menolak Laporan Akhir");
-        })
-        .catch(e => {
-            console.warn('⚠️ Laporan Akhir tertunda/gagal:', e);
-            
-            // 1. Munculkan notifikasi jujur tanpa mengganggu layar sukses logsheet utama
-            if (typeof showTemporaryToast === 'function') {
-                showTemporaryToast('⚠️ Logsheet tersimpan, tapi Rekap Laporan tertunda (Sinyal Lemah)', 'warning', 4000);
-            }
+        let armadaTembakan = [];
 
-            // 2. Simpan diam-diam ke memori HP
-            let pendingLaporan = [];
-            try {
-                pendingLaporan = JSON.parse(localStorage.getItem('offline_laporan_akhir') || '[]');
-            } catch(err) {}
-            
-            pendingLaporan.push(dataLaporanAkhir);
-            localStorage.setItem('offline_laporan_akhir', JSON.stringify(pendingLaporan));
+        // A. Peluru Teks Utama
+        armadaTembakan.push(fetch(GAS_URL, { method: 'POST', body: JSON.stringify(finalData) }).then(r => r.json()));
+        
+        // B. Peluru Laporan Akhir (Handover)
+        armadaTembakan.push(fetch(GAS_URL, { method: 'POST', body: JSON.stringify(dataLaporanAkhir) }).then(r => r.json()));
+
+        // C. Peluru Foto-foto (Dikirim serentak)
+        Object.entries(pendingPhotos).forEach(([key, photoData]) => {
+            const photoPayload = {
+                type: 'LOGSHEET_PHOTO',
+                parentType: config.submitType,
+                Operator: currentUser ? currentUser.name : 'Unknown',
+                photoKey: key,
+                photo: photoData,
+                timestamp: new Date().toISOString(),
+                targetFileId: config.spreadsheetId
+            };
+            armadaTembakan.push(fetch(GAS_URL, { method: 'POST', body: JSON.stringify(photoPayload) }).then(r => r.json()));
         });
-        // 👆 ============================================================================ 👆
-        progress.complete();
-        showCustomAlert('✓ Data Logsheet berhasil dikirim ke server!', 'success');
+
+        // 🔥 DOR! TEMBAKKAN SEMUANYA BERSAMAAN 🔥
+        const hasilTembakan = await Promise.all(armadaTembakan);
         
-        // Bersihkan data draf
-        univCurrentInput = {};
-        univParamPhotos = {};
-        localStorage.removeItem(config.draftKey);
-        localStorage.removeItem(config.photoKey);
-         // 👇 TAMBAHKAN DUA BARIS INI: Hapus dari RAM global 👇
-         if (window.activeDrafts) delete window.activeDrafts[activeLogsheetType];
-         if (window.activePhotos) delete window.activePhotos[activeLogsheetType];
-         // 👆 ============================================== 👆
+        // Evaluasi kalau ada 1 saja peluru yang meleset/ditolak server
+        const adaYangGagal = hasilTembakan.some(res => !res.success);
+        if (adaYangGagal) throw new Error("Server menolak sebagian paket data");
         
-        // Kembali ke Menu Utama
-        setTimeout(() => navigateTo('homeScreen'), 1500);
-        
+        console.log("✅ [Logsheet] Upload Siluman Selesai 100%!");
+        if (typeof showTemporaryToast === 'function') {
+            showTemporaryToast('✅ Logsheet & Foto sukses mendarat!', 'success');
+        }
+
     } catch (error) {
-        console.error('Logsheet Submit Error:', error);
-        progress.error();
-
-        let queue = [];
-        try {
-            queue = JSON.parse(localStorage.getItem(config.offlineKey) || '[]');
-        } catch(e) { queue = []; }
-
-        // 👇 PERBAIKAN: Perlindungan Error Saat Memasukkan Data Offline Besar 👇
-        const newOfflineData = {
-            ...finalData,
-            photos: pendingPhotos 
-        };
-
-        queue.push(newOfflineData);
-
-        try {
-            localStorage.setItem(config.offlineKey, JSON.stringify(queue));
-            checkOfflineData(); 
-            showCustomAlert('Sinyal lemah! Data disimpan aman di memori HP.', 'warning');
-            
-            // Karena sukses disimpan offline, kita bisa legakan memori draf
-            univCurrentInput = {};
-            univParamPhotos = {};
-            localStorage.removeItem(config.draftKey);
-            localStorage.removeItem(config.photoKey);
-            if (window.activeDrafts) delete window.activeDrafts[activeLogsheetType];
-            if (window.activePhotos) delete window.activePhotos[activeLogsheetType];
-            setTimeout(() => navigateTo('homeScreen'), 1500);
-
-        } catch (storageError) {
-            // JIKA GAGAL DISIMPAN OFFLINE KARENA MEMORI BENAR-BENAR PENUH
-            console.error("Gagal simpan offline:", storageError);
-            queue.pop(); // Keluarkan data yang barusan dimasukkan karena bikin penuh
-            localStorage.setItem(config.offlineKey, JSON.stringify(queue)); // Kembalikan ke state awal
-            
-            showCustomAlert('MEMORI HP PENUH! Tidak bisa menyimpan offline. Hapus cache atau cari sinyal Wi-Fi untuk mengirim!', 'error');
-        }
-        // 👆 ========================================================= 👆
+        console.warn('⚠️ [Logsheet] Sinyal putus saat upload siluman. Dialihkan ke Offline.', error);
+        simpanLogsheetOffline(config, savedOfflineData, dataLaporanAkhir);
     }
 }
 
+// 👇 TAMBAHKAN FUNGSI HELPER INI PERSIS DI BAWAHNYA 👇
+// Fungsi ini memuat perlindungan "Memori HP Penuh" dari kodingan lamamu
+function simpanLogsheetOffline(config, offlineDataUtama, dataLaporanAkhir) {
+    // 1. Simpan Utama beserta Fotonya
+    let queue = [];
+    try {
+        queue = JSON.parse(localStorage.getItem(config.offlineKey) || '[]');
+    } catch(e) { queue = []; }
+
+    queue.push(offlineDataUtama);
+
+    try {
+        localStorage.setItem(config.offlineKey, JSON.stringify(queue));
+        
+        // Jika Logsheet Utama sukses tersimpan, baru kita simpan Suntikan Laporan Akhirnya
+        let pendingLaporan = JSON.parse(localStorage.getItem('offline_laporan_akhir') || '[]');
+        pendingLaporan.push(dataLaporanAkhir);
+        localStorage.setItem('offline_laporan_akhir', JSON.stringify(pendingLaporan));
+
+        if (typeof showTemporaryToast === 'function') {
+            showTemporaryToast('⚠️ Sinyal lemah! Logsheet diamankan di antrean offline.', 'warning', 4500);
+        } else {
+            showCustomAlert('Sinyal lemah! Data disimpan aman di memori HP.', 'warning');
+        }
+        
+        if (typeof checkOfflineData === 'function') checkOfflineData();
+
+    } catch(storageError) {
+        // PERLINDUNGAN JIKA MEMORI HP OPERATOR PENUH 100%
+        console.error("Gagal simpan offline:", storageError);
+        queue.pop(); // Buang data yang bikin penuh
+        localStorage.setItem(config.offlineKey, JSON.stringify(queue)); // Kembalikan ke state awal
+        showCustomAlert('MEMORI HP PENUH! Tidak bisa menyimpan offline. Hapus cache HP atau cari sinyal Wi-Fi untuk mengirim!', 'error');
+    }
+}
 // =====================================================================
 // DYNAMIC GROUPED LOGSHEET ENGINE (Untuk STG, Asam Sulfat, dll)
 // =====================================================================
