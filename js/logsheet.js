@@ -63,7 +63,7 @@ function silentFetchLastData(type) {
     
     const script = document.createElement('script');
     script.id = scriptId;
-    script.src = `${GAS_URL}?callback=${callbackName}${actionParam}`;
+    script.src = `${getGasUrl()}?callback=${callbackName}${actionParam}`;
     
     signal.addEventListener('abort', () => {
         clearTimeout(fetchTimeout);
@@ -1167,10 +1167,10 @@ async function submitUniversalLogsheet() {
         let armadaTembakan = [];
 
         // A. Peluru Teks Utama
-        armadaTembakan.push(fetch(GAS_URL, { method: 'POST', body: JSON.stringify(finalData) }).then(r => r.json()));
+        armadaTembakan.push(fetch(getGasUrl(), { method: 'POST', body: JSON.stringify(finalData) }).then(r => r.json()));
         
         // B. Peluru Laporan Akhir (Handover)
-        armadaTembakan.push(fetch(GAS_URL, { method: 'POST', body: JSON.stringify(dataLaporanAkhir) }).then(r => r.json()));
+        armadaTembakan.push(fetch(getGasUrl(), { method: 'POST', body: JSON.stringify(dataLaporanAkhir) }).then(r => r.json()));
 
         // C. Peluru Foto-foto (Dikirim serentak)
         Object.entries(pendingPhotos).forEach(([key, photoData]) => {
@@ -1183,7 +1183,7 @@ async function submitUniversalLogsheet() {
                 timestamp: new Date().toISOString(),
                 targetFileId: config.spreadsheetId
             };
-            armadaTembakan.push(fetch(GAS_URL, { method: 'POST', body: JSON.stringify(photoPayload) }).then(r => r.json()));
+            armadaTembakan.push(fetch(getGasUrl(), { method: 'POST', body: JSON.stringify(photoPayload) }).then(r => r.json()));
         });
 
         // 🔥 DOR! TEMBAKKAN SEMUANYA BERSAMAAN 🔥
@@ -1664,7 +1664,7 @@ async function uploadPhotoInBackground(areaName, paramLabel, base64Data) {
         };
 
         // Kirim ke Server GAS
-        const response = await fetch(GAS_URL, {
+        const response = await fetch(getGasUrl(), {
             method: 'POST', 
             // Hapus mode: 'no-cors' dan headers
             body: JSON.stringify(photoPayload)
@@ -1759,7 +1759,7 @@ async function loadRoutineChecklist() {
         
         console.log(`🔍 [DEBUG PWA] Mengirim Request -> Unit: ${currentUnit} | Shift: ${currentShift}`);
 
-        const url = `${GAS_URL}?action=getDailyRoutine&day=${hariIni}&unit=${encodeURIComponent(currentUnit)}&shift=${currentShift}`;
+        const url = `${getGasUrl()}?action=getDailyRoutine&day=${hariIni}&unit=${encodeURIComponent(currentUnit)}&shift=${currentShift}`;
         const response = await fetch(url);
         const result = await response.json();
         
@@ -1986,7 +1986,7 @@ async function completeTask(element, tugasName, targetArea, dropdownId, fotoId) 
 
     // 👇 4. TEMBAKAN SILUMAN KE SERVER (FIRE & FORGET) 👇
     // Perhatikan: Tidak ada kata "await" di sini!
-    fetch(GAS_URL, {
+    fetch(getGasUrl(), {
         method: 'POST',
         body: JSON.stringify(payload)
     })
