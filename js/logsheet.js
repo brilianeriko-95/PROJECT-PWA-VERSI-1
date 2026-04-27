@@ -94,7 +94,7 @@ function updateLiveLastDataUI() {
     if (lastDataElWizard && typeof activeUnivArea !== 'undefined' && typeof activeUnivFilteredParams !== 'undefined') {
         const fullLabel = activeUnivFilteredParams[activeUnivIdx];
         if (fullLabel) {
-            const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+            const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
             const nameOnly = fullLabelBersih.split(' (')[0];
             
             // PERBAIKAN: Gunakan ?? agar nilai 0 tidak dianggap kosong
@@ -249,31 +249,41 @@ function renderMenuUniversal(menuKey, statusPabrik = 'OPERASI') {
                            (jamSekarang >= 21 && jamSekarang < 23) || 
                            (jamSekarang >= 5 && jamSekarang < 7);
     Object.entries(config.areas).forEach(([areaNameLengkap, paramsList]) => {
-        
-        const isAreaOperasi = areaNameLengkap.includes('[OPERASI]');
-        const isAreaStop = areaNameLengkap.includes('[STOP]');
-        const isAreaAll = areaNameLengkap.includes('[ALL]');
+        // 👇 1. SATPAM AREA 👇
+        const isAreaOperasi = areaNameLengkap.toUpperCase().includes('[OPERASI]');
+        const isAreaStop = areaNameLengkap.toUpperCase().includes('[STOP]');
+        const isAreaAll = areaNameLengkap.toUpperCase().includes('[ALL]');
         const isAreaLaporan = areaNameLengkap.toUpperCase().includes('[LAPORAN]');
+        const isAreaJam00 = areaNameLengkap.toUpperCase().includes('[JAM00]');
+        const isAreaJam06 = areaNameLengkap.toUpperCase().includes('[JAM06]');
         
         if (statusPabrik === 'STOP' && isAreaOperasi) return; 
         if (statusPabrik === 'OPERASI' && isAreaStop) return;
         if (isAreaLaporan && !isWaktuLaporan) return;
+        if (isAreaJam00 && jamSekarang !== 0) return; // Sembunyikan area jam 00
+        if (isAreaJam06 && jamSekarang !== 6) return; // Sembunyikan area jam 06
+
+        // 👇 2. SATPAM PARAMETER 👇
         const parameterLolosFilter = paramsList.filter(fullLabel => {
-            const isParamAll = fullLabel.includes('[ALL]');
-            const isParamStop = fullLabel.includes('[STOP]');
+            const isParamAll = fullLabel.toUpperCase().includes('[ALL]');
+            const isParamStop = fullLabel.toUpperCase().includes('[STOP]');
             const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]');
+            const isParamJam00 = fullLabel.toUpperCase().includes('[JAM00]');
+            const isParamJam06 = fullLabel.toUpperCase().includes('[JAM06]');
             
             if (statusPabrik === 'OPERASI' && isParamStop) return false; 
-            
-            // 👇 2. TAMBAHKAN !isAreaAll DI BARIS INI 👇
             if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false; 
             if (isParamLaporan && !isWaktuLaporan) return false;
+            
+            if (isParamJam00 && jamSekarang !== 0) return false; // Sembunyikan alat jam 00
+            if (isParamJam06 && jamSekarang !== 6) return false; // Sembunyikan alat jam 06
+            
             return true;
         });
 
         if (parameterLolosFilter.length === 0) return; 
 
-        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
 
         let areaFilled = 0;
         const areaTotal = parameterLolosFilter.length; 
@@ -386,33 +396,45 @@ function openUnivAreaInput(areaNameLengkap) {
     const paramsListRaw = config.areas[areaNameLengkap];
 
     const statusPabrik = window.currentStatusPabrik || 'OPERASI';
-    const isAreaStop = areaNameLengkap.includes('[STOP]');
-    const isAreaAll = areaNameLengkap.includes('[ALL]');
+    const isAreaStop = areaNameLengkap.toUpperCase().includes('[STOP]');
+    const isAreaAll = areaNameLengkap.toUpperCase().includes('[ALL]');
     const isAreaLaporan = areaNameLengkap.toUpperCase().includes('[LAPORAN]');
+    const isAreaJam00 = areaNameLengkap.toUpperCase().includes('[JAM00]');
+    const isAreaJam06 = areaNameLengkap.toUpperCase().includes('[JAM06]');
 
     const jamSekarang = new Date().getHours();
     const isWaktuLaporan = (jamSekarang >= 13 && jamSekarang < 15) || 
                            (jamSekarang >= 21 && jamSekarang < 23) || 
                            (jamSekarang >= 5 && jamSekarang < 7);
 
-    // 👇 1. SATPAM LEVEL AREA (Wajib di luar filter agar fungsi berhenti total) 👇
+    // 👇 1. PENGAMAN PINTU AREA 👇
     if (isAreaLaporan && !isWaktuLaporan) {
-        if (typeof showCustomAlert === 'function') {
-            showCustomAlert('⚠️ Bukan waktu pengisian laporan!', 'error');
-        }
-        return; // Keluar dari fungsi, form isian tidak akan pernah terbuka
+        if (typeof showCustomAlert === 'function') showCustomAlert('⚠️ Bukan waktu pengisian laporan!', 'error');
+        return; 
+    }
+    if (isAreaJam00 && jamSekarang !== 0) {
+        if (typeof showCustomAlert === 'function') showCustomAlert('⚠️ Area ini khusus Pukul 00:00 - 00:59', 'error');
+        return;
+    }
+    if (isAreaJam06 && jamSekarang !== 6) {
+        if (typeof showCustomAlert === 'function') showCustomAlert('⚠️ Area ini khusus Pukul 06:00 - 06:59', 'error');
+        return;
     }
 
-    // 👇 2. SATPAM LEVEL PARAMETER (Tetap di dalam filter) 👇
+    // 👇 2. FILTER ALAT DI WIZARD 👇
     activeUnivFilteredParams = paramsListRaw.filter(fullLabel => {
-        const isParamAll = fullLabel.includes('[ALL]');
-        const isParamStop = fullLabel.includes('[STOP]');
+        const isParamAll = fullLabel.toUpperCase().includes('[ALL]');
+        const isParamStop = fullLabel.toUpperCase().includes('[STOP]');
         const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]');
+        const isParamJam00 = fullLabel.toUpperCase().includes('[JAM00]');
+        const isParamJam06 = fullLabel.toUpperCase().includes('[JAM06]');
         
         if (statusPabrik === 'OPERASI' && isParamStop) return false; 
         if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false;
-        
         if (isParamLaporan && !isWaktuLaporan) return false;
+        
+        if (isParamJam00 && jamSekarang !== 0) return false;
+        if (isParamJam06 && jamSekarang !== 6) return false;
         
         return true;
     });
@@ -433,7 +455,7 @@ function openUnivAreaInput(areaNameLengkap) {
     const currentAreaNameEl = document.getElementById('univCurrentAreaName');
     if (currentAreaNameEl) {
         // Regex Mesin Cuci Anda sudah benar di sini 👍
-        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+        const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
         currentAreaNameEl.textContent = areaNameBersih; 
         currentAreaNameEl.style.color = config.themeColor;
     }
@@ -458,7 +480,7 @@ function showUnivStep() {
     document.getElementById('univAreaProgress').textContent = `${activeUnivIdx + 1}/${total}`;
     
     // 👇 MESIN PENCUCI NAMA ALAT AGAR [ALL]/[STOP] TIDAK MUNCUL DI LAYAR 👇
-    const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+    const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
     const nameOnly = fullLabelBersih.split(' (')[0];
     const unitMatch = fullLabelBersih.match(/\(([^)]+)\)/);
     // 👆 =============================================================== 👆
@@ -695,7 +717,7 @@ function nextUnivStep() {
 
     // Eksekusi jika sudah sampai di ujung area
     if (isFinished) {
-        const areaNameBersih = activeUnivArea.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+        const areaNameBersih = activeUnivArea.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
         if (typeof showCustomAlert === 'function') showCustomAlert(`Area ${areaNameBersih} Selesai!`, 'success');
         
         setTimeout(() => {
@@ -1080,7 +1102,7 @@ async function submitUniversalLogsheet() {
     Object.entries(univCurrentInput).forEach(([areaNameLengkap, params]) => {
        if (areaNameLengkap === '_savedAt' || typeof params !== 'object') return;
         Object.entries(params).forEach(([paramNameLengkap, value]) => {
-            const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+            const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
             allParameters[paramNameBersih] = value;
         });
     });
@@ -1092,8 +1114,8 @@ async function submitUniversalLogsheet() {
         Object.entries(areaPhotos).forEach(([paramNameLengkap, photoData]) => {
             if (photoData) {
                 totalPhotoCount++;
-                const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
-                const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+                const areaNameBersih = areaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
+                const paramNameBersih = paramNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
 
                 if (photoData !== 'UPLOADED_BACKGROUND') {
                     pendingPhotos[`${areaNameBersih}__${paramNameBersih}`] = photoData;
@@ -1353,29 +1375,37 @@ function openGroupedSubAreas(groupName) {
                            (jamSekarang >= 5 && jamSekarang < 7);
 
     subAreas.forEach(subAreaNameLengkap => {
-        // SATPAM LAPIS 1: Cek Area
-        const isAreaOperasi = subAreaNameLengkap.includes('[OPERASI]');
-        const isAreaStop = subAreaNameLengkap.includes('[STOP]');
-        const isAreaAll = subAreaNameLengkap.includes('[ALL]'); // 👈 Tambahan Cek Area ALL
+        // 👇 1. PENGAMAN AREA PANEL 👇
+        const isAreaOperasi = subAreaNameLengkap.toUpperCase().includes('[OPERASI]');
+        const isAreaStop = subAreaNameLengkap.toUpperCase().includes('[STOP]');
+        const isAreaAll = subAreaNameLengkap.toUpperCase().includes('[ALL]'); 
         const isAreaLaporan = subAreaNameLengkap.toUpperCase().includes('[LAPORAN]');
+        const isAreaJam00 = subAreaNameLengkap.toUpperCase().includes('[JAM00]');
+        const isAreaJam06 = subAreaNameLengkap.toUpperCase().includes('[JAM06]');
+        
         if (isAreaLaporan && !isWaktuLaporan) return;
         if (statusPabrik === 'STOP' && isAreaOperasi) return;
         if (statusPabrik === 'OPERASI' && isAreaStop) return;
+        
+        if (isAreaJam00 && jamSekarang !== 0) return;
+        if (isAreaJam06 && jamSekarang !== 6) return;
 
         const paramsListRaw = config.areas[subAreaNameLengkap] || [];
         
-        // 👇 SATPAM LAPIS 2: Cek Alat 👇
+        // 👇 2. FILTER ALAT PANEL 👇
         const paramsList = paramsListRaw.filter(fullLabel => {
-            const isParamAll = fullLabel.includes('[ALL]');
-            const isParamStop = fullLabel.includes('[STOP]');
-            const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]'); // 👈 Deteksi Tag Laporan
+            const isParamAll = fullLabel.toUpperCase().includes('[ALL]');
+            const isParamStop = fullLabel.toUpperCase().includes('[STOP]');
+            const isParamLaporan = fullLabel.toUpperCase().includes('[LAPORAN]'); 
+            const isParamJam00 = fullLabel.toUpperCase().includes('[JAM00]');
+            const isParamJam06 = fullLabel.toUpperCase().includes('[JAM06]');
 
-            // Aturan Status Pabrik
             if (statusPabrik === 'OPERASI' && isParamStop) return false;
             if (statusPabrik === 'STOP' && !isAreaStop && !isAreaAll && !isParamAll && !isParamStop) return false;
-            
-            // 👇 Aturan Waktu Laporan 👇
             if (isParamLaporan && !isWaktuLaporan) return false;
+            
+            if (isParamJam00 && jamSekarang !== 0) return false;
+            if (isParamJam06 && jamSekarang !== 6) return false;
 
             return true;
         });
@@ -1383,7 +1413,7 @@ function openGroupedSubAreas(groupName) {
         if (paramsList.length === 0) return; // Area kosong, jangan digambar
 
         // Bersihkan Nama Area untuk Layar
-        const subAreaNameBersih = subAreaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+        const subAreaNameBersih = subAreaNameLengkap.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
 
         html += `
         <details data-area="${subAreaNameLengkap}" class="form-card glass" style="margin-bottom: 16px; padding: 16px; background: rgba(30, 41, 59, 0.7); border: 1px solid ${config.themeColor}40;">
@@ -1395,7 +1425,7 @@ function openGroupedSubAreas(groupName) {
         
         paramsList.forEach(fullLabel => {
             // Bersihkan Nama Alat untuk Layar
-            const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]/gi, '').trim();
+            const fullLabelBersih = fullLabel.replace(/\[ALL\]|\[OPERASI\]|\[STOP\]|\[LAPORAN\]|\[JAM00\]|\[JAM06\]/gi, '').trim();
             const nameOnly = fullLabelBersih.split(' (')[0];
             const unitMatch = fullLabelBersih.match(/\(([^)]+)\)/);
             const unit = unitMatch ? unitMatch[1] : '';
