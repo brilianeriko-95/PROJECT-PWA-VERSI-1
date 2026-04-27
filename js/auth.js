@@ -545,6 +545,7 @@ async function loginOperator() {
 
 function handleLoginSuccess(user, username, password, isOffline = false) {
     currentUser = user;
+    currentUser.gasUrl = getGasUrl();
     isAuthenticated = true;
     
     saveSession(user, false);
