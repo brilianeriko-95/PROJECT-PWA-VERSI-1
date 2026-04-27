@@ -270,6 +270,12 @@ async function submitTPMData() {
     .then(res => {
         if (!res.success) throw new Error("Server menolak data");
         console.log('✅ Background upload TPM sukses mendarat!');
+        
+        // 👇 NOTIFIKASI HIJAU SUSULAN SUDAH DITAMBAHKAN DI SINI 👇
+        if (typeof showTemporaryToast === 'function') {
+            showTemporaryToast('✅ Data TPM & Foto sukses mendarat!', 'success');
+        }
+        // 👆 ================================================== 👆
     })
     .catch(error => {
         console.warn('⚠️ Gagal kirim TPM (Sinyal Lemah):', error);
@@ -280,9 +286,8 @@ async function submitTPMData() {
             queue = JSON.parse(localStorage.getItem(offlineKey) || '[]');
         } catch(e) { queue = []; }
 
-        // 👇 PERBAIKAN: Masukkan paket data UTUH tanpa dipisah/dihapus fotonya 👇
+        // PERBAIKAN: Masukkan paket data UTUH tanpa dipisah/dihapus fotonya
         queue.push(tpmData);
-        // 👆 ================================================================= 👆
 
         try {
             localStorage.setItem(offlineKey, JSON.stringify(queue));
