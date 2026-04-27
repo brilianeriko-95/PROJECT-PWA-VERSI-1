@@ -237,7 +237,7 @@ function silentFetchBalancingData(isManual = false) {
     const fileId = config ? config.spreadsheetId : '';
     
     const script = document.createElement('script');
-    script.src = `${GAS_URL}?action=getLastBalancing&callback=${callbackName}&targetFileId=${fileId}&t=${Date.now()}`;
+    script.src = `${getGasUrl()}?action=getLastBalancing&callback=${callbackName}&targetFileId=${fileId}&t=${Date.now()}`;
     document.body.appendChild(script);
 }
 
@@ -526,7 +526,7 @@ async function submitBalancingData() {
         
         try {
             // --- PERBAIKAN 1: Hapus mode: 'no-cors' agar bisa membaca respon server ---
-            const response = await fetch(GAS_URL, {
+            const response = await fetch(getGasUrl(), {
                 method: 'POST',
                 body: JSON.stringify(balancingData),
                 signal: currentUploadController.signal
