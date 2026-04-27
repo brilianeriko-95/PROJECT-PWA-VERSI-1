@@ -1045,7 +1045,7 @@ async function submitCMMSData() {
 
     } catch (err) {
         console.warn("[CMMS Offline Triggered]:", err);
-        progress.error();
+        //progress.error();
         
         // Simpan CMMS ke brankas offline
         let queueCMMS = JSON.parse(localStorage.getItem('offline_cmms') || '[]');
