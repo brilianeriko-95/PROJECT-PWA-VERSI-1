@@ -419,7 +419,7 @@ function validateUserOnline(username, password) {
         };
         
         const script = document.createElement('script');
-        script.src = `${GAS_URL}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&callback=${callbackName}`;
+        script.src = `${getGasUrl()}?action=login&username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}&callback=${callbackName}`;
         
         script.onerror = () => {
             clearTimeout(timeout);
@@ -783,7 +783,7 @@ function changePasswordJSONP(username, oldPassword, newPassword) {
     };
     
     const script = document.createElement('script');
-    const url = `${GAS_URL}?action=changePassword&username=${encodeURIComponent(username)}&oldPassword=${encodeURIComponent(oldPassword)}&newPassword=${encodeURIComponent(newPassword)}&callback=${callbackName}`;
+    const url = `${getGasUrl()}?action=changePassword&username=${encodeURIComponent(username)}&oldPassword=${encodeURIComponent(oldPassword)}&newPassword=${encodeURIComponent(newPassword)}&callback=${callbackName}`;
     
     script.src = url;
     
