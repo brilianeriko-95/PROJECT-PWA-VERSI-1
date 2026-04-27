@@ -1056,6 +1056,12 @@ async function submitCMMSData() {
     .then(([res1, res2]) => {
         if (!res1.success || !res2.success) throw new Error("Server menolak data");
         console.log("✅ Upload CMMS Siluman Berhasil!");
+        
+        // 👇 TAMBAHKAN 3 BARIS INI AGAR TOAST HIJAU MUNCUL 👇
+        if (typeof showTemporaryToast === 'function') {
+            showTemporaryToast('✅ History Alat & Rutinan sukses mendarat!', 'success');
+        }
+        // 👆 ============================================== 👆
     })
     .catch(err => {
         console.warn("⚠️ Sinyal putus saat proses siluman, dialihkan ke Offline.", err);
