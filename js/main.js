@@ -489,7 +489,7 @@ async function syncOfflineData() {
             try {
                 // A. Kirim Foto dengan Jeda Singkat (Mencegah Rate Limit)
                 for (const [photoKey, photoData] of Object.entries(photos)) {
-                    const responsePhoto = await fetch(GAS_URL, {
+                    const responsePhoto = await fetch(getGasUrl(), {
                         method: 'POST', 
                         // ❌ HAPUS mode: 'no-cors' dan headers Content-Type
                         body: JSON.stringify({
@@ -510,7 +510,7 @@ async function syncOfflineData() {
                 }
 
                 // B. Kirim Data Teks Utama
-                const responseText = await fetch(GAS_URL, {
+                const responseText = await fetch(getGasUrl(), {
                     method: 'POST', 
                     // ❌ HAPUS mode: 'no-cors' dan headers Content-Type
                     body: JSON.stringify(item),
@@ -822,7 +822,7 @@ async function syncOfflineLaporanAkhir() {
 
     for (const data of pendingLaporan) {
         try {
-            const response = await fetch(GAS_URL, {
+            const response = await fetch(getGasUrl(), {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
@@ -862,7 +862,7 @@ async function fetchMasterAlat() {
         if (!navigator.onLine) return; 
 
         // Telepon server untuk daftar terbaru
-        const response = await fetch(`${GAS_URL}?action=getMasterAlat`);
+        const response = await fetch(`${getGasUrl()}?action=getMasterAlat`);
         const res = await response.json();
         
         if (res.success && res.data) {
@@ -1050,8 +1050,8 @@ async function submitCMMSData() {
 
     // Tembakan Ganda (Barengan) di Latar Belakang
     Promise.all([
-        fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadCMMS) }).then(r => r.json()),
-        fetch(GAS_URL, { method: 'POST', body: JSON.stringify(payloadRoutine) }).then(r => r.json())
+        fetch(getGasUrl(), { method: 'POST', body: JSON.stringify(payloadCMMS) }).then(r => r.json()),
+        fetch(getGasUrl(), { method: 'POST', body: JSON.stringify(payloadRoutine) }).then(r => r.json())
     ])
     .then(([res1, res2]) => {
         if (!res1.success || !res2.success) throw new Error("Server menolak data");
