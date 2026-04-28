@@ -371,9 +371,23 @@ function getCurrentDutyGroup() {
 }
 
 // ====================================================================
-// FUNGSI BARU: Notifikasi yang hilang otomatis (Auto-Dismiss Toast)
+// FUNGSI BARU: Notifikasi yang hilang otomatis (Auto-Dismiss Toast) + GETAR
 // ====================================================================
 function showTemporaryToast(message, type = 'info', duration = 2500) {
+    // 👇 1. MESIN GETAR (HAPTIC FEEDBACK) 👇
+    if ('vibrate' in navigator) {
+        if (type === 'success') {
+            navigator.vibrate([100, 50, 100]); // Getar 2x Cepat (Tek-Tek)
+        } else if (type === 'warning') {
+            navigator.vibrate([200, 100, 200]); // Getar 2x Agak Panjang
+        } else if (type === 'error') {
+            navigator.vibrate([300, 100, 400, 100, 500]); // Getar SOS
+        } else {
+            navigator.vibrate(50); // Getar Halus 1x
+        }
+    }
+    // 👆 ================================= 👆
+
     const toast = document.createElement('div');
     
     toast.className = `toast-notif-kecil toast-${type}`; 
@@ -391,9 +405,9 @@ function showTemporaryToast(message, type = 'info', duration = 2500) {
     toast.style.transition = 'all 0.3s ease-in-out';
     toast.style.fontFamily = 'sans-serif';
     toast.style.fontSize = '14px';
-    toast.style.width = 'auto'; // Paksa lebar menyesuaikan teks, bukan layar
+    toast.style.width = 'auto'; 
     toast.style.maxWidth = '300px'; 
-    toast.style.pointerEvents = 'none'; // Agar operator tetap bisa ngetik meskipun notif muncul
+    toast.style.pointerEvents = 'none'; 
     
     // Konten teks
     toast.innerHTML = `<span style="font-weight:bold;">${message}</span>`;
