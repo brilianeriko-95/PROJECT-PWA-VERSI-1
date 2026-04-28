@@ -7,7 +7,7 @@
    ============================================ */
 
 // 1. APP CONFIGURATION
-const APP_VERSION = '3.0.4';
+const APP_VERSION = '3.0.5';
 const APP_NAME = 'PROJECT LOGSHEET';
 
 const AUTH_CONFIG = {
@@ -48,7 +48,7 @@ const UNIT_THEMES = {
 // 👆 ================================================== 👆
 
 // 2. BACKEND & USER SETUP
-const GAS_URL = "https://script.google.com/macros/s/AKfycbyxxKWZHYlaVTKAfMlM4_dW9htqd97882WS4WJJn9mCfZ80CEjR8wvHjD-4pf-vGJ0/exec";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwrZWw9T9grODSXS9B-07RLB9DROPSfzUYfWpYSeXkomH4pcaRMr7luC9qgb63HRzA/exec";
 
 const OFFLINE_USERS = {
     // Ubah ke MANAJEMEN agar Admin otomatis bisa melihat seluruh menu (SA & SU)
