@@ -49,10 +49,10 @@ const UNIT_THEMES = {
 
 // 2. BACKEND & USER SETUP
 const MULTI_GAS_URLS = {
-    'SA': 'https://script.google.com/macros/s/AKfycbyxxKWZHYlaVTKAfMlM4_dW9htqd97882WS4WJJn9mCfZ80CEjR8wvHjD-4pf-vGJ0/exec',
+    'SA': 'https://script.google.com/macros/s/AKfycbxsPQG2uBWf42z3_ihVIJblxLottJM_3KB0P24H86GTpd0a_Au86OQpU1aFyTxNlQw/exec',
     'UBB': 'https://script.google.com/macros/s/URL_MASTER_UBB/exec',
-    'UTILITAS': 'https://script.google.com/macros/s/AKfycbyxxKWZHYlaVTKAfMlM4_dW9htqd97882WS4WJJn9mCfZ80CEjR8wvHjD-4pf-vGJ0/exec',
-    'DEFAULT': 'https://script.google.com/macros/s/AKfycbyxxKWZHYlaVTKAfMlM4_dW9htqd97882WS4WJJn9mCfZ80CEjR8wvHjD-4pf-vGJ0/exec' // Jaga-jaga
+    'UTILITAS': 'https://script.google.com/macros/s/AKfycbxsPQG2uBWf42z3_ihVIJblxLottJM_3KB0P24H86GTpd0a_Au86OQpU1aFyTxNlQw/exec',
+    'DEFAULT': 'https://script.google.com/macros/s/AKfycbxsPQG2uBWf42z3_ihVIJblxLottJM_3KB0P24H86GTpd0a_Au86OQpU1aFyTxNlQw/exec' // Jaga-jaga
 };
 // 👇 2. MESIN RADAR PENENTU PINTU MASUK 👇
 window.getGasUrl = function() {
