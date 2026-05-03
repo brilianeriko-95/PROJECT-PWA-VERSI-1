@@ -409,9 +409,6 @@
         
         <div class="premium-home-header">
             <div class="user-profile">
-                <div class="avatar-circle">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
                 <div class="user-greeting">
                     <p class="greeting-text">Selamat Datang,</p>
                     <h2 id="displayUserName">Operator</h2>
@@ -461,16 +458,16 @@
         <div class="premium-menu-section">
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: pointer; user-select: none;" onclick="toggleMainMenu()">
-                <h3 class="section-title" style="margin-bottom: 0;">Menu Utama</h3>
-                <div style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; padding: 6px 10px; display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-                    <span id="menuStatusText">TUTUP</span>
-                    <svg id="mainMenuChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
-                        <path d="M18 15l-6-6-6 6"/>
-                    </svg>
-                </div>
+            <h3 class="section-title" style="margin-bottom: 0;">Menu Utama</h3>
+            <div style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; padding: 6px 10px; display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                <span id="menuStatusText">BUKA</span>
+                <svg id="mainMenuChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: rotate(180deg);">
+                    <path d="M18 15l-6-6-6 6"/>
+                </svg>
             </div>
+        </div>
 
-            <div class="premium-grid-container" id="mainMenuGrid" style="transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); max-height: 800px; opacity: 1; overflow: hidden; margin-bottom: 24px;">
+            <div class="premium-grid-container" id="mainMenuGrid" style="transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); max-height: 0px; opacity: 0; overflow: hidden; margin-bottom: 0px;">
                 
                 <div class="premium-grid-card" onclick="navigateTo('logsheetSelectScreen')">
                     <div class="card-icon-wrapper turbin-bg">
