@@ -54,116 +54,125 @@
         #statusAbnormalCard1100 .status-chip[data-status="MAINTENANCE"].active { background: rgba(245, 158, 11, 0.1) !important; border-color: #f59e0b !important; color: #f59e0b !important; }
         #statusAbnormalCard1100 .status-chip[data-status="OFF"].active { background: rgba(248, 250, 252, 0.1) !important; border-color: #f8fafc !important; color: #f8fafc !important; }
       
-        /* Tambahan Animasi Custom Alert Premium */
-        @keyframes spin-slow {
-            100% { transform: rotate(360deg); }
-        }
+        @keyframes spin-slow { 100% { transform: rotate(360deg); } }
         @keyframes alert-popup {
             0% { transform: scale(0.85); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
         }
-        .custom-alert {
-            transition: opacity 0.3s ease;
-        }
-        .custom-alert:not(.hidden) .alert-content {
-            animation: alert-popup 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }  
-        /* ========================================= */
-        /* PREMIUM AREA CARD LOGSHEET (GLASSMORPHISM)*/
-        /* ========================================= */
+        .custom-alert { transition: opacity 0.3s ease; }
+        .custom-alert:not(.hidden) .alert-content { animation: alert-popup 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }  
+        
         .premium-area-card {
             background: linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.9));
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 16px 20px;
-            margin-bottom: 16px;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px;
+            padding: 16px 20px; margin-bottom: 16px; position: relative; overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
         }
         .premium-area-card:active {
             transform: scale(0.97);
             background: linear-gradient(145deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 1));
         }
-        /* Garis Warna Menyala di Samping Kiri */
         .premium-area-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 5px; height: 100%;
-            background: var(--theme-color);
-            box-shadow: 0 0 15px var(--theme-color);
+            content: ''; position: absolute; top: 0; left: 0; width: 5px; height: 100%;
+            background: var(--theme-color); box-shadow: 0 0 15px var(--theme-color);
         }
-        .premium-area-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
+        .premium-area-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .premium-icon-box {
-            width: 48px; height: 48px;
-            border-radius: 14px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem;
-            box-shadow: inset 0 2px 4px rgba(255,255,255,0.15);
+            width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; box-shadow: inset 0 2px 4px rgba(255,255,255,0.15);
         }
-        .premium-area-info {
-            flex: 1;
-            margin-left: 16px;
-        }
-        .premium-area-title {
-            font-size: 1.05rem;
-            font-weight: 800;
-            color: #f8fafc;
-            margin: 0 0 6px 0;
-            letter-spacing: 0.5px;
-        }
-        .premium-area-subtitle {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            margin: 0;
-            display: flex; align-items: center; gap: 6px;
-            font-weight: 500;
-        }
-        .premium-progress-bar-bg {
-            width: 100%;
-            height: 6px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 9999px;
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .premium-progress-fill {
-            height: 100%;
-            border-radius: 9999px;
-            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .abnormal-pulse {
-            animation: pulse-red 2s infinite;
-        }
+        .premium-area-info { flex: 1; margin-left: 16px; }
+        .premium-area-title { font-size: 1.05rem; font-weight: 800; color: #f8fafc; margin: 0 0 6px 0; letter-spacing: 0.5px; }
+        .premium-area-subtitle { font-size: 0.8rem; color: #94a3b8; margin: 0; display: flex; align-items: center; gap: 6px; font-weight: 500; }
+        .premium-progress-bar-bg { width: 100%; height: 6px; background: rgba(0, 0, 0, 0.4); border-radius: 9999px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+        .premium-progress-fill { height: 100%; border-radius: 9999px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .abnormal-pulse { animation: pulse-red 2s infinite; }
         @keyframes pulse-red {
             0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
             70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
             100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
-      /* ========================================= */
-        /* PWA STANDALONE HIDER (MENYEMBUNYIKAN TOMBOL INSTALL) */
+        @media all and (display-mode: standalone) { #installPwaBtn { display: none !important; } }
+        @media all and (display-mode: fullscreen) { #installPwaBtn { display: none !important; } }
+
         /* ========================================= */
-        @media all and (display-mode: standalone) {
-            #installPwaBtn {
-                display: none !important;
-            }
+        /* PREMIUM HOMESCREEN DASHBOARD LAYOUT CSS   */
+        /* ========================================= */
+        .premium-home-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: calc(var(--safe-top) + 24px) 24px 20px; background: transparent;
         }
-        
-        /* Deteksi khusus untuk pengguna iPhone/iOS Safari */
-        @media all and (display-mode: fullscreen) {
-            #installPwaBtn {
-                display: none !important;
-            }
+        .user-profile { display: flex; align-items: center; gap: 16px; }
+        .avatar-circle {
+            width: 50px; height: 50px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary-dark));
+            display: flex; align-items: center; justify-content: center;
+            color: white; border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
         }
+        .greeting-text { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 2px; }
+        .user-greeting h2 { font-size: 1.25rem; font-weight: 800; color: var(--text); letter-spacing: 0.5px; margin: 0; }
+
+        .premium-dashboard-banner {
+            margin: 0 24px 24px; padding: 24px; border-radius: 24px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            display: flex; justify-content: space-between; align-items: center;
+            position: relative; overflow: hidden;
+        }
+        .premium-dashboard-banner::before {
+            content: ''; position: absolute; top: -50%; right: -20%; width: 150px; height: 150px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3) 0%, transparent 70%); border-radius: 50%; filter: blur(20px);
+        }
+        .banner-content h3 { font-size: 1.2rem; color: white; font-weight: 800; margin-bottom: 4px; z-index: 2; position: relative;}
+        .banner-content p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px; z-index: 2; position: relative;}
+        .banner-status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 20px; font-size: 0.75rem; color: #34d399; font-weight: 700; z-index: 2; position: relative;}
+        .status-dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; animation: blink 2s infinite; }
+        .banner-decoration { position: absolute; right: 20px; top: 10px; z-index: 1; opacity: 0.5; }
+
+        .premium-menu-section { padding: 0 24px 24px; }
+        .section-title { font-size: 1.1rem; font-weight: 700; color: var(--text); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        .section-title::before { content: ''; width: 4px; height: 18px; background: linear-gradient(180deg, var(--primary-light), var(--primary-dark)); border-radius: 4px; }
+
+        .premium-grid-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+        .premium-grid-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px;
+            padding: 24px 16px; text-align: center; cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        .premium-grid-card::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 40%; height: 4px; border-radius: 4px 4px 0 0; background: rgba(255,255,255,0.1); transition: all 0.3s;
+        }
+        .premium-grid-card:hover, .premium-grid-card:active {
+            transform: translateY(-8px) scale(1.03); border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), 0 0 20px rgba(59, 130, 246, 0.15); z-index: 10;
+        }
+        .premium-grid-card:hover::after { width: 80%; background: var(--primary-light); }
+
+        .card-icon-wrapper {
+            width: 56px; height: 56px; border-radius: 18px; margin-bottom: 12px;
+            display: flex; align-items: center; justify-content: center; color: white;
+            box-shadow: 0 10px 20px -5px rgba(0,0,0,0.5), inset 0 2px 2px rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+        .premium-grid-card:hover .card-icon-wrapper { transform: scale(1.15) rotate(5deg); }
+
+        .turbin-bg { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+        .ct-bg { background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); }
+        .balance-bg { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); }
+        .tpm-bg { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .admin-bg { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); }
+
+        .card-title { font-size: 0.95rem; font-weight: 800; color: var(--text); margin-bottom: 4px; letter-spacing: 0.3px; }
+        .card-subtitle { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; }
     </style>
 </head>
 <body>
@@ -177,7 +186,6 @@
             <div class="loader-pulse-ring"></div>
             <div class="loader-pulse-ring delay"></div>
         </div>
-        
         <div class="loader-text">
             <div class="typewriter-container">
                 <h3 class="typewriter-text" id="typewriterTitle">
@@ -194,9 +202,7 @@
                     <span class="cursor"></span>
                 </h3>
             </div>
-            
             <p class="loader-subtitle" id="loaderStatusText">Memuat sistem...</p>
-            
             <div class="premium-progress-container">
                 <div class="premium-progress-track">
                     <div class="premium-progress-fill" id="loaderProgress" style="width: 0%">
@@ -224,15 +230,12 @@
 
 <div id="customAlert" class="custom-alert hidden" style="z-index: 100000; position: fixed; inset: 0; background: rgba(2, 6, 23, 0.7); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center;">
     <div class="alert-content glass" id="alertContent" style="max-width: 320px; width: 90%; background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95)); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 28px; padding: 32px 24px; text-align: center; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);">
-        
         <div class="alert-icon-wrapper" id="alertIconWrapper">
-        <div style="animation: spin-slow 8s linear infinite;"></div>
-    <div id="alertIcon"></div>
-    </div> 
-    <h3 id="alertTitle">Berhasil</h3>
-        
+            <div style="animation: spin-slow 8s linear infinite;"></div>
+            <div id="alertIcon"></div>
+        </div> 
+        <h3 id="alertTitle">Berhasil</h3>
         <p id="alertMessage" style="color: #94a3b8; margin-bottom: 28px; font-size: 0.95rem; line-height: 1.5;">Data berhasil dikirim!</p>
-        
         <button class="alert-btn" onclick="closeAlert()" style="width: 100%; padding: 16px; border: none; border-radius: 16px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(59, 130, 246, 0.1); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">OKE</button>
     </div>
 </div>
@@ -278,7 +281,9 @@
             </div>
         </form>
     </div>
-</div> <div id="cmmsModal" class="custom-alert hidden" style="z-index: 10006;">
+</div> 
+
+<div id="cmmsModal" class="custom-alert hidden" style="z-index: 10006;">
     <div class="alert-content" style="max-width: 420px; width: 90%; text-align: left; padding: 24px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h3 style="margin: 0; color: #f8fafc; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
@@ -329,18 +334,18 @@
 
 <div class="app-container">
     
-    <div <div id="loginScreen" class="screen active">
-    <div class="login-container">
-        <div class="login-header">
-            <div class="logo-container animated">
-                <img src="icons/Produksi_3B.png" id="mainLogo" alt="Logo Unit" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                <div class="logo-fallback" style="display:none;">⚡</div>
+    <div id="loginScreen" class="screen active">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="logo-container animated">
+                    <img src="icons/Produksi_3B.png" id="mainLogo" alt="Logo Unit" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                    <div class="logo-fallback" style="display:none;">⚡</div>
+                </div>
+                
+                <h1 class="app-title">PRODUKSI-3B</h1>
+                <p class="app-subtitle"></p>
             </div>
-            
-            <h1 class="app-title">PRODUKSI-3B</h1>
-            <p class="app-subtitle"></p>
-        </div>
-                            
+                                
             <div class="login-form glass">
                 <h2 class="login-title">🔐 Login Operator</h2>
                 <p class="login-subtitle">Masukkan username dan password</p>
@@ -401,164 +406,230 @@
     </div>
 
     <div id="homeScreen" class="screen">
-        <div class="home-header glass-header">
-            <div class="header-top">
-                <div class="user-info">
-                    <div class="avatar">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                        </svg>
+        
+        <div class="premium-home-header">
+            <div class="user-profile">
+                <div class="avatar-circle">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </div>
+                <div class="user-greeting">
+                    <p class="greeting-text">Selamat Datang,</p>
+                    <h2 id="displayUserName">Operator</h2>
+                </div>
+            </div>
+            <div class="header-actions" style="display: flex; gap: 8px;">
+                <button id="installPwaBtn" class="btn-icon btn-install hidden" onclick="installPWA()" title="Install App">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+                <button class="btn-icon btn-password" onclick="showChangePasswordModal()" title="Ganti Password">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </button>
+                <button class="btn-icon logout-btn" onclick="logoutOperator()" title="Keluar">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="premium-dashboard-banner">
+            <div class="banner-content">
+                <h3>Sulphuric Acid & Utility Plant</h3>
+                <p>Digital Logsheet System</p>
+                <div class="banner-status">
+                    <span class="status-dot"></span> System Online
+                </div>
+            </div>
+            <div class="banner-decoration">
+            <img src="logo.png" alt="Logo Background" style="width: 100px; height: 100px; object-fit: contain; opacity: 0.15; transform: rotate(-10deg) scale(1.3); filter: drop-shadow(0 0 10px rgba(255,255,255,0.3));">
+        </div>
+        </div>
+
+        <div id="offlineSyncContainer" style="display: none; padding: 0 24px; margin-bottom: 24px;">
+            <button onclick="syncOfflineData()" class="btn-primary" style="background: linear-gradient(135deg, #ef4444, #b91c1c); display: flex; align-items: center; justify-content: space-between; width: 100%; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); border-radius: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <span style="font-size: 1.5rem;">🔄</span>
+                    <div style="text-align: left;">
+                        <div style="font-weight: 800; font-size: 1rem;">Kirim Data Tertunda</div>
+                        <div id="offlineSyncText" style="font-size: 0.75rem; font-weight: 500; opacity: 0.9;">Ada 0 data belum terkirim</div>
                     </div>
-                    <span id="displayUserName">Operator</span>
                 </div>
-                <div class="header-actions" style="display: flex; gap: 8px;">
-                    <button id="installPwaBtn" class="btn-icon btn-install hidden" onclick="installPWA()" title="Install App">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
-                        </svg>
-                    </button>
-                    <button class="btn-icon btn-password" onclick="showChangePasswordModal()" title="Ganti Password">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                    </button>
-                    <button class="btn-icon logout-btn" onclick="logoutOperator()" title="Keluar">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
-                        </svg>
-                    </button>
+                <div id="offlineSyncBadge" style="background: white; color: #ef4444; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
+                    0
                 </div>
+            </button>
+        </div>
+
+        <div class="premium-menu-section">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; cursor: pointer; user-select: none;" onclick="toggleMainMenu()">
+                <h3 class="section-title" style="margin-bottom: 0;">Menu Utama</h3>
+                <div style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 10px; padding: 6px 10px; display: flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                    <span id="menuStatusText">TUTUP</span>
+                    <svg id="mainMenuChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
+                        <path d="M18 15l-6-6-6 6"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="premium-grid-container" id="mainMenuGrid" style="transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); max-height: 800px; opacity: 1; overflow: hidden; margin-bottom: 24px;">
+                
+                <div class="premium-grid-card" onclick="navigateTo('logsheetSelectScreen')">
+                    <div class="card-icon-wrapper turbin-bg">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    </div>
+                    <div class="card-title">Logsheet Area</div>
+                    <div class="card-subtitle">Form Pencatatan</div>
+                </div>
+                
+                <div class="premium-grid-card" onclick="navigateTo('tpmScreen')">
+                    <div class="card-icon-wrapper tpm-bg">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    </div>
+                    <div class="card-title">TPM Patrol</div>
+                    <div class="card-subtitle">Cek Total Productive</div>
+                </div>
+
+                <div class="premium-grid-card" onclick="openLogsheetMenu('BALANCING')">
+                    <div class="card-icon-wrapper balance-bg">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <div class="card-title">Kalkulasi MW</div>
+                    <div class="card-subtitle">Balancing Shift</div>
+                </div>
+
+                <div class="premium-grid-card" onclick="openCMMSModal()">
+                    <div class="card-icon-wrapper ct-bg">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+                    </div>
+                    <div class="card-title">CMMS History</div>
+                    <div class="card-subtitle">Riwayat Alat</div>
+                </div>
+
+                <div class="premium-grid-card" onclick="showUserManagement()" style="grid-column: 1 / -1;">
+                    <div class="card-icon-wrapper admin-bg" style="height: 48px; border-radius: 14px; margin-bottom: 8px;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+                    </div>
+                    <div class="card-title">Portal Admin</div>
+                </div>
+
+            </div>
+        </div>
+
+        <script>
+            function toggleMainMenu() {
+                const grid = document.getElementById('mainMenuGrid');
+                const chevron = document.getElementById('mainMenuChevron');
+                const statusText = document.getElementById('menuStatusText');
+                
+                if (grid.style.maxHeight === '0px' || grid.style.maxHeight === '0') {
+                    // BUKA MENU
+                    grid.style.maxHeight = '800px';
+                    grid.style.opacity = '1';
+                    grid.style.margin = '0 0 24px 0';
+                    chevron.style.transform = 'rotate(0deg)';
+                    statusText.textContent = 'TUTUP';
+                } else {
+                    // TUTUP MENU
+                    grid.style.maxHeight = '0px';
+                    grid.style.opacity = '0';
+                    grid.style.margin = '0px';
+                    chevron.style.transform = 'rotate(180deg)';
+                    statusText.textContent = 'BUKA';
+                }
+            }
+        </script>
+
+        <div class="job-list-section" style="padding: 0 24px 24px;">
+            <div class="job-list-header">
+                <div class="job-list-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                </div>
+                <h3>Job Hari Ini</h3>
+                <span class="job-date" id="jobDate">--/--/----</span>
+            </div>
+            <div class="job-list-content" id="jobListContainer">
+                <div class="job-loading">
+                    <div class="spinner"></div>
+                    <span>Memuat data...</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="logsheetSelectScreen" class="screen">
+        <div class="screen-header glass-header" style="border-bottom: none;">
+            <button class="btn-icon" onclick="navigateTo('homeScreen')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </button>
+            <div class="header-title-group">
+                <h2>Pilih Logsheet</h2>
+                <span class="header-subtitle">Daftar Area Operasional 3B</span>
+            </div>
+            <div class="user-pill"><span id="logsheetSelectUser">-</span></div>
+        </div>
+
+        <div class="premium-grid-container" style="padding: 10px 24px 24px;">
+            
+            <div class="premium-grid-card" onclick="openLogsheetMenu('LAPANGANTURBIN')">
+                <div class="card-icon-wrapper turbin-bg">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <div class="card-title">Turbin</div>
+                <div class="card-subtitle">Lapangan</div>
+            </div>
+
+            <div class="premium-grid-card" onclick="openLogsheetMenu('CT')">
+                <div class="card-icon-wrapper ct-bg">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/><path d="M12 22V12"/></svg>
+                </div>
+                <div class="card-title">Cooling Tower</div>
+                <div class="card-subtitle">Basin SA & SU</div>
+            </div>
+
+            <div class="premium-grid-card" onclick="openLogsheetMenu('1300')">
+                <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/><circle cx="12" cy="12" r="3" /></svg>
+                </div>
+                <div class="card-title">Area 1300</div>
+                <div class="card-subtitle">Blower & Absorber</div>
+            </div>
+
+            <div class="premium-grid-card" onclick="openLogsheetMenu('1100_1200')">
+                <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+                </div>
+                <div class="card-title">Area 1100</div>
+                <div class="card-subtitle">Furnace & WHB</div>
             </div>
             
-            <div class="home-hero-content">
-                <div class="logo-container small animated">
-                    <img src="logo.png" alt="Logo" id="mainLogo" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
-                    <div class="logo-fallback" style="display:none;">⚡</div>
+            <div class="premium-grid-card" onclick="openLogsheetMenu('1000')">
+                <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
                 </div>
-                <h1 class="home-title">LOGSHEET DIGITAL</h1>
-                <p class="home-subtitle">Pilih Menu Untuk Memulai</p>
-            </div>
-        </div>
-
-        <div id="branchMenuPopupOverlay" class="modern-menu-overlay hidden" onclick="closeBranchMenuPopup()">
-            <div class="modern-menu-popup" onclick="event.stopPropagation()">
-                <div class="modern-menu-header">
-                    <h3>Menu Utama</h3>
-                    <button class="modern-menu-close" onclick="closeBranchMenuPopup()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"/>
-                            <line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="modern-menu-grid">
-                    <div class="modern-menu-card primary" onclick="navigateTo('logsheetSelectScreen'); closeBranchMenuPopup();">
-                        <div class="modern-menu-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                            </svg>
-                        </div>
-                        <span class="modern-menu-label">Logsheet</span>
-                    </div>
-
-                    <div class="modern-menu-card warning" onclick="navigateTo('tpmScreen'); closeBranchMenuPopup();">
-                        <div class="modern-menu-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-                            </svg>
-                        </div>
-                        <span class="modern-menu-label">TPM</span>
-                    </div>
-
-                    <div class="modern-menu-card success" id="menu-balancing" onclick="openLogsheetMenu('BALANCING'); closeBranchMenuPopup();">
-                        <div class="modern-menu-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                            </svg>
-                        </div>
-                        <span class="modern-menu-label">Balancing</span>
-                    </div>
-                    <div class="modern-menu-card" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); color: #a78bfa;" onclick="openCMMSModal(); closeBranchMenuPopup();">
-                        <div class="modern-menu-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
-                                <line x1="12" y1="11" x2="12" y2="17"/>
-                                <line x1="9" y1="14" x2="15" y2="14"/>
-                            </svg>
-                        </div>
-                        <span class="modern-menu-label" style="color: #c4b5fd;">History Alat</span>
-                    </div>
-                    <div class="modern-menu-card danger" id="menu-user" onclick="showUserManagement(); closeBranchMenuPopup();">
-                        <div class="modern-menu-icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="9" cy="7" r="4"/>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                            </svg>
-                        </div>
-                        <span class="modern-menu-label">Admin</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div id="offlineSyncContainer" style="display: none; padding: 0 20px; margin-bottom: 20px;">
-    <button onclick="syncOfflineData()" class="btn-primary" style="background: linear-gradient(135deg, #ef4444, #b91c1c); display: flex; align-items: center; justify-content: space-between; width: 100%; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);">
-        <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 1.5rem;">🔄</span>
-            <div style="text-align: left;">
-                <div style="font-weight: 800; font-size: 1rem;">Kirim Data Tertunda</div>
-                <div id="offlineSyncText" style="font-size: 0.75rem; font-weight: 500; opacity: 0.9;">Ada 0 data belum terkirim</div>
-            </div>
-        </div>
-        <div id="offlineSyncBadge" style="background: white; color: #ef4444; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem;">
-            0
-        </div>
-    </button>
-</div>
-        <div class="home-content-area">
-            <div class="round-menu-section">
-                <button class="round-menu-btn" onclick="toggleBranchMenuPopup()" title="Menu Utama">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="7" height="7"/>
-                        <rect x="14" y="3" width="7" height="7"/>
-                        <rect x="14" y="14" width="7" height="7"/>
-                        <rect x="3" y="14" width="7" height="7"/>
-                    </svg>
-                </button>
-                <span class="round-menu-label" style="margin-top:8px;">Menu</span>
+                <div class="card-title">Area 1000</div>
+                <div class="card-subtitle">Pencairan Belerang</div>
             </div>
 
-            <div class="job-list-section">
-                <div class="job-list-header">
-                    <div class="job-list-icon">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                            <polyline points="14 2 14 8 20 8"/>
-                            <line x1="16" y1="13" x2="8" y2="13"/>
-                            <line x1="16" y1="17" x2="8" y2="17"/>
-                            <polyline points="10 9 9 9 8 9"/>
-                        </svg>
-                    </div>
-                    <h3>Job Hari Ini</h3>
-                    <span class="job-date" id="jobDate">--/--/----</span>
+            <div class="premium-grid-card" onclick="openLogsheetMenu('PANEL_STG')">
+                <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #1d6be8 0%, #1e40af 100%);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
                 </div>
-                <div class="job-list-content" id="jobListContainer">
-                    <div class="job-loading">
-                        <div class="spinner"></div>
-                        <span>Memuat data...</span>
-                    </div>
-                </div>
+                <div class="card-title">Panel STG</div>
+                <div class="card-subtitle">Control Room</div>
             </div>
+            
+            <div class="premium-grid-card" onclick="openLogsheetMenu('PANEL_ASAM_SULFAT')" style="grid-column: 1 / -1;">
+                <div class="card-icon-wrapper" style="background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); height: 48px; border-radius: 14px; margin-bottom: 8px;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3H15"></path><path d="M10 3V8L5 16C4.44772 16.92 5.11053 18 6.19615 18H17.8038C18.8895 18 19.5523 16.92 19 16L14 8V3"></path><path d="M7 13H17"></path></svg>
+                </div>
+                <div class="card-title">Panel Asam Sulfat</div>
+            </div>
+
         </div>
     </div>
+    
     <div id="dashboardSupervisor" class="screen" style="display: none; padding-top: 70px; padding-bottom: 80px;">
     
     <div class="screen-header glass-header" style="display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; z-index: 10000; padding: 10px 16px; box-sizing: border-box; height: 70px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.1);">
@@ -622,140 +693,6 @@
         </button>
 
     </div> </div>
-    <div id="logsheetSelectScreen" class="screen">
-        <div class="screen-header glass-header">
-            <button class="btn-icon" onclick="navigateTo('homeScreen')">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-            </button>
-            <div class="header-title-group">
-                <h2>Pilih Logsheet</h2>
-                <span class="header-subtitle">Pilih jenis logsheet yang akan diisi</span>
-            </div>
-            <div class="user-pill">
-                <span id="logsheetSelectUser">-</span>
-            </div>
-        </div>
-
-        <div class="logsheet-select-container">
-            <div class="logsheet-select-card" id="menu-Turbin" onclick="openLogsheetMenu('LAPANGANTURBIN')">
-                <div class="logsheet-icon-large turbin">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="stroke: white;">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                    </svg>
-                </div>
-                <div class="logsheet-info">
-                    <h3>Logsheet Lapangan Turbin</h3>
-                    <p>Input data operasional turbine, steam, lube oil, dan generator</p>
-                </div>
-                <div class="logsheet-arrow">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18l6-6-6-6"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="logsheet-select-card ct-version" id="menu-CT" onclick="openLogsheetMenu('CT')">
-                <div class="logsheet-icon-large ct">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="stroke: white;">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                        <path d="M12 22V12"/>
-                    </svg>
-                </div>
-                <div class="logsheet-info">
-                    <h3>Logsheet Cooling Tower</h3>
-                    <p>Input data operasional basin SA & SU, pompa, fan, dan chemical</p>
-                </div>
-                <div class="logsheet-arrow">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18l6-6-6-6"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="logsheet-select-card acid-version" id="menu-1300" onclick="openLogsheetMenu('1300')">
-                <div class="logsheet-icon-large" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); display: flex; align-items: center; justify-content: center; border-radius: 16px;">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                        <circle cx="12" cy="12" r="3" />
-                    </svg>
-                </div>
-                <div class="logsheet-info">
-                    <h3>Logsheet Area 1300</h3>
-                    <p>Input data Drying Air, Absorber, Blower, dan Lube Oil System</p>
-                </div>
-                <div class="logsheet-arrow">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18l6-6-6-6"/>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="logsheet-select-card" id="menu-1100" onclick="openLogsheetMenu('1100_1200')" style="border: 1px solid rgba(234, 179, 8, 0.2);">
-                <div class="logsheet-icon-large" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); display: flex; align-items: center; justify-content: center; border-radius: 16px;">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                    </svg>
-                </div>
-                <div class="logsheet-info">
-                    <h3>Logsheet Area 1100/1200</h3>
-                    <p>Input data Sulphur, Furnace, WHB, Preheater, dan BFW</p>
-                </div>
-                <div class="logsheet-arrow">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18l6-6-6-6"/>
-                    </svg>
-                </div>
-            </div>
-            
-            <div class="logsheet-select-card" id="menu-1000" onclick="openLogsheetMenu('1000')" style="border: 1px solid rgba(239, 68, 68, 0.2);">
-                <div class="logsheet-icon-large" style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); display: flex; align-items: center; justify-content: center; border-radius: 16px;">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-                </div>
-                <div class="logsheet-info">
-                    <h3>Logsheet Area 1000</h3>
-                    <p>Input data area pencairan belerang, agitator, dan filtrasi</p>
-                </div>
-                <div class="logsheet-arrow">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                </div>
-            </div>
-            <div class="logsheet-select-card" id="menu-PanelSTG" onclick="openLogsheetMenu('PANEL_STG')">
-                <div class="logsheet-icon-large" style="background: linear-gradient(135deg, #1d6be8 0%, #1e40af 100%); display: flex; align-items: center; justify-content: center; border-radius: 16px;">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <line x1="3" y1="9" x2="21" y2="9"></line>
-                        <line x1="9" y1="21" x2="9" y2="9"></line>
-                    </svg>
-                </div>
-                <div class="logsheet-info">
-                    <h3>Logsheet Panel STG</h3>
-                    <p>Input data parameter elektrikal, trafo, dan sistem kontrol</p>
-                </div>
-                <div class="logsheet-arrow">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18l6-6-6-6"/>
-                    </svg>
-                </div>
-            </div> <div class="logsheet-select-card" id="menu-PanelAsamSulfat" onclick="openLogsheetMenu('PANEL_ASAM_SULFAT')" style="border: 1px solid rgba(234, 179, 8, 0.2);">
-                <div class="logsheet-icon-large" style="background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%); display: flex; align-items: center; justify-content: center; border-radius: 16px;">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M9 3H15"></path>
-                        <path d="M10 3V8L5 16C4.44772 16.92 5.11053 18 6.19615 18H17.8038C18.8895 18 19.5523 16.92 19 16L14 8V3"></path>
-                        <path d="M7 13H17"></path>
-                    </svg>
-                </div>
-                <div class="logsheet-info">
-                    <h3>Logsheet Panel Asam Sulfat</h3>
-                    <p>Input data Sulphur Handling, Converter, Absorber, & Blower</p>
-                </div>
-                <div class="logsheet-arrow">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M9 18l6-6-6-6"/>
-                    </svg>
-                </div>
-            </div> </div> </div>
 
     <div id="tpmScreen" class="screen">
         <div class="screen-header glass-header">
@@ -1191,37 +1128,39 @@
             </button>
         </div>
     </div>
+
     <div id="universalAreaListScreen" class="screen">
-    <div class="screen-header glass-header">
-        <button class="btn-icon" onclick="navigateTo('logsheetSelectScreen')">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
+        <div class="screen-header glass-header">
+            <button class="btn-icon" onclick="navigateTo('logsheetSelectScreen')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </button>
+            <div class="header-title-group">
+                <h2 id="univHeaderTitle">Memuat...</h2>
+                <span class="header-subtitle" id="univProgressText">0% Complete</span>
+            </div>
+            <div class="user-pill"><span id="univAreaListUser">-</span></div>
+        </div>
+
+        <div class="progress-card glass">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 0.875rem; color: #94a3b8;">Overall Progress</span>
+                <span style="font-weight: 700;" id="univOverallPercent">0%</span>
+            </div>
+            <div class="progress-bar-bg" style="width: 100%; height: 8px; background: rgba(148, 163, 184, 0.1); border-radius: 9999px; overflow: hidden;">
+                <div class="progress-bar-fill" id="univOverallProgressBar" style="height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+            </div>
+        </div>
+
+        <div class="areas-list" id="univAreaList"></div>
+
+        <button class="btn btn-floating" id="univSubmitBtn" onclick="submitUniversalLogsheet()" style="display:none; position: fixed; bottom: 32px; left: 24px; right: 24px; padding: 16px; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">
+            <span>📤 Kirim Data Logsheet</span>
         </button>
-        <div class="header-title-group">
-            <h2 id="univHeaderTitle">Memuat...</h2>
-            <span class="header-subtitle" id="univProgressText">0% Complete</span>
-        </div>
-        <div class="user-pill"><span id="univAreaListUser">-</span></div>
     </div>
 
-    <div class="progress-card glass">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span style="font-size: 0.875rem; color: #94a3b8;">Overall Progress</span>
-            <span style="font-weight: 700;" id="univOverallPercent">0%</span>
-        </div>
-        <div class="progress-bar-bg" style="width: 100%; height: 8px; background: rgba(148, 163, 184, 0.1); border-radius: 9999px; overflow: hidden;">
-            <div class="progress-bar-fill" id="univOverallProgressBar" style="height: 100%; width: 0%; transition: width 0.3s ease;"></div>
-        </div>
-    </div>
-
-    <div class="areas-list" id="univAreaList"></div>
-
-    <button class="btn btn-floating" id="univSubmitBtn" onclick="submitUniversalLogsheet()" style="display:none; position: fixed; bottom: 32px; left: 24px; right: 24px; padding: 16px; color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;">
-        <span>📤 Kirim Data Logsheet</span>
-    </button>
-</div>
-<div id="univParamScreen" class="screen">
+    <div id="univParamScreen" class="screen">
         <div class="screen-header glass-header">
             <button class="btn-icon" onclick="prevUnivStep(true)">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1299,43 +1238,47 @@
             </div>
         </div>
     </div>
+
     <div id="panelSTGGroupScreen" class="screen">
-            <div class="screen-header glass-header">
-                <button class="btn-icon" onclick="navigateTo('logsheetSelectScreen')">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                </button>
-                <div class="header-title-group">
-                    <h2 id="panelGroupTitle">Panel STG</h2>
-                    <span class="header-subtitle" id="panelGroupSubtitle">Pilih Area Pengecekan</span>
-                </div>
-                <div class="user-pill"><span id="panelGroupUser">-</span></div>
-            </div>
-
-            <div class="areas-list" id="panelGroupList" style="padding-bottom: 90px;"></div>
-
-            <button class="btn btn-floating" id="panelSubmitBtn" onclick="submitUniversalLogsheet()" style="display:none; position: fixed; bottom: 24px; left: 24px; right: 24px; padding: 16px; background: linear-gradient(135deg, #1d6be8 0%, #1e40af 100%); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 24px rgba(29, 107, 232, 0.4); z-index: 99;">
-                <span>📤 Kirim Data Logsheet Panel</span>
+        <div class="screen-header glass-header">
+            <button class="btn-icon" onclick="navigateTo('logsheetSelectScreen')">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
+            <div class="header-title-group">
+                <h2 id="panelGroupTitle">Panel STG</h2>
+                <span class="header-subtitle" id="panelGroupSubtitle">Pilih Area Pengecekan</span>
+            </div>
+            <div class="user-pill"><span id="panelGroupUser">-</span></div>
         </div>
 
-        <div id="panelSTGScreen" class="screen" style="padding-bottom: 90px;">
-            <div class="screen-header glass-header">
-                <button class="btn-icon" onclick="openGroupedLogsheet()"> 
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                </button>
-                <div class="header-title-group">
-                    <h2 id="panelSTGHeaderTitle">Nama Area Utama</h2>
-                    <span class="header-subtitle">Pengisian Parameter</span>
-                </div>
-            </div>
+        <div class="areas-list" id="panelGroupList" style="padding-bottom: 90px;"></div>
 
-            <div id="panelSTGContent" class="form-container" style="padding: 16px; margin-top: 10px;"></div>
+        <button class="btn btn-floating" id="panelSubmitBtn" onclick="submitUniversalLogsheet()" style="display:none; position: fixed; bottom: 24px; left: 24px; right: 24px; padding: 16px; background: linear-gradient(135deg, #1d6be8 0%, #1e40af 100%); color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 24px rgba(29, 107, 232, 0.4); z-index: 99;">
+            <span>📤 Kirim Data Logsheet Panel</span>
+        </button>
+    </div>
 
-            <button class="btn" onclick="openGroupedLogsheet()" style="position: fixed; bottom: 24px; left: 24px; right: 24px; padding: 16px; background: rgba(30, 41, 59, 0.95); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; font-weight: 700; cursor: pointer; backdrop-filter: blur(10px); z-index: 99;">
-                <span>💾 Simpan & Kembali</span>
+    <div id="panelSTGScreen" class="screen" style="padding-bottom: 90px;">
+        <div class="screen-header glass-header">
+            <button class="btn-icon" onclick="openGroupedLogsheet()"> 
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
+            <div class="header-title-group">
+                <h2 id="panelSTGHeaderTitle">Nama Area Utama</h2>
+                <span class="header-subtitle">Pengisian Parameter</span>
+            </div>
+        </div>
+
+        <div id="panelSTGContent" class="form-container" style="padding: 16px; margin-top: 10px;"></div>
+
+        <button class="btn" onclick="openGroupedLogsheet()" style="position: fixed; bottom: 24px; left: 24px; right: 24px; padding: 16px; background: rgba(30, 41, 59, 0.95); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; font-weight: 700; cursor: pointer; backdrop-filter: blur(10px); z-index: 99;">
+            <span>💾 Simpan & Kembali</span>
+        </button>
+    </div>
+
 </div>
-    <div id="updateModal" class="modal-overlay hidden">
+
+<div id="updateModal" class="modal-overlay hidden">
     <div class="update-card shadow-lg">
         <div class="update-header">
             <div class="update-icon-circle">
