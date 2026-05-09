@@ -1214,57 +1214,142 @@ function renderDocuments(docs) {
     });
 }
 
-// Menampilkan Pop-Up PDF di dalam PWA
+// ============================================
+// NATIVE PDF RENDERER (DENGAN ZOOM & PUTAR)
+// ============================================
+
+// Memori Global untuk menyimpan status PDF
+let activePdfDoc = null;
+let pdfCurrentScale = 1.5;
+let pdfCurrentRotation = 0;
+
 async function showPdfInApp(url, name) {
     const modal = document.getElementById('pdfViewerModal');
     const container = document.getElementById('pdfCanvasContainer');
     const title = document.getElementById('pdfViewerTitle');
 
     if (!modal || !container) return;
-    title.textContent = name;
 
-    container.innerHTML = '<div class="job-loading"><div class="spinner"></div><p>Membuka Berkas PDF...</p></div>';
+    // 1. Reset Pengaturan Saat Buka Dokumen Baru
+    pdfCurrentScale = 1.5;
+    pdfCurrentRotation = 0;
+    activePdfDoc = null;
+
+    title.textContent = name.replace('.pdf', '').replace('.PDF', '');
+    
+    container.innerHTML = `
+        <div class="job-loading" style="margin-top: 50px;">
+            <div class="spinner"></div>
+            <p style="margin-top: 16px; color: #94a3b8; font-weight: 600;">Menyiapkan Dokumen...</p>
+        </div>`;
+    
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('active'), 10);
 
     try {
         const cleanUrl = encodeURI(url);
-        const loadingTask = pdfjsLib.getDocument(url);
-        const pdf = await loadingTask.promise;
-        container.innerHTML = ''; 
-
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            const page = await pdf.getPage(pageNum);
-            const viewport = page.getViewport({ scale: 1.5 }); // Mengatur ketajaman tampilan
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-
-            // Styling agar tampilan kertas terlihat profesional
-            canvas.style.width = '100%';
-            canvas.style.maxWidth = '800px';
-            canvas.style.borderRadius = '12px';
-            canvas.style.boxShadow = '0 15px 30px rgba(0,0,0,0.4)';
-
-            container.appendChild(canvas);
-            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-        }
+        
+        // 2. Unduh dan Simpan ke Memori
+        const loadingTask = pdfjsLib.getDocument(cleanUrl);
+        activePdfDoc = await loadingTask.promise;
+        
+        // 3. Panggil Mesin Penggambar (Render)
+        await renderAllPdfPages(); 
+        
     } catch (error) {
-        container.innerHTML = '<p style="color:#ef4444; padding:20px;">Gagal menarik data dari server Supabase.</p>';
+        console.error("Error PDF.js:", error);
+        container.innerHTML = `<div class="job-empty" style="color: #ef4444;">⚠️ Gagal memuat PDF.</div>`;
     }
 }
 
-// Menutup Pop-Up PDF
+// MESIN PENGGAMBAR KERTAS (RENDERER)
+async function renderAllPdfPages() {
+    const container = document.getElementById('pdfCanvasContainer');
+    if (!activePdfDoc) return;
+    
+    container.innerHTML = ''; // Bersihkan layar sebelum digambar ulang
+
+    for (let pageNum = 1; pageNum <= activePdfDoc.numPages; pageNum++) {
+        const page = await activePdfDoc.getPage(pageNum);
+        
+        // Atur Skala (Zoom) dan Putaran (Rotation)
+        const viewport = page.getViewport({ scale: pdfCurrentScale, rotation: pdfCurrentRotation });
+        
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        // Gaya Kertas
+        canvas.style.width = '100%';
+        canvas.style.maxWidth = '1000px'; // Lebar maksimal diizinkan agar zoom tidak terpotong
+        canvas.style.background = '#fff';
+        canvas.style.borderRadius = '8px';
+        canvas.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+        canvas.style.marginBottom = '20px';
+        
+        container.appendChild(canvas);
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    }
+}
+
+// MESIN KONTROL ZOOM
+function zoomPdf(step) {
+    if (!activePdfDoc) return;
+    pdfCurrentScale += step;
+    
+    // Batasan Zoom (Jangan terlalu kecil atau terlalu besar sampai HP lemot)
+    if (pdfCurrentScale < 0.5) pdfCurrentScale = 0.5;
+    if (pdfCurrentScale > 3.0) pdfCurrentScale = 3.0;
+    
+    // Gambar ulang dengan skala baru
+    renderAllPdfPages();
+}
+
+// MESIN KONTROL PUTAR (Rotasi kelipatan 90 derajat)
+function rotatePdf() {
+    if (!activePdfDoc) return;
+    pdfCurrentRotation = (pdfCurrentRotation + 90) % 360;
+    
+    // Gambar ulang dengan rotasi baru
+    renderAllPdfPages();
+}
+
+// MESIN LAYAR PENUH (FULLSCREEN API)
+function fullscreenPdf() {
+    const modal = document.getElementById('pdfViewerModal');
+    if (!document.fullscreenElement) {
+        if (modal.requestFullscreen) {
+            modal.requestFullscreen();
+        } else if (modal.webkitRequestFullscreen) { /* Safari */
+            modal.webkitRequestFullscreen();
+        } else if (modal.msRequestFullscreen) { /* IE11 */
+            modal.msRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
+
+// MESIN PENUTUP
 function closePdfViewer() {
     const modal = document.getElementById('pdfViewerModal');
-    const iframe = document.getElementById('pdfIframe');
+    const container = document.getElementById('pdfCanvasContainer');
 
     if (modal) {
         modal.classList.remove('active');
+        
+        // Jika sedang Fullscreen, keluarkan paksa
+        if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(err => console.log(err));
+        }
+        
         setTimeout(() => {
             modal.style.display = 'none';
-            if (iframe) iframe.src = ""; // Bersihkan Iframe supaya HP tidak lemot/panas
+            if (container) container.innerHTML = ''; 
+            activePdfDoc = null; // Kosongkan memori agar HP tidak berat
         }, 300);
     }
 }
