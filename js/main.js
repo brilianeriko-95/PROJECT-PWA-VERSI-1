@@ -196,16 +196,15 @@ function hideLoader() {
 window.currentActiveMenu = ''; 
 
 /**
- * Mesin Navigasi Utama PWA
- * Mengatur perpindahan layar dengan transisi halus dan pemicu data otomatis.
+ * Mesin Navigasi Utama PWA (Diperbarui dengan Kontrol Tab Bawah)
  */
 function navigateTo(screenId) {
     console.log('🚀 Navigating to screen:', screenId);
     
-    // 1. Amankan posisi scroll ke atas setiap ganti layar
+    // 1. Amankan posisi scroll ke atas
     window.scrollTo(0, 0);
 
-    // 2. Sembunyikan semua layar secara paksa
+    // 2. Sembunyikan semua layar
     const allScreens = document.querySelectorAll('.screen');
     allScreens.forEach(screen => {
         screen.classList.remove('active');
@@ -216,47 +215,62 @@ function navigateTo(screenId) {
     const targetScreen = document.getElementById(screenId);
     if (targetScreen) {
         targetScreen.style.display = 'block';
-        // Delay sedikit agar browser sempat memproses display:block sebelum animasi CSS jalan
-        setTimeout(() => {
-            targetScreen.classList.add('active');
-        }, 10);
+        setTimeout(() => { targetScreen.classList.add('active'); }, 10);
     }
 
-    // --- LOGIKA INTERCEPTOR KHUSUS (Pemicu Otomatis) ---
+    // ========================================================
+    // LOGIKA KONTROL TAB BAWAH (BOTTOM NAVIGATION)
+    // ========================================================
+    const bottomNav = document.getElementById('bottomNav');
+    if (bottomNav) {
+        if (screenId === 'loginScreen' || screenId === 'logsheetSelectScreen') {
+            bottomNav.style.display = 'none';
+        } else {
+            bottomNav.style.display = 'flex';
+            
+            // Hapus semua status aktif
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            
+            // Nyalakan tab yang sesuai
+            if (screenId === 'homeScreen') document.getElementById('tab-home')?.classList.add('active');
+            else if (screenId === 'tpmScreen' || screenId === 'tpmInputScreen') document.getElementById('tab-tpm')?.classList.add('active');
+            else if (screenId === 'balancingScreen') document.getElementById('tab-balance')?.classList.add('active');
+            else if (screenId === 'documentScreen') document.getElementById('tab-docs')?.classList.add('active');
 
-    // 👇 PERBAIKAN: Update otomatis semua nama user ("-") di setiap layar 👇
+            // LOGIKA PERGESERAN KAPSUL CAHAYA (SUPER PRESISI 100%)
+            const indicator = document.getElementById('navIndicator');
+            const activeTab = document.querySelector('.bottom-nav .nav-item.active');
+            
+            setTimeout(() => {
+                if (bottomNav && indicator && activeTab) {
+                    indicator.style.left = '0px';
+                    const navRect = bottomNav.getBoundingClientRect();
+                    const tabRect = activeTab.getBoundingClientRect();
+                    const capsuleWidth = 54; 
+                    const exactCenter = (tabRect.left - navRect.left) + (tabRect.width / 2) - (capsuleWidth / 2);
+                    
+                    indicator.style.width = `${capsuleWidth}px`; 
+                    indicator.style.transform = `translateX(${exactCenter}px)`;
+                }
+            }, 50);
+        }
+    }
+    // ========================================================
+
+    // 4. Update nama user
     if (typeof currentUser !== 'undefined' && currentUser) {
         const userName = currentUser.name || 'Operator';
-        
-        // Update elemen badge di berbagai layar
-        const userBadgeIds = [
-            'logsheetSelectUser', // Layar Pilih Logsheet
-            'tpmHeaderUser',      // Layar Daftar TPM
-            'tpmInputUser',       // Layar Input TPM
-            'balancingUser'       // Layar Balancing
-        ];
-        
+        const userBadgeIds = ['logsheetSelectUser', 'tpmHeaderUser', 'tpmInputUser', 'balancingUser'];
         userBadgeIds.forEach(id => {
             const badgeEl = document.getElementById(id);
             if (badgeEl) badgeEl.textContent = userName;
         });
     }
-    // 👆 ================================================================ 👆
     
-    // Sinkronisasi data offline saat kembali ke Home
-    if (screenId === 'homeScreen') {
-        checkOfflineData();
-    }
-
-    // Render ulang area TPM jika masuk ke menu TPM
-    if (screenId === 'tpmScreen' && typeof renderTPMAreas === 'function') {
-        renderTPMAreas();
-    }
-
-    // Update data dashboard jika supervisor masuk
-    if (screenId === 'dashboardSupervisor' && typeof loadSupervisorDashboard === 'function') {
-        loadSupervisorDashboard();
-    }
+    // 5. Pemicu Fungsi Lain
+    if (screenId === 'homeScreen' && typeof checkOfflineData === 'function') checkOfflineData();
+    if (screenId === 'tpmScreen' && typeof renderTPMAreas === 'function') renderTPMAreas();
+    if (screenId === 'dashboardSupervisor' && typeof loadSupervisorDashboard === 'function') loadSupervisorDashboard();
 }
 
 /**
@@ -1109,4 +1123,139 @@ function formatTime(date) {
         hour: '2-digit', 
         minute: '2-digit' 
     });
+}
+// ============================================
+// MESIN DOKUMEN SOP/PID (SEARCH, FILTER & IN-APP VIEWER)
+// ============================================
+
+let globalDocuments = []; // Brankas penyimpan data PDF
+
+async function openDocumentMenu() {
+    navigateTo('documentScreen'); 
+    const container = document.getElementById('documentListContainer');
+    const categorySelect = document.getElementById('docCategory');
+    const searchInput = document.getElementById('docSearch');
+
+    if (!container) return;
+
+    // Tampilkan Loading State
+    container.innerHTML = `
+        <div class="job-loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 12px; color: #94a3b8; font-weight: 500;">Menghubungkan ke Brankas Drive...</p>
+        </div>`;
+    categorySelect.innerHTML = '<option value="ALL">Semua Area (Sub-Folder)</option>';
+    searchInput.value = '';
+
+    try {
+        // PERHATIAN: Pastikan GAS_URL sudah terdefinisi di js/config.js kamu
+        const response = await fetch(`${GAS_URL}?action=getDocuments`);
+        const res = await response.json();
+        
+        if (res.success && res.data) {
+            globalDocuments = res.data; 
+            
+            if (globalDocuments.length === 0) {
+                container.innerHTML = '<div class="job-empty" style="text-align:center; padding:40px 20px;">📂 Belum ada dokumen PDF di folder Google Drive Anda.</div>';
+                return;
+            }
+
+            // Bikin Dropdown otomatis berdasarkan nama Sub-Folder di Drive
+            const uniqueCategories = [...new Set(globalDocuments.map(doc => doc.category))];
+            uniqueCategories.forEach(cat => {
+                if (cat && cat !== 'UMUM') { 
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.textContent = `📁 ${cat}`;
+                    categorySelect.appendChild(opt);
+                }
+            });
+
+            // Tampilkan semua data
+            renderDocuments(globalDocuments);
+        }
+    } catch (error) {
+        console.error(error);
+        container.innerHTML = '<div class="job-empty" style="text-align:center; padding:40px 20px; color: #ef4444;">⚠️ Gagal memuat dokumen. Periksa koneksi internet Anda.</div>';
+    }
+}
+
+function filterDocuments() {
+    const searchText = document.getElementById('docSearch').value.toLowerCase();
+    const selectedCat = document.getElementById('docCategory').value;
+
+    const filtered = globalDocuments.filter(doc => {
+        const matchSearch = doc.name.toLowerCase().includes(searchText);
+        const matchCat = selectedCat === 'ALL' || doc.category === selectedCat;
+        return matchSearch && matchCat;
+    });
+
+    renderDocuments(filtered);
+}
+
+function renderDocuments(docs) {
+    const container = document.getElementById('documentListContainer');
+    container.innerHTML = '';
+
+    if (docs.length === 0) {
+        container.innerHTML = '<div class="job-empty" style="text-align:center; padding:40px 20px;">❌ Dokumen yang dicari tidak ditemukan.</div>';
+        return;
+    }
+
+    docs.forEach(doc => {
+        const card = document.createElement('div');
+        card.className = 'pdf-card';
+        // Saat di-klik, panggil fungsi Pop-Up Viewer
+        card.onclick = () => showPdfInApp(doc.url, doc.name);
+        
+        card.innerHTML = `
+            <div class="pdf-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            </div>
+            <div class="pdf-info">
+                <div class="pdf-name">${doc.name}</div>
+                <div class="pdf-category-label">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    ${doc.category || 'UMUM'}
+                </div>
+            </div>
+            <div style="color: #64748b;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// Menampilkan Pop-Up PDF di dalam PWA
+function showPdfInApp(url, name) {
+    // Ubah URL Drive menjadi URL Preview agar bisa masuk Iframe
+    const previewUrl = url.replace(/\/view.*/, '/preview');
+    
+    const modal = document.getElementById('pdfViewerModal');
+    const iframe = document.getElementById('pdfIframe');
+    const title = document.getElementById('pdfViewerTitle');
+
+    if (modal && iframe) {
+        // Hilangkan format .pdf di judul supaya lebih rapi (Opsional)
+        title.textContent = name.replace('.pdf', '').replace('.PDF', '');
+        iframe.src = previewUrl;
+        
+        modal.style.display = 'flex';
+        setTimeout(() => modal.classList.add('active'), 10);
+    }
+}
+
+// Menutup Pop-Up PDF
+function closePdfViewer() {
+    const modal = document.getElementById('pdfViewerModal');
+    const iframe = document.getElementById('pdfIframe');
+
+    if (modal) {
+        modal.classList.remove('active');
+        setTimeout(() => {
+            modal.style.display = 'none';
+            if (iframe) iframe.src = ""; // Bersihkan Iframe supaya HP tidak lemot/panas
+        }, 300);
+    }
 }
