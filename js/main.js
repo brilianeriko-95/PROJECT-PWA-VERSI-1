@@ -1129,54 +1129,41 @@ function formatTime(date) {
 // ============================================
 
 let globalDocuments = []; // Brankas penyimpan data PDF
+const SUPABASE_BASE_URL = "https://iqjrlgylggadebyntzgp.supabase.co/storage/v1/object/public/dokumen-sop";
 
 async function openDocumentMenu() {
     navigateTo('documentScreen'); 
     const container = document.getElementById('documentListContainer');
     const categorySelect = document.getElementById('docCategory');
-    const searchInput = document.getElementById('docSearch');
-
     if (!container) return;
 
-    // Tampilkan Loading State
-    container.innerHTML = `
-        <div class="job-loading">
-            <div class="spinner"></div>
-            <p style="margin-top: 12px; color: #94a3b8; font-weight: 500;">Menghubungkan ke Brankas Drive...</p>
-        </div>`;
-    categorySelect.innerHTML = '<option value="ALL">Semua Area (Sub-Folder)</option>';
-    searchInput.value = '';
+    container.innerHTML = '<div class="job-loading"><div class="spinner"></div><p>Sinkronisasi Katalog SOP...</p></div>';
 
     try {
-        // PERHATIAN: Pastikan GAS_URL sudah terdefinisi di js/config.js kamu
-        const response = await fetch(`${GAS_URL}?action=getDocuments`);
+        const response = await fetch(`${GAS_URL}?action=getSopList`);
         const res = await response.json();
-        
-        if (res.success && res.data) {
-            globalDocuments = res.data; 
-            
-            if (globalDocuments.length === 0) {
-                container.innerHTML = '<div class="job-empty" style="text-align:center; padding:40px 20px;">📂 Belum ada dokumen PDF di folder Google Drive Anda.</div>';
-                return;
-            }
 
-            // Bikin Dropdown otomatis berdasarkan nama Sub-Folder di Drive
-            const uniqueCategories = [...new Set(globalDocuments.map(doc => doc.category))];
+        if (res.success && res.data) {
+            globalDocuments = res.data.map(doc => ({
+                name: doc.nama,
+                category: doc.area,
+                url: `${SUPABASE_BASE_URL}/${doc.file}` // Merakit URL Supabase secara otomatis
+            }));
+
+            // Membuat kategori filter secara unik
+            const uniqueCategories = [...new Set(globalDocuments.map(d => d.category))];
+            categorySelect.innerHTML = '<option value="ALL">Semua Area</option>';
             uniqueCategories.forEach(cat => {
-                if (cat && cat !== 'UMUM') { 
-                    const opt = document.createElement('option');
-                    opt.value = cat;
-                    opt.textContent = `📁 ${cat}`;
-                    categorySelect.appendChild(opt);
-                }
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = `📁 ${cat}`;
+                categorySelect.appendChild(opt);
             });
 
-            // Tampilkan semua data
             renderDocuments(globalDocuments);
         }
     } catch (error) {
-        console.error(error);
-        container.innerHTML = '<div class="job-empty" style="text-align:center; padding:40px 20px; color: #ef4444;">⚠️ Gagal memuat dokumen. Periksa koneksi internet Anda.</div>';
+        container.innerHTML = '<div class="job-empty">Gagal memuat katalog dari Cloud.</div>';
     }
 }
 
@@ -1228,21 +1215,43 @@ function renderDocuments(docs) {
 }
 
 // Menampilkan Pop-Up PDF di dalam PWA
-function showPdfInApp(url, name) {
-    // Ubah URL Drive menjadi URL Preview agar bisa masuk Iframe
-    const previewUrl = url.replace(/\/view.*/, '/preview');
-    
+async function showPdfInApp(url, name) {
     const modal = document.getElementById('pdfViewerModal');
-    const iframe = document.getElementById('pdfIframe');
+    const container = document.getElementById('pdfCanvasContainer');
     const title = document.getElementById('pdfViewerTitle');
 
-    if (modal && iframe) {
-        // Hilangkan format .pdf di judul supaya lebih rapi (Opsional)
-        title.textContent = name.replace('.pdf', '').replace('.PDF', '');
-        iframe.src = previewUrl;
-        
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('active'), 10);
+    if (!modal || !container) return;
+    title.textContent = name;
+
+    container.innerHTML = '<div class="job-loading"><div class="spinner"></div><p>Membuka Berkas PDF...</p></div>';
+    modal.style.display = 'flex';
+    setTimeout(() => modal.classList.add('active'), 10);
+
+    try {
+        const cleanUrl = encodeURI(url);
+        const loadingTask = pdfjsLib.getDocument(url);
+        const pdf = await loadingTask.promise;
+        container.innerHTML = ''; 
+
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 1.5 }); // Mengatur ketajaman tampilan
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            // Styling agar tampilan kertas terlihat profesional
+            canvas.style.width = '100%';
+            canvas.style.maxWidth = '800px';
+            canvas.style.borderRadius = '12px';
+            canvas.style.boxShadow = '0 15px 30px rgba(0,0,0,0.4)';
+
+            container.appendChild(canvas);
+            await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        }
+    } catch (error) {
+        container.innerHTML = '<p style="color:#ef4444; padding:20px;">Gagal menarik data dari server Supabase.</p>';
     }
 }
 
