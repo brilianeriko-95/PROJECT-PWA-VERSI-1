@@ -1215,13 +1215,12 @@ function renderDocuments(docs) {
 }
 
 // ============================================
-// NATIVE PDF RENDERER (DENGAN ZOOM & PUTAR)
+// NATIVE PDF RENDERER (ULTIMATE ZOOM & PINCH)
 // ============================================
 
-// Memori Global untuk menyimpan status PDF
 let activePdfDoc = null;
-let pdfCurrentScale = 1.5;
-let pdfCurrentRotation = 0;
+let visualScale = 1.0; // Mengontrol ukuran CSS (Lebih cepat tanpa loading ulang)
+let currentRotation = 0;
 
 async function showPdfInApp(url, name) {
     const modal = document.getElementById('pdfViewerModal');
@@ -1230,12 +1229,21 @@ async function showPdfInApp(url, name) {
 
     if (!modal || !container) return;
 
-    // 1. Reset Pengaturan Saat Buka Dokumen Baru
-    pdfCurrentScale = 1.5;
-    pdfCurrentRotation = 0;
+    // 👇 1. TRIK SULAP: BUKA KUNCI PINCH-TO-ZOOM HP 👇
+    const metaViewport = document.querySelector('meta[name="viewport"]');
+    if (metaViewport) {
+        metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+    }
+    // 👆 ========================================= 👆
+
+    visualScale = 1.0; 
+    currentRotation = 0;
     activePdfDoc = null;
 
     title.textContent = name.replace('.pdf', '').replace('.PDF', '');
+    
+    // Pastikan container bisa di-scroll ke kanan-kiri saat di-zoom
+    container.style.overflow = 'auto'; 
     
     container.innerHTML = `
         <div class="job-loading" style="margin-top: 50px;">
@@ -1248,12 +1256,9 @@ async function showPdfInApp(url, name) {
 
     try {
         const cleanUrl = encodeURI(url);
-        
-        // 2. Unduh dan Simpan ke Memori
         const loadingTask = pdfjsLib.getDocument(cleanUrl);
         activePdfDoc = await loadingTask.promise;
         
-        // 3. Panggil Mesin Penggambar (Render)
         await renderAllPdfPages(); 
         
     } catch (error) {
@@ -1262,29 +1267,29 @@ async function showPdfInApp(url, name) {
     }
 }
 
-// MESIN PENGGAMBAR KERTAS (RENDERER)
 async function renderAllPdfPages() {
     const container = document.getElementById('pdfCanvasContainer');
     if (!activePdfDoc) return;
     
-    container.innerHTML = ''; // Bersihkan layar sebelum digambar ulang
+    container.innerHTML = ''; 
 
     for (let pageNum = 1; pageNum <= activePdfDoc.numPages; pageNum++) {
         const page = await activePdfDoc.getPage(pageNum);
         
-        // Atur Skala (Zoom) dan Putaran (Rotation)
-        const viewport = page.getViewport({ scale: pdfCurrentScale, rotation: pdfCurrentRotation });
+        // Render dengan ketajaman super tinggi (Scale 2.0) agar tidak pecah saat di-zoom jari
+        const viewport = page.getViewport({ scale: 2.0, rotation: currentRotation });
         
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.height = viewport.height;
         canvas.width = viewport.width;
         
-        // Gaya Kertas
-        canvas.style.width = '100%';
-        canvas.style.maxWidth = '1000px'; // Lebar maksimal diizinkan agar zoom tidak terpotong
+        // Atur gaya ukuran visual (Dimulai dari 100%)
+        canvas.style.width = `${100 * visualScale}%`;
+        canvas.style.maxWidth = 'none'; // Hapus batasan agar bisa bebas membesar
+        canvas.style.transition = 'width 0.2s ease-out'; // Animasi mulus saat tombol zoom ditekan
         canvas.style.background = '#fff';
-        canvas.style.borderRadius = '8px';
+        canvas.style.borderRadius = '4px';
         canvas.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
         canvas.style.marginBottom = '20px';
         
@@ -1293,55 +1298,51 @@ async function renderAllPdfPages() {
     }
 }
 
-// MESIN KONTROL ZOOM
+// MESIN ZOOM SUPER CEPAT (Menggunakan CSS, bukan render ulang)
 function zoomPdf(step) {
     if (!activePdfDoc) return;
-    pdfCurrentScale += step;
     
-    // Batasan Zoom (Jangan terlalu kecil atau terlalu besar sampai HP lemot)
-    if (pdfCurrentScale < 0.5) pdfCurrentScale = 0.5;
-    if (pdfCurrentScale > 3.0) pdfCurrentScale = 3.0;
+    visualScale += step;
+    if (visualScale < 0.5) visualScale = 0.5;
+    if (visualScale > 4.0) visualScale = 4.0;
     
-    // Gambar ulang dengan skala baru
-    renderAllPdfPages();
+    // Ubah ukuran seluruh halaman serentak secara instan
+    const canvases = document.querySelectorAll('#pdfCanvasContainer canvas');
+    canvases.forEach(canvas => {
+        canvas.style.width = `${100 * visualScale}%`;
+    });
 }
 
-// MESIN KONTROL PUTAR (Rotasi kelipatan 90 derajat)
 function rotatePdf() {
     if (!activePdfDoc) return;
-    pdfCurrentRotation = (pdfCurrentRotation + 90) % 360;
-    
-    // Gambar ulang dengan rotasi baru
+    currentRotation = (currentRotation + 90) % 360;
+    // Rotasi butuh render ulang kanvasnya
     renderAllPdfPages();
 }
 
-// MESIN LAYAR PENUH (FULLSCREEN API)
 function fullscreenPdf() {
     const modal = document.getElementById('pdfViewerModal');
     if (!document.fullscreenElement) {
-        if (modal.requestFullscreen) {
-            modal.requestFullscreen();
-        } else if (modal.webkitRequestFullscreen) { /* Safari */
-            modal.webkitRequestFullscreen();
-        } else if (modal.msRequestFullscreen) { /* IE11 */
-            modal.msRequestFullscreen();
-        }
+        if (modal.requestFullscreen) modal.requestFullscreen();
+        else if (modal.webkitRequestFullscreen) modal.webkitRequestFullscreen();
     } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
     }
 }
 
-// MESIN PENUTUP
 function closePdfViewer() {
     const modal = document.getElementById('pdfViewerModal');
     const container = document.getElementById('pdfCanvasContainer');
 
+    // 👇 2. TRIK SULAP: KUNCI KEMBALI LAYAR HP 👇
+    const metaViewport = document.querySelector('meta[name="viewport"]');
+    if (metaViewport) {
+        metaViewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+    // 👆 ========================================= 👆
+
     if (modal) {
         modal.classList.remove('active');
-        
-        // Jika sedang Fullscreen, keluarkan paksa
         if (document.fullscreenElement && document.exitFullscreen) {
             document.exitFullscreen().catch(err => console.log(err));
         }
@@ -1349,7 +1350,7 @@ function closePdfViewer() {
         setTimeout(() => {
             modal.style.display = 'none';
             if (container) container.innerHTML = ''; 
-            activePdfDoc = null; // Kosongkan memori agar HP tidak berat
+            activePdfDoc = null; 
         }, 300);
     }
 }
