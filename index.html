@@ -965,19 +965,19 @@
     </div>
 
     <div id="pdfViewerModal" class="screen" style="z-index: 99999; display: none; flex-direction: column; position: fixed; inset: 0; background: #020617;">
-        <div class="screen-header glass-header" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
-            <button class="btn-icon" onclick="closePdfViewer()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-            <div class="header-title-group" style="flex: 1; min-width: 0;">
-                <h2 id="pdfViewerTitle" style="font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Lihat Dokumen</h2>
-            </div>
-            <div style="width: 44px;"></div>
+    <div class="screen-header glass-header" style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255, 255, 255, 0.1);">
+        <button class="btn-icon" onclick="closePdfViewer()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <div class="header-title-group" style="flex: 1; min-width: 0;">
+            <h2 id="pdfViewerTitle" style="font-size: 1rem;">Lihat Dokumen</h2>
         </div>
-        <div style="flex: 1; width: 100%; height: 100%; background: #fff; overflow: hidden; margin-top: 70px;">
-            <iframe id="pdfIframe" src="" style="width: 100%; height: 100%; border: none;"></iframe>
-        </div>
+        <div style="width: 44px;"></div>
     </div>
+
+    <div id="pdfCanvasContainer" style="flex: 1; width: 100%; height: 100%; overflow-y: auto; background: #0f172a; padding: 16px; margin-top: 70px; display: flex; flex-direction: column; gap: 20px; align-items: center; padding-bottom: 100px;">
+        </div>
+</div>
 
     <nav class="bottom-nav" id="bottomNav" style="display: none;">
         <div class="nav-indicator" id="navIndicator"></div>
@@ -1037,6 +1037,8 @@
 <script src="js/tpm.js"></script>
 <script src="js/balancing.js"></script>
 <script src="js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
 </body>
 </html>
